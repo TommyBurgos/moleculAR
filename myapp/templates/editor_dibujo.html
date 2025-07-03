@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+  <meta charset="UTF-8" />
+  <title>🧬 Editor Molecular JSME + Visualización 3D</title>
+  <script type="text/javascript" src="{% static 'jsme/jsme.nocache.js' %}"></script> <!-- Asegúrate de tener este archivo localmente o en static -->
+  <script>
+    let jsmeApplet;
+
+    function jsmeOnLoad() {
+      jsmeApplet = new JSApplet.JSME("jsme_container", "600px", "400px", {
+            options: "oldlook,star,query,hydrogens,noquery"
+
+      });
+    }
+
+    function exportar(tipo) {
+      if (!jsmeApplet) return;
+      const val = tipo === "mol" ? jsmeApplet.molFile() : jsmeApplet.smiles();
+      document.getElementById("tipo").value = tipo;
+      document.getElementById("mol_input").value = val;
+    }
+
+    function verEn3D() {
+      // Esto asegura que esté exportado antes de enviar
+      exportar(document.querySelector('input[name="formato"]:checked').value);
+      document.getElementById("formulario_molecula").submit();
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+
+    #jsme_container {
+      width: 600px;
+      height: 400px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+    }
+
+    textarea {
+      width: 600px;
+      height: 120px;
+      font-family: monospace;
+      margin-bottom: 10px;
+    }
+
+    button {
+      padding: 10px 14px;
+      margin-right: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>🧪 Editor Molecular con JSME y Visualizador 3D</h2>
+
+  <div id="jsme_container">Cargando editor...</div>
+
+  <form id="formulario_molecula" method="POST" action="/procesar-molecula/">
+    {% csrf_token %}
+    
+    <label><input type="radio" name="formato" value="smiles" checked> SMILES</label>
+    <label><input type="radio" name="formato" value="mol"> MOL</label><br><br>
+
+    <button type="button" onclick="exportar('smiles')">📤 Exportar SMILES</button>
+    <button type="button" onclick="exportar('mol')">📤 Exportar MOL</button>
+    <button type="button" onclick="verEn3D()">🧬 Ver molécula en 3D</button>
+
+    <input type="hidden" name="tipo" id="tipo" value="smiles">
+    <textarea name="mol_input" id="mol_input" placeholder="Aquí aparecerá el SMILES o MOL exportado..."></textarea>
+  </form>
+</body>
+</html>

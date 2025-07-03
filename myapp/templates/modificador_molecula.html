@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Modificador de Moléculas</title>
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    #viewer { width: 600px; height: 400px; border: 1px solid #ccc; background: #fff; }
+    .panel { margin-top: 20px; background: #fff; padding: 15px; border-radius: 8px; width: 600px; }
+    button { background: #28a745; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #218838; }
+    select, input[type="radio"] { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<h2>Modificador Molecular con RDKit + Django</h2>
+
+<div id="viewer"></div>
+
+<div class="panel">
+  <p><strong>SMILES base:</strong> <code id="smiles">CC</code></p>
+
+  <p><strong>Selecciona un átomo para modificar:</strong></p>
+  <div id="lista_atomos">Cargando átomos...</div>
+
+  <p><strong>Grupo a agregar:</strong></p>
+  <select id="grupo">
+    <option value="CH3">CH₃ (metilo)</option>
+  </select>
+
+  <br><br>
+  <button onclick="modificarMolecula()">Aplicar modificación</button>
+</div>
+
+<script>
+  let viewer = $3Dmol.createViewer("viewer", { backgroundColor: "white" });
+  let modeloActual = null;
+  let smiles = "CC";  // Puedes reemplazar con lo que quieras
+
+  function cargarMolDesdeSMILES(smilesStr) {
+    fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${smilesStr}/SDF`)
+      .then(res => res.text())
+      .then(data => {
+        viewer.clear();
+        modeloActual = viewer.addModel(data, "sdf");
+        viewer.setStyle({}, { stick: {}, sphere: { scale: 0.3 } });
+        viewer.zoomTo();
+        viewer.render();
+        listarAtomos();
+      })
+      .catch(err => {
+        alert("Error al cargar la molécula desde PubChem");
+        console.error(err);
+      });
+  }
+
+  function listarAtomos() {
+    const atomos = modeloActual.selectedAtoms({});
+    const lista = atomos.map((a, i) => `
+      <label><input type="radio" name="atomo" value="${i}"> #${i} (${a.elem})</label><br>
+    `).join("");
+    document.getElementById("lista_atomos").innerHTML = lista;
+  }
+
+  function modificarMolecula() {
+    const grupo = document.getElementById("grupo").value;
+    const atomo_idx = document.querySelector('input[name="atomo"]:checked');
+    if (!atomo_idx) return alert("Selecciona un átomo");
+
+    const data = {
+      smiles: smiles,
+      atomo_idx: atomo_idx.value,
+      grupo: grupo
+    };
+
+    fetch("/modificar-molecula/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(json => {
+      if (json.error) throw new Error(json.error);
+      viewer.clear();
+      viewer.addModel(json.sdf, "sdf");
+      viewer.setStyle({}, { stick: {}, sphere: { scale: 0.3 } });
+      viewer.zoomTo();
+      viewer.render();
+    })
+    .catch(err => {
+      alert("❌ Error al modificar la molécula:\n" + err.message);
+      console.error(err);
+    });
+  }
+
+  document.getElementById("smiles").innerText = smiles;
+  cargarMolDesdeSMILES(smiles);
+</script>
+
+</body>
+</html>

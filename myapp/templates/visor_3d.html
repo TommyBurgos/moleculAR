@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Molécula 3D</title>
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+    #viewer { width: 600px; height: 400px; border: 1px solid #ccc; background: white; }
+  </style>
+</head>
+<body>
+
+<h2>🔬 Vista 3D de la Molécula</h2>
+<div id="viewer"></div>
+
+<script>
+  const sdfData = `{{ sdf_data|escapejs }}`;
+  const viewer = $3Dmol.createViewer("viewer", { backgroundColor: "white" });
+  viewer.addModel(sdfData, "sdf");
+  viewer.setStyle({}, { stick: {}, sphere: { scale: 0.3 } });
+  viewer.zoomTo();
+  viewer.render();
+</script>
+
+</body>
+</html>
