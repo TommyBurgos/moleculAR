@@ -11,9 +11,10 @@ import json
 
 
 from user.models import User,Rol
-from django.contrib.auth import login
+from django.contrib.auth import login, logout, authenticate
 import re
-@csrf_exempt
+from .permissions import role_required
+
 @csrf_exempt
 def modificar_molecula(request):
     if request.method == 'POST':
@@ -122,7 +123,52 @@ def registroExitoso(request):
     return HttpResponse('Método no permitido')
 
 
+def vistaLogin(request):
+    return render(request,'sign-in.html')
 
+@role_required('Admin')
+def inicioAdmin(request):
+    user = request.user    
+    # 1. Cantidad de usuarios cuyo rol es igual a 2
+    # Fecha hace dos semanas    
+    return render(request, 'usAdmin/admin-dashboard.html')
+
+@role_required('Estudiante')
+def inicioEstudiante(request):
+    user = request.user    
+    return render(request, 'estudiante/student-dashboard.html')    
+
+def inicioDocente(request):
+    return render(request, 'docente/instructor-dashboard.html')
+
+
+def custom_login(request):
+    print("entre a la funcion custom")
+    if request.method == "POST":  
+        print("Estoy en post")   
+        print(request.POST) 
+        print(request.POST['email'], request.POST['password'])  
+        user = authenticate(request, username=request.POST['email'], password= request.POST
+        ['password'])
+        print(user)
+        print("Ya autentique el usuario")
+        print(user is not None)
+        if user is not None:            
+            login(request, user)
+            print("Loguie al usuario")
+            rol = user.rol_id  # Asignar rol después de la autenticación   
+            print(rol)         
+            if rol == 1:
+                print("Ingrese al rol 1")
+                return redirect('dashboard-adm')
+            elif rol == 2:
+                return redirect('student_dashboard')
+            elif rol == 3:
+                return redirect('teacher_dashboard')
+        else:
+            # Manejar error de autenticación
+            return render(request, 'generales/accesoDenegado.html', {'error': 'Credenciales inválidas'})
+    return redirect('inicio')
 
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
