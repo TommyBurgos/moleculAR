@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import SDWriter
+from django.middleware.csrf import rotate_token
 import tempfile
 import json
 
@@ -129,9 +130,12 @@ def vistaLogin(request):
 @role_required('Admin')
 def inicioAdmin(request):
     user = request.user    
-    # 1. Cantidad de usuarios cuyo rol es igual a 2
-    # Fecha hace dos semanas    
-    return render(request, 'usAdmin/admin-dashboard.html')
+    imgPerfil=user.imgPerfil  
+    context = {                  
+        'imgPerfil': imgPerfil,        
+        'usuario':user.username,        
+    }   
+    return render(request, 'usAdmin/admin-dashboard.html', context)
 
 @role_required('Estudiante')
 def inicioEstudiante(request):
@@ -169,6 +173,12 @@ def custom_login(request):
             # Manejar error de autenticación
             return render(request, 'generales/accesoDenegado.html', {'error': 'Credenciales inválidas'})
     return redirect('inicio')
+
+def signout(request):
+    logout(request)
+    rotate_token(request)  # Gira el token CSRF para la nueva sesión
+    return redirect('inicio')
+
 
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt

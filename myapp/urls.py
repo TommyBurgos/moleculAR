@@ -4,6 +4,7 @@ from myapp import views
 urlpatterns = [
     path('', views.inicio, name='inicio'),
     path('login/', views.vistaLogin, name='inicio'),
+    path("logout/", views.signout, name="logout"),
     path('registro/', views.registroUser),
     path('inicio/',views.custom_login),
     path('usAdmin/', views.inicioAdmin, name="dashboard-adm"),
