@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -7,11 +7,12 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import SDWriter
 from django.middleware.csrf import rotate_token
+from django.contrib.auth.decorators import login_required
 import tempfile
 import json
 
 
-from user.models import User,Rol
+from user.models import User,Rol, Curso
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
@@ -136,6 +137,59 @@ def inicioAdmin(request):
         'usuario':user.username,        
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
+
+@role_required('Admin')
+def vistaAllCursos(request):
+    user = request.user    
+    imgPerfil=user.imgPerfil 
+    cursos = Curso.objects.all().order_by('-fecha_creacion') 
+    context = {                  
+        'imgPerfil': imgPerfil,        
+        'usuario':user.username, 
+        'cursos': cursos       
+    }   
+    return render(request,'usAdmin/detalleCursos.html',context)
+
+@role_required('Admin')
+@login_required
+def detalle_curso(request, curso_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+    user = request.user    
+    imgPerfil=user.imgPerfil
+    #contenidos = Contenido.objects.filter(curso=curso, tipo_contenido='video')
+
+    return render(request, 'usAdmin/detalle_curso.html', {
+        'curso': curso,
+        'imgPerfil': imgPerfil,        
+        'usuario':user.username,
+        #'contenidos': contenidos
+    })
+
+
+
+from .forms import CursoForm
+
+@role_required('Admin')
+def vistaCrearCurso(request):
+    user = request.user    
+    imgPerfil=user.imgPerfil 
+    if request.method == 'POST':
+        form = CursoForm(request.POST, request.FILES)
+        if form.is_valid():
+            curso = form.save(commit=False)
+            curso.profesor = request.user  # Asignar el usuario actual como profesor
+            curso.save()
+            return redirect('detalleCursos-adm', curso.id) 
+    else:
+        form = CursoForm() 
+    context = {                  
+        'imgPerfil': imgPerfil,        
+        'usuario':user.username,
+        'form': form        
+    }   
+    return render(request,'usAdmin/crearCurso.html',context)
+
+
 
 @role_required('Estudiante')
 def inicioEstudiante(request):

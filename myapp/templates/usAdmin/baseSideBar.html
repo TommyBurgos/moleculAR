@@ -1,7 +1,22 @@
-<ul class="navbar-nav flex-column" id="navbar-sidebar">
-				{% load static %}
+{% load static %}
+<nav class="navbar sidebar navbar-expand-xl navbar-dark bg-dark">
+
+	<!-- Navbar brand for xl START -->
+	<div class="d-flex align-items-center">
+		<a class="navbar-brand" href="/usAdmin/">
+			<img class="navbar-brand-item" src="{% static 'img/Plataforma/General/logo_blanco.png' %}" alt="">
+		</a>
+	</div>
+	<!-- Navbar brand for xl END -->
+	
+	<div class="offcanvas offcanvas-start flex-row custom-scrollbar h-100" data-bs-backdrop="true" tabindex="-1" id="offcanvasSidebar">
+		<div class="offcanvas-body sidebar-content d-flex flex-column bg-dark">
+
+			<!-- Sidebar menu START -->
+             <ul class="navbar-nav flex-column" id="navbar-sidebar">
+				
 				<!-- Menu item 1 -->
-				<li class="nav-item"><a href="admin-dashboard.html" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
+				<li class="nav-item"><a href="/usAdmin/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
 				
 				<!-- Title -->
 				<li class="nav-item ms-2 my-2">Pages</li>
@@ -13,7 +28,7 @@
 					</a>
 					<!-- Submenu -->
 					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
-						<li class="nav-item"> <a class="nav-link" href="admin-course-list.html">Todos los cursos</a></li>
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Todos los cursos</a></li>
 						<li class="nav-item"> <a class="nav-link" href="admin-course-category.html">Crear Curso</a></li>
 						<li class="nav-item"> <a class="nav-link" href="admin-course-detail.html">Course Detail</a></li>
 					</ul>
@@ -64,4 +79,25 @@
 				</li>
 				<!-- Menu item 9 -->
 				<li class="nav-item"> <a class="nav-link" href="docs/index.html"><img src="{% static 'img/Plataforma/General/manual.png' %}" class="fa-fw me-2" alt="">Instructivo y politicas</a></li>				
-			</ul>
+			</ul>			
+			<!-- Sidebar menu end -->
+
+			<!-- Sidebar footer START -->
+			<div class="px-3 mt-auto pt-3">
+				<div class="d-flex align-items-center justify-content-between text-primary-hover">
+						<a class="h5 mb-0 text-body" href="admin-setting.html" data-bs-toggle="tooltip" data-bs-placement="top" title="Settings">
+							<i class="bi bi-gear-fill"></i>
+						</a>
+						<a class="h5 mb-0 text-body" href="index.html" data-bs-toggle="tooltip" data-bs-placement="top" title="Home">
+							<i class="bi bi-globe"></i>
+						</a>
+						<a class="h5 mb-0 text-body" href="/logout/" data-bs-toggle="tooltip" data-bs-placement="top" title="Sign out">
+							<i class="bi bi-power"></i>
+						</a>
+				</div>
+			</div>
+			<!-- Sidebar footer END -->
+		</div>
+	</div>
+</nav>
+

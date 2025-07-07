@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% load static %}
+	<title>Eduport- LMS, Education and Course Theme</title>
+
+	<!-- Meta Tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="author" content="Webestica.com">
+	<meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+	<!-- Dark mode -->
+	<script>
+		const storedTheme = localStorage.getItem('theme')
+ 
+		const getPreferredTheme = () => {
+			if (storedTheme) {
+				return storedTheme
+			}
+			return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'light'
+		}
+
+		const setTheme = function (theme) {
+			if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.setAttribute('data-bs-theme', 'dark')
+			} else {
+				document.documentElement.setAttribute('data-bs-theme', theme)
+			}
+		}
+
+		setTheme(getPreferredTheme())
+
+		window.addEventListener('DOMContentLoaded', () => {
+		    var el = document.querySelector('.theme-icon-active');
+			if(el != 'undefined' && el != null) {
+				const showActiveTheme = theme => {
+				const activeThemeIcon = document.querySelector('.theme-icon-active use')
+				const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+				const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+				document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+					element.classList.remove('active')
+				})
+
+				btnToActive.classList.add('active')
+				activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+			}
+
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				if (storedTheme !== 'light' || storedTheme !== 'dark') {
+					setTheme(getPreferredTheme())
+				}
+			})
+
+			showActiveTheme(getPreferredTheme())
+
+			document.querySelectorAll('[data-bs-theme-value]')
+				.forEach(toggle => {
+					toggle.addEventListener('click', () => {
+						const theme = toggle.getAttribute('data-bs-theme-value')
+						localStorage.setItem('theme', theme)
+						setTheme(theme)
+						showActiveTheme(theme)
+					})
+				})
+
+			}
+		})
+		
+	</script>
+
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+	<!-- Google Font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+	<!-- Plugins CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/choices/css/choices.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/overlay-scrollbar/css/overlayscrollbars.min.css' %}">
+
+	<!-- Theme CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+</head>
+
+<body>
+
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+	
+<!-- Sidebar START -->
+{% include 'usAdmin/baseSideBar.html' %}
+<!-- Sidebar END -->
+
+<!-- Page content START -->
+<div class="page-content">
+	
+	<!-- Top bar START -->
+	{% include 'usAdmin/navBar.html' %}
+	<!-- Top bar END -->
+
+	<!-- Page main content START -->
+	<div class="page-content-wrapper border">
+
+		<!-- Title -->
+		<div class="row mb-3">
+			<div class="col-12 d-sm-flex justify-content-between align-items-center">
+				<h1 class="h3 mb-2 mb-sm-0">Courses</h1>
+				<a href="/usAdmin/crearCurso" class="btn btn-sm btn-primary mb-0">Crear un curso</a>
+			</div>
+		</div>
+
+		<!-- Course boxes START -->
+		<div class="row g-4 mb-4">
+			<!-- Course item -->
+			<div class="col-sm-6 col-lg-4">
+				<div class="text-center p-4 bg-primary bg-opacity-10 border border-primary rounded-3">
+					<h6>Total cursos</h6>
+					<h2 class="mb-0 fs-1 text-primary">{{ cursos.count }}</h2>
+				</div>
+			</div>
+
+			<!-- Course item -->
+			<div class="col-sm-6 col-lg-4">
+				<div class="text-center p-4 bg-success bg-opacity-10 border border-success rounded-3">
+					<h6>Cursos Activos</h6>
+					<h2 class="mb-0 fs-1 text-success">{{ cursos.count }}</h2>
+				</div>
+			</div>
+
+			<!-- Course item -->
+			<div class="col-sm-6 col-lg-4">
+				<div class="text-center p-4  bg-warning bg-opacity-15 border border-warning rounded-3">
+					<h6>Cursos inactivos</h6>
+					<h2 class="mb-0 fs-1 text-warning">0</h2>
+				</div>
+			</div>
+		</div>
+		<!-- Course boxes END -->
+
+		<!-- Card START -->
+		<div class="card bg-transparent border">
+
+			<!-- Card header START -->
+			<div class="card-header bg-light border-bottom">
+				<!-- Search and select START -->
+				<div class="row g-3 align-items-center justify-content-between">
+					<!-- Search bar -->
+					<div class="col-md-8">
+						<form class="rounded position-relative">
+							<input class="form-control bg-body" type="search" placeholder="Search" aria-label="Search">
+							<button class="bg-transparent p-2 position-absolute top-50 end-0 translate-middle-y border-0 text-primary-hover text-reset" type="submit">
+								<i class="fas fa-search fs-6 "></i>
+							</button>
+						</form>
+					</div>
+
+					<!-- Select option -->
+					<div class="col-md-3">
+						<!-- Short by filter -->
+						<form>
+							<select class="form-select js-choice border-0 z-index-9" aria-label=".form-select-sm">
+								<option value="">Sort by</option>
+								<option>Newest</option>
+								<option>Oldest</option>
+								<option>Accepted</option>
+								<option>Rejected</option>
+							</select>
+						</form>
+					</div>
+				</div>
+				<!-- Search and select END -->
+			</div>
+			<!-- Card header END -->
+
+			<!-- Card body START -->
+			<div class="card-body">
+				<!-- Course table START -->
+				<div class="table-responsive border-0 rounded-3">
+					<!-- Table START -->
+					<table class="table table-dark-gray align-middle p-4 mb-0 table-hover">
+						<!-- Table head -->
+						<thead>
+							<tr>
+								<th scope="col" class="border-0 rounded-start">Nombre del curso</th>
+								<th scope="col" class="border-0">Docente</th>
+								<th scope="col" class="border-0">Fecha de Creación</th>
+								<th scope="col" class="border-0">Categoria</th>
+								<th scope="col" class="border-0 rounded-end">Acción</th>
+							</tr>
+						</thead>						
+						<!-- Table body START -->
+						<tbody>
+							{% for curso in cursos %}
+							<!-- Table row -->
+							<tr>
+								<!-- Table data -->
+								<td>
+									<div class="d-flex align-items-center position-relative">
+										<!-- Image -->
+										<div class="w-60px">
+											<img src="{{ curso.imagen_portada.url }}" class="rounded" alt="">
+										</div>
+										<!-- Title -->
+										<h6 class="table-responsive-title mb-0 ms-2">	
+											<a href="{% url 'detalle_curso' curso.id %}" class="stretched-link">{{ curso.titulo }}</a>
+										</h6>
+									</div>
+								</td>
+
+								<!-- Table data -->
+								<td>
+									<div class="d-flex align-items-center mb-3">
+										<!-- Avatar -->
+										<div class="avatar avatar-xs flex-shrink-0">
+											<img class="avatar-img rounded-circle" src="{{ curso.profesor.imgPerfil.url }}" alt="avatar">
+										</div>
+										<!-- Info -->
+										<div class="ms-2">
+											<h6 class="mb-0 fw-light">{{ curso.profesor }}</h6>
+										</div>
+									</div>
+								</td>
+
+								<!-- Table data -->
+								<td>{{ curso.fecha_creacion }}</td>
+								
+								<!-- Table data -->
+								<td>{{ curso.categoria }}</td>								
+
+								<!-- Table data -->
+								<td>
+									<a href="{% url 'detalle_curso' curso.id %}" class="btn btn-sm btn-success-soft me-1 mb-1 mb-md-0">Ver detalle</a>
+									<button class="btn btn-sm btn-secondary-soft mb-0">Eliminar</button>
+								</td>
+							</tr>							
+							{% endfor %}
+						</tbody>
+						<!-- Table body END -->
+					</table>
+					<!-- Table END -->
+				</div>
+				<!-- Course table END -->
+			</div>
+			<!-- Card body END -->
+
+			<!-- Card footer START -->
+			<div class="card-footer bg-transparent pt-0">
+				<!-- Pagination START -->
+				<div class="d-sm-flex justify-content-sm-between align-items-sm-center">
+					<!-- Content -->
+					<p class="mb-0 text-center text-sm-start">Showing 1 to 8 of 20 entries</p>
+					<!-- Pagination -->
+					<nav class="d-flex justify-content-center mb-0" aria-label="navigation">
+						<ul class="pagination pagination-sm pagination-primary-soft d-inline-block d-md-flex rounded mb-0">
+							<li class="page-item mb-0"><a class="page-link" href="#" tabindex="-1"><i class="fas fa-angle-left"></i></a></li>
+							<li class="page-item mb-0"><a class="page-link" href="#">1</a></li>
+							<li class="page-item mb-0 active"><a class="page-link" href="#">2</a></li>
+							<li class="page-item mb-0"><a class="page-link" href="#">3</a></li>
+							<li class="page-item mb-0"><a class="page-link" href="#"><i class="fas fa-angle-right"></i></a></li>
+						</ul>
+					</nav>
+				</div>
+				<!-- Pagination END -->
+			</div>
+			<!-- Card footer END -->
+		</div>
+		<!-- Card END -->
+	</div>
+	<!-- Page main content END -->
+
+</div>
+<!-- Page content END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Back to top -->
+<div class="back-top"><i class="bi bi-arrow-up-short position-absolute top-50 start-50 translate-middle"></i></div>
+
+<!-- Bootstrap JS -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- Vendors -->
+<script src="{% static 'assets/vendor/choices/js/choices.min.js' %}"></script>
+<script src="{% static 'assets/vendor/overlay-scrollbar/js/overlayscrollbars.min.js' %}"></script>
+
+<!-- Template Functions -->
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+</body>
+</html>

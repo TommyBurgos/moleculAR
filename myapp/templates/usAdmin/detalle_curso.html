@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% load static %}
+	<title>Eduport- LMS, Education and Course Theme</title>
+
+	<!-- Meta Tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="author" content="Webestica.com">
+	<meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+	<!-- Dark mode -->
+	<script>
+		const storedTheme = localStorage.getItem('theme')
+ 
+		const getPreferredTheme = () => {
+			if (storedTheme) {
+				return storedTheme
+			}
+			return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'light'
+		}
+
+		const setTheme = function (theme) {
+			if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.setAttribute('data-bs-theme', 'dark')
+			} else {
+				document.documentElement.setAttribute('data-bs-theme', theme)
+			}
+		}
+
+		setTheme(getPreferredTheme())
+
+		window.addEventListener('DOMContentLoaded', () => {
+		    var el = document.querySelector('.theme-icon-active');
+			if(el != 'undefined' && el != null) {
+				const showActiveTheme = theme => {
+				const activeThemeIcon = document.querySelector('.theme-icon-active use')
+				const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+				const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+				document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+					element.classList.remove('active')
+				})
+
+				btnToActive.classList.add('active')
+				activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+			}
+
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				if (storedTheme !== 'light' || storedTheme !== 'dark') {
+					setTheme(getPreferredTheme())
+				}
+			})
+
+			showActiveTheme(getPreferredTheme())
+
+			document.querySelectorAll('[data-bs-theme-value]')
+				.forEach(toggle => {
+					toggle.addEventListener('click', () => {
+						const theme = toggle.getAttribute('data-bs-theme-value')
+						localStorage.setItem('theme', theme)
+						setTheme(theme)
+						showActiveTheme(theme)
+					})
+				})
+
+			}
+		})
+		
+	</script>
+
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+	<!-- Google Font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+	<!-- Plugins CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/choices/css/choices.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/glightbox/css/glightbox.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/quill/css/quill.snow.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/stepper/css/bs-stepper.min.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/overlay-scrollbar/css/overlayscrollbars.min.css' %}">
+
+	<!-- Theme CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+</head>
+
+<body>
+
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+	
+<!-- Sidebar START -->
+{% include 'usAdmin/baseSideBar.html' %}
+<!-- Sidebar END -->
+
+<!-- Page content START -->
+<div class="page-content">
+	
+	<!-- Top bar START -->
+	{% include 'usAdmin/navBar.html' %}
+	<!-- Top bar END -->
+
+	<!-- Page main content START -->
+	<div class="page-content-wrapper border">
+
+		<h1 class="h3 mb-3">Editar curso</h1>
+
+		<!-- Card START -->
+		<div class="card border rounded-3 mb-5">
+			<div id="stepper" class="bs-stepper stepper-outline">
+				<!-- Card header -->
+				<div class="card-header bg-light border-bottom px-lg-5">
+					<!-- Step Buttons START -->
+					<div class="bs-stepper-header" role="tablist">
+						<!-- Step 3 -->						
+					</div>
+					<!-- Step Buttons END -->
+				</div>
+
+				<!-- Card body START -->
+				<div class="card-body px-1 px-sm-4">
+					<!-- Step content START -->
+					<div class="bs-stepper-content">
+						<form onsubmit="return false">
+							<!-- Step 3 content START -->
+							<div id="step-3" role="tabpanel" class="content fade active" aria-labelledby="steppertrigger3">
+								<!-- Title -->
+								<h4>{{ curso.titulo }}</h4>
+
+								<hr> <!-- Divider -->
+
+								<div class="row">
+									<!-- Add lecture Modal button -->
+									<div class="d-sm-flex justify-content-sm-between align-items-center mb-3">
+										<h5 class="mb-2 mb-sm-0">Agregar sección</h5>
+										<a href="#" class="btn btn-sm btn-primary-soft mb-0" data-bs-toggle="modal" data-bs-target="#addLecture"><i class="bi bi-plus-circle me-2"></i>Agregar sección</a>
+										
+									</div>
+			
+									<!-- Edit lecture START -->
+									<div class="accordion accordion-icon accordion-bg-light" id="accordionExample2">
+										<!-- Item START -->
+										<div class="accordion-item mb-3">
+											<h6 class="accordion-header font-base" id="heading-1">
+												<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-1" aria-expanded="false" aria-controls="collapse-1">
+													Introduction of Digital Marketing 
+												</button>
+											</h6>
+			
+											<div id="collapse-1" class="accordion-collapse collapse show" aria-labelledby="heading-1" data-bs-parent="#accordionExample2">
+												<!-- Topic START -->
+												<div class="accordion-body mt-3">
+													<!-- Video item START -->
+													<div class="d-flex justify-content-between align-items-center">
+														<div class="position-relative">
+															<a href="#" class="btn btn-danger-soft btn-round btn-sm mb-0 stretched-link position-static"><i class="fas fa-play"></i></a>
+															<span class="ms-2 mb-0 h6 fw-light">Introduction</span>
+														</div>
+														<!-- Edit and cancel button -->
+														<div>
+															<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-1 mb-md-0"><i class="far fa-fw fa-edit"></i></a>
+															<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
+														</div>
+													</div>
+													<!-- Divider -->
+													<hr>
+													<!-- Video item END -->
+							
+													<!-- Video item START -->
+													<div class="d-flex justify-content-between align-items-center">
+														<div class="position-relative">
+															<a href="#" class="btn btn-danger-soft btn-round btn-sm mb-0 stretched-link position-static"><i class="fas fa-play"></i></a>
+															<span class="ms-2 mb-0 h6 fw-light">What is Digital Marketing</span>
+														</div>
+														<!-- Edit and cancel button -->
+														<div>
+															<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-1 mb-md-0"><i class="far fa-fw fa-edit"></i></a>
+															<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
+														</div>
+													</div>
+													<!-- Divider -->
+													<hr>
+													<!-- Video item END -->
+			
+													<!-- Add topic -->
+													<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic"><i class="bi bi-plus-circle me-2"></i>Añadir recurso</a>
+													<a href="#" class="btn btn-sm btn-danger-soft mb-0 mt-1 mt-sm-0">Delete this Lecture</a>
+												</div>
+												<!-- Topic END -->
+											</div>
+										</div>
+										<!-- Item END -->
+					
+										<!-- Item START -->
+										<div class="accordion-item mb-3">
+											<h6 class="accordion-header font-base" id="heading-2">
+												<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-2" aria-expanded="false" aria-controls="collapse-2">
+													Customer Life cycle
+												</button>
+											</h6>
+			
+											<div id="collapse-2" class="accordion-collapse collapse" aria-labelledby="heading-2" data-bs-parent="#accordionExample2">
+												<div class="accordion-body mt-3">
+													<!-- Add topic -->
+													<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic">
+														<i class="bi bi-plus-circle me-2"></i>Add topic
+													</a>	
+												</div>
+											</div>
+										</div>
+										<!-- Item END -->
+					
+										<!-- Item START -->
+										<div class="accordion-item mb-3">
+											<h6 class="accordion-header font-base" id="heading-3">
+												<button class="accordion-button fw-bold collapsed rounded d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-3" aria-expanded="false" aria-controls="collapse-3">
+													How much should I offer the sellers? 
+												</button>
+											</h6>
+											<!-- Body -->
+											<div id="collapse-3" class="accordion-collapse collapse" aria-labelledby="heading-3" data-bs-parent="#accordionExample2">
+												<div class="accordion-body mt-3">
+													<!-- Add topic -->
+													<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic">
+														<i class="bi bi-plus-circle me-2"></i>Add topic
+													</a>
+												</div>
+											</div>
+										</div>	
+										<!-- Item END -->
+			
+									</div>
+									<!-- Edit lecture END -->
+
+									<!-- Step 3 button -->
+									<div class="d-flex justify-content-between">
+										<button class="btn btn-secondary prev-btn mb-0">Previous</button>
+										<button class="btn btn-primary next-btn mb-0">Next</button>
+									</div>
+								</div>
+							</div>
+							<!-- Step 3 content END -->
+
+							<!-- Step 4 content START -->
+							
+
+						</form>
+					</div>
+				</div>
+				<!-- Card body END -->
+			</div>
+		</div>
+		<!-- Card END -->
+	</div>
+	<!-- Page main content END -->
+
+</div>
+<!-- Page content END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Popup modal for add lecture START -->
+<div class="modal fade" id="addLecture" tabindex="-1" aria-labelledby="addLectureLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header bg-dark">
+				<h5 class="modal-title text-white" id="addLectureLabel">Add Lecture</h5>
+				<button type="button" class="btn btn-sm btn-light mb-0 ms-auto" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+			</div>
+			<div class="modal-body">
+				<form class="row text-start g-3">
+					<!-- Course name -->
+					<div class="col-12">
+						<label class="form-label">Course name <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" placeholder="Enter course name">
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger-soft my-0" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-success my-0">Save Lecture</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- Popup modal for add lecture END -->
+
+<!-- Popup modal for add topic START -->
+<div class="modal fade" id="addTopic" tabindex="-1" aria-labelledby="addTopicLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header bg-dark">
+				<h5 class="modal-title text-white" id="addTopicLabel">Add topic</h5>
+				<button type="button" class="btn btn-sm btn-light mb-0 ms-auto" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+			</div>
+			<div class="modal-body">
+				<form class="row text-start g-3">
+					<!-- Topic name -->
+					<div class="col-md-6">
+						<label class="form-label">Topic name</label>
+						<input class="form-control" type="text" placeholder="Enter topic name">
+					</div>
+					<!-- Video link -->
+					<div class="col-md-6">
+						<label class="form-label">Video link</label>
+						<input class="form-control" type="text" placeholder="Enter Video link">
+					</div>
+					<!-- Description -->
+					<div class="col-12 mt-3">
+						<label class="form-label">Course description</label>
+						<textarea class="form-control" rows="4" placeholder="" spellcheck="false"></textarea>
+					</div>
+					<!-- Buttons -->
+					<div class="col-6 mt-3">
+						<div class="btn-group" role="group" aria-label="Basic radio toggle button group">
+							<!-- Free button -->
+							<input type="radio" class="btn-check" name="options" id="option1" checked="">
+							<label class="btn btn-sm btn-light btn-primary-soft-check border-0 m-0" for="option1">Free</label>
+							<!-- Premium button -->
+							<input type="radio" class="btn-check" name="options" id="option2">
+							<label class="btn btn-sm btn-light btn-primary-soft-check border-0 m-0" for="option2">Premium</label>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger-soft my-0" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-success my-0">Save topic</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- Popup modal for add topic END -->
+
+<!-- Popup modal for add faq START -->
+<div class="modal fade" id="addQuestion" tabindex="-1" aria-labelledby="addQuestionLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header bg-dark">
+				<h5 class="modal-title text-white" id="addQuestionLabel">Add FAQ</h5>
+				<button type="button" class="btn btn-sm btn-light mb-0 ms-auto" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+			</div>
+			<div class="modal-body">
+				<form class="row text-start g-3">
+					<!-- Question -->
+					<div class="col-12">
+						<label class="form-label">Question</label>
+						<input class="form-control" type="text" placeholder="Write a question">
+					</div>
+					<!-- Answer -->
+					<div class="col-12 mt-3">
+						<label class="form-label">Answer</label>
+						<textarea class="form-control" rows="4" placeholder="Write a answer" spellcheck="false"></textarea>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger-soft my-0" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-success my-0">Save topic</button>
+			</div>
+		</div>
+	</div>
+</div>
+<!-- Popup modal for add faq END -->
+
+<!-- Back to top -->
+<div class="back-top"><i class="bi bi-arrow-up-short position-absolute top-50 start-50 translate-middle"></i></div>
+
+<!-- Bootstrap JS -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- Vendors -->
+<script src="{% static 'assets/vendor/choices/js/choices.min.js' %}"></script>
+<script src="{% static 'assets/vendor/glightbox/js/glightbox.js' %}"></script>
+<script src="{% static 'assets/vendor/quill/js/quill.min.js' %}"></script>
+<script src="{% static 'assets/vendor/stepper/js/bs-stepper.min.js' %}"></script>
+<script src="{% static 'assets/vendor/overlay-scrollbar/js/overlayscrollbars.min.js' %}"></script>
+
+<!-- Template Functions -->
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+</body>
+</html>
