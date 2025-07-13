@@ -10,7 +10,13 @@ urlpatterns = [
     path('usAdmin/', views.inicioAdmin, name="dashboard-adm"),
     path('usAdmin/detalleCursos', views.vistaAllCursos, name="detalleCursos-adm"),
     path('detalleCurso/<int:curso_id>/', views.detalle_curso, name='detalle_curso'),
+    path('curso/<int:curso_id>/modulo/nuevo/', views.crear_modulo, name='crear_modulo'),
+    path('seccion/<int:seccion_id>/crear-recurso/', views.crear_recurso, name='crear_recurso'),
+
+
     path('usAdmin/crearCurso', views.vistaCrearCurso, name="crearCurso-adm"),
+    path("obtener-presigned-url/", views.obtener_presigned_url, name="obtener_presigned_url"),
+
     path('usEstudiante/', views.inicioEstudiante, name="student_dashboard"),
     path('usDocente/', views.inicioDocente, name="teacher_dashboard"),
     path("modificar-molecula/", views.modificar_molecula, name="modificar_molecula"),

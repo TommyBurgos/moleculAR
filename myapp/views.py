@@ -8,11 +8,12 @@ from rdkit.Chem import AllChem
 from rdkit.Chem import SDWriter
 from django.middleware.csrf import rotate_token
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 import tempfile
 import json
 
 
-from user.models import User,Rol, Curso
+from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
@@ -149,21 +150,156 @@ def vistaAllCursos(request):
         'cursos': cursos       
     }   
     return render(request,'usAdmin/detalleCursos.html',context)
+from django.db.models import Prefetch
 
 @role_required('Admin')
 @login_required
 def detalle_curso(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
-    user = request.user    
-    imgPerfil=user.imgPerfil
-    #contenidos = Contenido.objects.filter(curso=curso, tipo_contenido='video')
+    
+    recursos_prefetch = Prefetch(
+        'recursos',
+        queryset=Recurso.objects.order_by('orden'),
+        to_attr='recursos_ordenados'
+    )
+    
+    secciones = Seccion.objects.filter(curso=curso_id).prefetch_related(recursos_prefetch).order_by('orden')
+
+    recursosTipo = TipoRecurso.objects.all()
+    user = request.user
+    imgPerfil = user.imgPerfil
 
     return render(request, 'usAdmin/detalle_curso.html', {
         'curso': curso,
-        'imgPerfil': imgPerfil,        
-        'usuario':user.username,
-        #'contenidos': contenidos
+        'imgPerfil': imgPerfil,
+        'usuario': user.username,
+        'secciones': secciones,
+        'tipos_recurso': recursosTipo
     })
+
+
+def crear_modulo(request, curso_id):
+    curso = get_object_or_404(Curso, id=curso_id)
+
+    if request.method == 'POST':
+        titulo = request.POST.get('titulo', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        orden = request.POST.get('orden', 1)
+
+        if not titulo:
+            messages.error(request, "El título del módulo es obligatorio.")
+            return redirect('crear_modulo', curso_id=curso.id)
+
+        Seccion.objects.create(
+            curso=curso,
+            titulo=titulo,
+            descripcion=descripcion,
+            orden=orden
+        )
+        messages.success(request, "Módulo creado exitosamente.")
+        return redirect('detalle_curso', curso_id=curso.id)
+
+    return render(request, 'usAdmin/detalleCursos.html', {'curso': curso})
+
+def crear_recurso(request, seccion_id):
+    if request.method == 'POST':
+        print("Entré al post de crear recurso")
+        # Datos básicos del recurso
+        titulo = request.POST.get('titulo')
+        print(f"Titulo: {titulo}")
+        descripcion = request.POST.get('descripcion')
+        imagen = request.FILES.get('imagen_referencial')
+        tipo_id = request.POST.get('tipo')
+        visible = 'visible_biblioteca' in request.POST
+        seccion_id = request.POST.get('seccion_id')
+        print("La sección id es" + seccion_id)
+        tipo = TipoRecurso.objects.get(id=tipo_id)
+        seccion = Seccion.objects.get(id=seccion_id)
+
+        recurso = Recurso.objects.create(
+            titulo=titulo,
+            descripcion=descripcion,
+            tipo=tipo,
+            imagen=imagen,
+            seccion=seccion,
+            visible_biblioteca=visible
+        )
+        print(f"Recurso creado {recurso}")
+        # CREACIÓN SEGÚN TIPO DE RECURSO
+        nombre_tipo = tipo.nombre.lower()
+        print(f"nombre del tipo de recurso es {nombre_tipo}")
+        print('video' in nombre_tipo)
+
+        if 'video' in nombre_tipo:
+            print("Dentro del if")
+            video_url = request.POST.get('video_url')
+            print(video_url)
+            if video_url:
+                print(recurso.video_url)
+                recurso.video_url = video_url
+                print(recurso.video_url)
+                recurso.save()
+            else:
+                print("⚠️ No se recibió la URL del video desde el formulario.")
+
+
+        elif 'cuestionario' in nombre_tipo:
+            print("Dentro del if cuestionario")
+            instrucciones = request.POST.get('nombre_cuestionario')
+            tiempo_limite = request.POST.get('descripcion_cuestionario')
+            Cuestionario.objects.create(
+                recurso=recurso,
+                instrucciones=instrucciones,
+                tiempo_limite=tiempo_limite
+            )
+
+        elif 'practica' in nombre_tipo:
+            nombre_p = request.POST.get('nombre_practica')
+            desc_p = request.POST.get('descripcion_practica')
+            Practica.objects.create(
+                recurso=recurso,
+                nombre=nombre_p,
+                descripcion=desc_p
+            )
+        print("Antes de redirigir")
+        # Redirigir al detalle del curso
+        return redirect('detalle_curso', curso_id=seccion.curso.id)
+
+import boto3
+import uuid
+from django.conf import settings
+
+@csrf_exempt
+def obtener_presigned_url(request):
+    if request.method == 'POST':
+        nombre_archivo = request.POST.get('filename')
+        extension = nombre_archivo.split('.')[-1]
+        nuevo_nombre = f"videos/{uuid.uuid4()}.{extension}"
+
+        s3 = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_S3_REGION_NAME
+        )
+
+        # ⚠️ NO incluir campos ACL ni condiciones ACL
+        presigned_post = s3.generate_presigned_post(
+            Bucket=settings.AWS_STORAGE_BUCKET_NAME,
+            Key=nuevo_nombre,
+            Fields={},  # sin ACL aquí
+            Conditions=[],
+            ExpiresIn=3600
+        )
+
+        url_publica = f"https://{settings.AWS_STORAGE_BUCKET_NAME}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com/{nuevo_nombre}"
+
+        return JsonResponse({
+            'data': presigned_post,
+            'url': url_publica
+        })
+
+
 
 
 
@@ -233,10 +369,6 @@ def signout(request):
     rotate_token(request)  # Gira el token CSRF para la nueva sesión
     return redirect('inicio')
 
-
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
 from rdkit import Chem
 from rdkit.Chem import AllChem, SDWriter
 import tempfile

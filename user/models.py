@@ -59,7 +59,10 @@ class Recurso(models.Model):
     imagen = models.ImageField(upload_to='recursos/imgs/', blank=True, null=True)
     orden = models.PositiveIntegerField(default=1)  # Para ordenar recursos dentro de la sección
     fecha_creacion = models.DateTimeField(auto_now_add=True)
-    visible_biblioteca = models.BooleanField(default=False)  # Para marcar si va a la biblioteca pública
+    contenido_texto = models.TextField(blank=True, null=True)  #NUEVO CAMPO para recurso tipo texto
+    visible_biblioteca = models.BooleanField(default=False)  # Marco si va a la biblioteca pública
+    video_url = models.URLField(blank=True, null=True)
+
 
     def __str__(self):
         return f"{self.titulo} ({self.tipo.nombre})"
@@ -149,3 +152,4 @@ class RespuestaCuestionario(models.Model):
 
     def __str__(self):
         return f"Resp. de {self.estudiante.username} a {self.pregunta.id}"
+

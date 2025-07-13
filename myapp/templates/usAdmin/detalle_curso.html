@@ -149,109 +149,73 @@
 									<!-- Edit lecture START -->
 									<div class="accordion accordion-icon accordion-bg-light" id="accordionExample2">
 										<!-- Item START -->
+										{% if secciones %}
+										{% for seccion in secciones %}
+  <div class="accordion-item mb-3">
+    <h6 class="accordion-header font-base" id="heading-{{ forloop.counter }}">
+      <button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse-{{ forloop.counter }}">
+        {{ seccion.titulo }}
+      </button>
+    </h6>
+
+    <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse show" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionExample2">
+      <div class="accordion-body mt-3">
+
+        <!-- Aquí listamos los recursos de esta sección -->
+        {% if seccion.recursos_ordenados %}
+          {% for recurso in seccion.recursos_ordenados %}
+            <div class="mb-2">
+              <span class="fw-bold">{{ recurso.titulo }}</span><br>
+              <small class="text-muted">{{ recurso.tipo.nombre|capfirst }}</small>
+              <p>{{ recurso.descripcion }}</p>
+            </div>
+            <hr>
+          {% endfor %}
+			{% else %}
+			<p class="text-muted">No hay recursos en esta sección.</p>
+			{% endif %}
+
+			<!-- Botón para agregar recurso -->
+			<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic" data-seccion-id="{{ seccion.id }}">
+			<i class="bi bi-plus-circle me-2"></i>Añadir recurso
+			</a>
+
+		</div>
+		</div>
+	</div>
+	{% endfor %}
+
+										{% else %}
 										<div class="accordion-item mb-3">
 											<h6 class="accordion-header font-base" id="heading-1">
 												<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-1" aria-expanded="false" aria-controls="collapse-1">
-													Introduction of Digital Marketing 
+													No existen aún secciones, crea una
 												</button>
 											</h6>
 			
 											<div id="collapse-1" class="accordion-collapse collapse show" aria-labelledby="heading-1" data-bs-parent="#accordionExample2">
 												<!-- Topic START -->
-												<div class="accordion-body mt-3">
-													<!-- Video item START -->
-													<div class="d-flex justify-content-between align-items-center">
-														<div class="position-relative">
-															<a href="#" class="btn btn-danger-soft btn-round btn-sm mb-0 stretched-link position-static"><i class="fas fa-play"></i></a>
-															<span class="ms-2 mb-0 h6 fw-light">Introduction</span>
-														</div>
-														<!-- Edit and cancel button -->
-														<div>
-															<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-1 mb-md-0"><i class="far fa-fw fa-edit"></i></a>
-															<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
-														</div>
-													</div>
-													<!-- Divider -->
-													<hr>
-													<!-- Video item END -->
-							
-													<!-- Video item START -->
-													<div class="d-flex justify-content-between align-items-center">
-														<div class="position-relative">
-															<a href="#" class="btn btn-danger-soft btn-round btn-sm mb-0 stretched-link position-static"><i class="fas fa-play"></i></a>
-															<span class="ms-2 mb-0 h6 fw-light">What is Digital Marketing</span>
-														</div>
-														<!-- Edit and cancel button -->
-														<div>
-															<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-1 mb-md-0"><i class="far fa-fw fa-edit"></i></a>
-															<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
-														</div>
-													</div>
-													<!-- Divider -->
-													<hr>
-													<!-- Video item END -->
-			
+												<div class="accordion-body mt-3">												
 													<!-- Add topic -->
 													<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic"><i class="bi bi-plus-circle me-2"></i>Añadir recurso</a>
-													<a href="#" class="btn btn-sm btn-danger-soft mb-0 mt-1 mt-sm-0">Delete this Lecture</a>
+													<!--<a href="#" class="btn btn-sm btn-danger-soft mb-0 mt-1 mt-sm-0">Delete this Lecture</a>-->
 												</div>
 												<!-- Topic END -->
 											</div>
 										</div>
+										{% endif %}
 										<!-- Item END -->
 					
-										<!-- Item START -->
-										<div class="accordion-item mb-3">
-											<h6 class="accordion-header font-base" id="heading-2">
-												<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-2" aria-expanded="false" aria-controls="collapse-2">
-													Customer Life cycle
-												</button>
-											</h6>
-			
-											<div id="collapse-2" class="accordion-collapse collapse" aria-labelledby="heading-2" data-bs-parent="#accordionExample2">
-												<div class="accordion-body mt-3">
-													<!-- Add topic -->
-													<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic">
-														<i class="bi bi-plus-circle me-2"></i>Add topic
-													</a>	
-												</div>
-											</div>
-										</div>
+										<!-- Item START -->										
 										<!-- Item END -->
 					
-										<!-- Item START -->
-										<div class="accordion-item mb-3">
-											<h6 class="accordion-header font-base" id="heading-3">
-												<button class="accordion-button fw-bold collapsed rounded d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-3" aria-expanded="false" aria-controls="collapse-3">
-													How much should I offer the sellers? 
-												</button>
-											</h6>
-											<!-- Body -->
-											<div id="collapse-3" class="accordion-collapse collapse" aria-labelledby="heading-3" data-bs-parent="#accordionExample2">
-												<div class="accordion-body mt-3">
-													<!-- Add topic -->
-													<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic">
-														<i class="bi bi-plus-circle me-2"></i>Add topic
-													</a>
-												</div>
-											</div>
-										</div>	
+										<!-- Item START -->										
 										<!-- Item END -->
 			
 									</div>
-									<!-- Edit lecture END -->
-
-									<!-- Step 3 button -->
-									<div class="d-flex justify-content-between">
-										<button class="btn btn-secondary prev-btn mb-0">Previous</button>
-										<button class="btn btn-primary next-btn mb-0">Next</button>
-									</div>
+									<!-- Edit lecture END -->									
 								</div>
 							</div>
-							<!-- Step 3 content END -->
-
-							<!-- Step 4 content START -->
-							
 
 						</form>
 					</div>
@@ -274,22 +238,27 @@
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header bg-dark">
-				<h5 class="modal-title text-white" id="addLectureLabel">Add Lecture</h5>
+				<h5 class="modal-title text-white" id="addLectureLabel">Agergar sección</h5>
 				<button type="button" class="btn btn-sm btn-light mb-0 ms-auto" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
 			</div>
 			<div class="modal-body">
-				<form class="row text-start g-3">
+				<form method="post" class="space-y-6" action="{% url 'crear_modulo' curso.id %}">
+                    {% csrf_token %}
 					<!-- Course name -->
 					<div class="col-12">
-						<label class="form-label">Course name <span class="text-danger">*</span></label>
-						<input type="text" class="form-control" placeholder="Enter course name">
+						<label class="form-label">Nombre sección <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" name="titulo" placeholder="Enter course name">
+						<label class="form-label">Descripción <span class="text-danger">*</span></label>
+						<textarea name="descripcion" rows="3" class="form-control"></textarea>
+						<label class="form-label">Orden (opcional) <span class="text-danger">*</span></label>
+						<input name="orden" type="number" class="form-control" placeholder="Coloca el orden de la sección">
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-danger-soft my-0" data-bs-dismiss="modal">Cerrar</button>
+						<button type="submit" class="btn btn-success my-0">Guardar sección</button>
 					</div>
 				</form>
-			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-danger-soft my-0" data-bs-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-success my-0">Save Lecture</button>
-			</div>
+			</div>			
 		</div>
 	</div>
 </div>
@@ -297,40 +266,90 @@
 
 <!-- Popup modal for add topic START -->
 <div class="modal fade" id="addTopic" tabindex="-1" aria-labelledby="addTopicLabel" aria-hidden="true">
-	<div class="modal-dialog">
+	<div class="modal-dialog" style="max-width: 80%;">
 		<div class="modal-content">
 			<div class="modal-header bg-dark">
-				<h5 class="modal-title text-white" id="addTopicLabel">Add topic</h5>
+				<h5 class="modal-title text-white" id="addTopicLabel">Añadir Recurso</h5>
 				<button type="button" class="btn btn-sm btn-light mb-0 ms-auto" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
 			</div>
 			<div class="modal-body">
-				<form class="row text-start g-3">
-					<!-- Topic name -->
-					<div class="col-md-6">
-						<label class="form-label">Topic name</label>
-						<input class="form-control" type="text" placeholder="Enter topic name">
-					</div>
-					<!-- Video link -->
-					<div class="col-md-6">
-						<label class="form-label">Video link</label>
-						<input class="form-control" type="text" placeholder="Enter Video link">
-					</div>
-					<!-- Description -->
-					<div class="col-12 mt-3">
-						<label class="form-label">Course description</label>
-						<textarea class="form-control" rows="4" placeholder="" spellcheck="false"></textarea>
-					</div>
-					<!-- Buttons -->
-					<div class="col-6 mt-3">
-						<div class="btn-group" role="group" aria-label="Basic radio toggle button group">
-							<!-- Free button -->
-							<input type="radio" class="btn-check" name="options" id="option1" checked="">
-							<label class="btn btn-sm btn-light btn-primary-soft-check border-0 m-0" for="option1">Free</label>
-							<!-- Premium button -->
-							<input type="radio" class="btn-check" name="options" id="option2">
-							<label class="btn btn-sm btn-light btn-primary-soft-check border-0 m-0" for="option2">Premium</label>
-						</div>
-					</div>
+				<form method="POST" enctype="multipart/form-data" id="formAgregarRecurso">
+				{% csrf_token %}
+
+				<!-- TÍTULO -->
+				<div class="mb-3">
+					<label for="titulo" class="form-label">Título del recurso</label>
+					<input type="text" name="titulo" id="titulo" class="form-control" required>
+				</div>
+
+				<!-- DESCRIPCIÓN -->
+				<div class="mb-3">
+					<label for="descripcion" class="form-label">Descripción</label>
+					<textarea name="descripcion" id="descripcion" rows="4" class="form-control"></textarea>
+				</div>
+
+				<!-- IMAGEN -->
+				<div class="mb-3">
+					<label for="imagen_referencial" class="form-label">Imagen referencial</label>
+					<input type="file" name="imagen_referencial" id="imagen_referencial" class="form-control">
+				</div>
+
+				<!-- TIPO DE RECURSO -->
+				<div class="mb-3">
+					<label for="tipo" class="form-label">Tipo de recurso</label>
+					<select name="tipo" id="tipo" class="form-select" required>
+					{% for tipo in tipos_recurso %}
+						<option value="{{ tipo.id }}">{{ tipo.nombre|capfirst }}</option>
+					{% endfor %}
+					</select>
+				</div>
+
+				<!-- CHECK VISIBILIDAD EN BIBLIOTECA -->
+				<div class="form-check mb-3">
+					<input class="form-check-input" type="checkbox" name="visible_biblioteca" id="visible_biblioteca">
+					<label class="form-check-label" for="visible_biblioteca">
+					¿Publicar en la biblioteca general?
+					</label>
+				</div>
+
+				<!-- CAMPOS DINÁMICOS -->
+				<!-- CAMPO OCULTO para guardar la URL del video -->
+				<input type="hidden" name="video_url" id="video_url">
+
+				<!-- SI ES VIDEO -->
+				<div class="mb-3 d-none" id="videoFields">
+					<label for="video_file" class="form-label">Subir video</label>
+					<input type="file" id="video_file" class="form-control" accept="video/*">
+					<progress id="progreso_video" value="0" max="100" style="width:100%;"></progress>
+				</div>
+
+
+				<!-- SI ES CUESTIONARIO -->
+				<div class="mb-3 d-none" id="cuestionarioFields">
+					<label for="nombre_cuestionario" class="form-label">Instrucciones</label>
+					<input type="text" name="nombre_cuestionario" id="nombre_cuestionario" class="form-control">
+
+					<label for="descripcion_cuestionario" class="form-label mt-2">Tiempo Limite (En minutos)</label>
+					<input type="int" name="descripcion_cuestionario" id="descripcion_cuestionario" rows="3" class="form-control">
+				</div>
+
+				<!-- SI ES PRÁCTICA -->
+				<div class="mb-3 d-none" id="practicaFields">
+					<label for="nombre_practica" class="form-label">Nombre de la práctica</label>
+					<input type="text" name="nombre_practica" id="nombre_practica" class="form-control">
+
+					<label for="descripcion_practica" class="form-label mt-2">Descripción</label>
+					<textarea name="descripcion_practica" id="descripcion_practica" rows="3" class="form-control"></textarea>
+				</div>
+				<!-- SI ES TEXTO -->
+				<div class="mb-3 d-none" id="textoFields">
+				<label for="contenido_texto" class="form-label">Contenido del texto</label>
+				<textarea name="contenido_texto" id="contenido_texto" rows="6" class="form-control" placeholder="Escribe aquí el contenido del recurso textual..."></textarea>
+				</div>
+
+				<!-- BOTÓN -->
+				<button type="submit" class="btn btn-primary mt-3">Guardar recurso</button>
+				<input type="hidden" name="seccion_id" id="seccion_id">
 				</form>
 			</div>
 			<div class="modal-footer">
@@ -388,6 +407,139 @@
 
 <!-- Template Functions -->
 <script src="{% static 'assets/js/functions.js' %}"></script>
+<!--Script para AWS-->
+<script>
+document.getElementById("tipo").addEventListener("change", function () {
+    const tipoTexto = this.options[this.selectedIndex].text.toLowerCase();
+    document.getElementById("videoFields").classList.toggle("d-none", tipoTexto !== "video");
+});
+
+document.getElementById("video_file").addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("filename", file.name);
+
+    const response = await fetch("{% url 'obtener_presigned_url' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+        body: formData
+    });
+
+    const data = await response.json();
+    const presignedData = data.data;
+    const publicUrl = data.url;
+
+    const uploadFormData = new FormData();
+    
+    // 🔽 Aquí se agregan los campos esperados por S3
+    Object.entries(presignedData.fields).forEach(([k, v]) => {
+        uploadFormData.append(k, v);
+    });    
+	
+    // 🔽 Aquí se agrega el archivo en sí
+    uploadFormData.append("file", file);
+	console.log("📦 Archivo seleccionado:", file.name);
+
+    const upload = await fetch(presignedData.url, {
+        method: "POST",
+        body: uploadFormData
+    });
+	
+	if (upload.ok) {
+		alert("✅ Video subido exitosamente.");
+		document.getElementById("video_url").value = publicUrl;
+	} else {
+		const errorText = await upload.text();
+		console.error("❌ Error al subir el video:", errorText);
+		alert("❌ Error al subir el video.");
+	}
+
+});
+</script>
+
+<!--Script para AWS 2 VERIFICA EL VIDEO SE SUBA COMPLETO Y GENERE LA URL-->
+
+<script>
+document.getElementById("formAgregarRecurso").addEventListener("submit", function(e) {
+    const tipo = document.getElementById("tipo");
+    const tipoTexto = tipo.options[tipo.selectedIndex].text.toLowerCase();
+
+    if (tipoTexto === "video") {
+        const videoUrl = document.getElementById("video_url").value;
+        if (!videoUrl) {
+            e.preventDefault();
+            alert("⚠️ Por favor espera a que el video termine de subir antes de guardar el recurso.");
+        }
+    }
+});
+</script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tipoSelect = document.getElementById('tipo');
+
+    const videoFields = document.getElementById('videoFields');
+    const cuestionarioFields = document.getElementById('cuestionarioFields');
+    const practicaFields = document.getElementById('practicaFields');
+    const textoFields = document.getElementById('textoFields');
+
+    function actualizarCampos() {
+      const selectedOption = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
+
+      videoFields.classList.add('d-none');
+      cuestionarioFields.classList.add('d-none');
+      practicaFields.classList.add('d-none');
+      textoFields.classList.add('d-none');
+
+      if (selectedOption.includes('video')) {
+        videoFields.classList.remove('d-none');
+      } else if (selectedOption.includes('cuestionario')) {
+        cuestionarioFields.classList.remove('d-none');
+      } else if (selectedOption.includes('práctica') || selectedOption.includes('practica')) {
+        practicaFields.classList.remove('d-none');
+      } else if (selectedOption.includes('texto')) {
+        textoFields.classList.remove('d-none');
+      }
+    }
+
+    tipoSelect.addEventListener('change', actualizarCampos);
+    actualizarCampos();  // Ejecuta una vez al cargar
+  });
+</script>
+
+<!--Para capturar el id de la sección-->
+<script>
+  const addTopicModal = document.getElementById('addTopic');
+  addTopicModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const seccionId = button.getAttribute('data-seccion-id');
+    const inputSeccion = addTopicModal.querySelector('#seccion_id');
+    inputSeccion.value = seccionId;
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('addTopic');
+    const form = document.getElementById('formAgregarRecurso');
+
+    modal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      const seccionId = button.getAttribute('data-seccion-id');
+
+      // Establecer la URL de acción dinámica (ajusta si usas un prefijo o namespace)
+      form.action = `/seccion/${seccionId}/crear-recurso/`;
+    });
+
+    // Código para mostrar campos dinámicos según tipo de recurso (ya lo tienes)
+  });
+</script>
+
 
 </body>
 </html>
