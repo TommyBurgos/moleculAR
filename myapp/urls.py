@@ -10,8 +10,14 @@ urlpatterns = [
     path('usAdmin/', views.inicioAdmin, name="dashboard-adm"),
     path('usAdmin/detalleCursos', views.vistaAllCursos, name="detalleCursos-adm"),
     path('detalleCurso/<int:curso_id>/', views.detalle_curso, name='detalle_curso'),
+    path('recurso/<int:recurso_id>/', views.detalle_recurso, name='detalle_recurso'),
+
     path('curso/<int:curso_id>/modulo/nuevo/', views.crear_modulo, name='crear_modulo'),
     path('seccion/<int:seccion_id>/crear-recurso/', views.crear_recurso, name='crear_recurso'),
+    path('practica/<int:recurso_id>/ver/', views.ver_practica, name='ver_practica'),
+    path('practica/<int:recurso_id>/editar/', views.editar_practica, name='editar_practica'),
+
+
 
 
     path('usAdmin/crearCurso', views.vistaCrearCurso, name="crearCurso-adm"),
