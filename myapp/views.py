@@ -177,6 +177,40 @@ def detalle_curso(request, curso_id):
         'tipos_recurso': recursosTipo
     })
 
+def ver_practica(request, recurso_id):
+    recurso = get_object_or_404(Recurso, id=recurso_id)
+    practica = get_object_or_404(Practica, recurso=recurso)
+    print(f"el recurso es {recurso}")
+    print(f"la practica es {practica}")
+
+    modelo = practica.modelo_objetivo
+    print(f"el modelo es {modelo}")
+    print(f"el smile es {modelo.smiles}")
+    print(modelo.smiles if modelo else "")
+    smiles = modelo.smiles if modelo else ""
+    
+    return render(request, 'usAdmin/ver_practica.html', {
+        'practica': practica,
+        'recurso': recurso,
+        'modelo':modelo,
+        'smiles': smiles
+    })
+
+
+def detalle_recurso(request, recurso_id):
+    recurso = get_object_or_404(Recurso, id=recurso_id)
+    curso = recurso.seccion.curso 
+    recursos_prefetch = Prefetch(
+        'recursos',
+        queryset=Recurso.objects.order_by('orden'),
+        to_attr='recursos_ordenados'
+    )    
+    secciones = Seccion.objects.filter(curso=curso).prefetch_related(recursos_prefetch).order_by('orden')
+    return render(request, 'usAdmin/detalleRecurso.html', {
+        'recurso': recurso,
+        'secciones': secciones,
+        'curso': curso})
+
 
 def crear_modulo(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
@@ -200,6 +234,102 @@ def crear_modulo(request, curso_id):
         return redirect('detalle_curso', curso_id=curso.id)
 
     return render(request, 'usAdmin/detalleCursos.html', {'curso': curso})
+
+#FUNCIÓN QUE ME AYUDA A OBTENER EL SMILE
+import requests
+def obtener_smiles_pubchem(nombre_molecula):
+    nombre_molecula = nombre_molecula.strip().lower()
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{nombre_molecula}/property/IsomericSMILES,SMILES/JSON"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            properties = data.get('PropertyTable', {}).get('Properties', [])
+            if properties:
+                return (
+                    properties[0].get('IsomericSMILES') or
+                    properties[0].get('SMILES')
+                )
+    except Exception as e:
+        print(f"❌ Error al consultar PubChem: {e}")
+    return None
+
+
+@login_required
+def editar_practica(request, recurso_id):
+    recurso = get_object_or_404(Recurso, id=recurso_id)
+    practica = Practica.objects.filter(recurso=recurso).first()
+
+    if request.method == 'POST':
+        fuente = request.POST.get('fuente_molecula')
+        titulo_objetivo = request.POST.get('titulo_objetivo')
+        instrucciones = request.POST.get('instrucciones')
+        smiles = None
+        modelo = None
+
+        if fuente == 'jsme':
+            smiles = request.POST.get('mol_input')
+            if smiles and smiles.strip():
+                modelo = Modelo.objects.create(
+                    titulo=titulo_objetivo,
+                    descripcion=instrucciones,
+                    tipo='2D',
+                    smiles=smiles.strip(),
+                    creado_por=request.user,
+                    visible_biblioteca=False
+                )
+            else:
+                return render(request, 'editar_practica.html', {
+                    'recurso': recurso,
+                    'error': 'No se pudo obtener el SMILES desde el editor JSME.'
+                })
+
+        elif fuente == 'pubchem':
+            nombre_molecula = request.POST.get('nombre_molecula')
+            print("Nombre recibido desde formulario:", nombre_molecula)
+            smiles = obtener_smiles_pubchem(nombre_molecula)
+            print("SMILES recibido desde PubChem:", smiles)
+            if smiles and smiles.strip():
+                modelo = Modelo.objects.create(
+                    titulo=nombre_molecula,
+                    descripcion='Molécula importada desde PubChem',
+                    tipo='2D',
+                    smiles=smiles.strip(),
+                    creado_por=request.user,
+                    visible_biblioteca=False
+                )
+            else:
+                return render(request, 'usAdmin/editor_dibujo.html', {
+                    'recurso': recurso,
+                    'error': f"No se pudo encontrar un SMILES válido para '{nombre_molecula}'. Intenta con otro nombre."
+                })
+
+        # Crear la práctica solo si se creó un modelo
+        if modelo:
+            practica, creada = Practica.objects.get_or_create(
+            recurso=recurso,
+            defaults={
+                'titulo_objetivo': titulo_objetivo,
+                'instrucciones': instrucciones,
+                'modelo_objetivo': modelo
+            }
+        )
+
+        if not creada:
+            practica.titulo_objetivo = titulo_objetivo
+            practica.instrucciones = instrucciones
+            practica.modelo_objetivo = modelo
+            practica.save()
+
+            return redirect('detalle_curso', curso_id=recurso.seccion.curso.id)
+        else:
+            return render(request, 'usAdmin/editor_dibujo.html', {
+                'recurso': recurso,
+                'error': 'No se pudo crear la práctica porque no se generó ningún modelo.'
+            })
+
+    return render(request, 'usAdmin/editor_dibujo.html', {'recurso': recurso})
+
 
 def crear_recurso(request, seccion_id):
     if request.method == 'POST':
@@ -229,6 +359,10 @@ def crear_recurso(request, seccion_id):
         nombre_tipo = tipo.nombre.lower()
         print(f"nombre del tipo de recurso es {nombre_tipo}")
         print('video' in nombre_tipo)
+        print("Comparando si ingresa a pràctica")
+        print('Practica' in nombre_tipo)
+        print('practica' in nombre_tipo)
+        print(tipo.nombre.lower() == 'practica')
 
         if 'video' in nombre_tipo:
             print("Dentro del if")
@@ -251,19 +385,16 @@ def crear_recurso(request, seccion_id):
                 recurso=recurso,
                 instrucciones=instrucciones,
                 tiempo_limite=tiempo_limite
-            )
+            )        
+        elif tipo.nombre.lower() == 'practica':
+            # Por ahora NO creamos la práctica. Solo dejamos el recurso creado.
+            # Luego redirigiremos a una vista donde se edita ese recurso.
+            print("Se creo el recurso practica")
+            return redirect('editar_practica', recurso.id)                
 
-        elif 'practica' in nombre_tipo:
-            nombre_p = request.POST.get('nombre_practica')
-            desc_p = request.POST.get('descripcion_practica')
-            Practica.objects.create(
-                recurso=recurso,
-                nombre=nombre_p,
-                descripcion=desc_p
-            )
-        print("Antes de redirigir")
-        # Redirigir al detalle del curso
-        return redirect('detalle_curso', curso_id=seccion.curso.id)
+
+
+
 
 import boto3
 import uuid

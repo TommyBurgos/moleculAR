@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🧪 Ver Práctica: {{ practica.titulo_objetivo }}</title>
+  <script type="text/javascript" src="{% static 'jsme/jsme.nocache.js' %}"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    #jsme_container {
+      width: 600px;
+      height: 400px;
+      border: 1px solid #ccc;
+      margin-top: 20px;
+    }
+  </style>
+  <script>
+    let jsmeApplet;
+
+    function jsmeOnLoad() {
+      jsmeApplet = new JSApplet.JSME("jsme_container", "600px", "400px", {
+        options: "oldlook,star,query,hydrogens,noquery"
+      });
+
+      const smilesGuardado = "{{ modelo.smiles|default:''|escapejs }}";
+      console.log("SMILES recibido:", smilesGuardado);
+
+      if (smilesGuardado.trim() !== "") {
+        setTimeout(() => {
+          try {
+            // Usamos el método correcto compatible con SMILES
+            jsmeApplet.readGenericMolecularInput(smilesGuardado);
+            console.log("SMILES cargado correctamente");
+          } catch (err) {
+            console.error("Error al cargar el SMILES:", err);
+          }
+        }, 300); // Espera breve para asegurar carga del editor
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>🔬 {{ practica.titulo_objetivo }}</h1>
+  <p>{{ practica.instrucciones }}</p>
+
+  <div id="jsme_container"></div>
+
+  <p><strong>SMILES almacenado:</strong>
+    {% if modelo %}
+      {{ modelo.smiles }}
+    {% else %}
+      No definido
+    {% endif %}
+  </p>
+</body>
+</html>

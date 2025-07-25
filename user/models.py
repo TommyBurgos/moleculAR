@@ -131,6 +131,19 @@ class Modelo(models.Model):
     def __str__(self):
         return self.titulo
 
+
+class MoleculaEstudiante(models.Model):
+    estudiante = models.ForeignKey('User', on_delete=models.CASCADE)
+    practica = models.ForeignKey('Practica', on_delete=models.CASCADE)
+    smiles = models.TextField()
+    archivo = models.FileField(upload_to='moleculas/', blank=True)  # si quieres guardar archivo .mol o .cml
+    fecha_envio = models.DateTimeField(auto_now_add=True)
+    es_correcta = models.BooleanField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Molecula de {self.estudiante.username} para {self.practica.recurso.titulo}"
+
+
 class Competencia(models.Model):
     recurso = models.OneToOneField('Recurso', on_delete=models.CASCADE, related_name='competencia')
     codigo_acceso = models.CharField(max_length=10, unique=True)

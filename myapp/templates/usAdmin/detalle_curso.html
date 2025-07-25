@@ -90,6 +90,10 @@
 	<!-- Theme CSS -->
 	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
 
+	<script src="https://cdn.tiny.cloud/1/b76qtc5o4y7657bzong9z2xld42w9ehj3coo783i85zca27o/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+
+
 </head>
 
 <body>
@@ -149,61 +153,67 @@
 									<!-- Edit lecture START -->
 									<div class="accordion accordion-icon accordion-bg-light" id="accordionExample2">
 										<!-- Item START -->
-										{% if secciones %}
-										{% for seccion in secciones %}
-  <div class="accordion-item mb-3">
-    <h6 class="accordion-header font-base" id="heading-{{ forloop.counter }}">
-      <button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse-{{ forloop.counter }}">
-        {{ seccion.titulo }}
-      </button>
-    </h6>
+									{% if secciones %}
+									{% for seccion in secciones %}
+						<div class="accordion-item mb-3">
+							<h6 class="accordion-header font-base" id="heading-{{ forloop.counter }}">
+							<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse-{{ forloop.counter }}">
+								{{ seccion.titulo }}
+							</button>
+							</h6>
 
-    <div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse show" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionExample2">
-      <div class="accordion-body mt-3">
+							<div id="collapse-{{ forloop.counter }}" class="accordion-collapse collapse show" aria-labelledby="heading-{{ forloop.counter }}" data-bs-parent="#accordionExample2">
+							<div class="accordion-body mt-3">
 
-        <!-- Aquí listamos los recursos de esta sección -->
-        {% if seccion.recursos_ordenados %}
-          {% for recurso in seccion.recursos_ordenados %}
-            <div class="mb-2">
-              <span class="fw-bold">{{ recurso.titulo }}</span><br>
-              <small class="text-muted">{{ recurso.tipo.nombre|capfirst }}</small>
-              <p>{{ recurso.descripcion }}</p>
-            </div>
-            <hr>
-          {% endfor %}
-			{% else %}
-			<p class="text-muted">No hay recursos en esta sección.</p>
-			{% endif %}
-
-			<!-- Botón para agregar recurso -->
-			<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic" data-seccion-id="{{ seccion.id }}">
-			<i class="bi bi-plus-circle me-2"></i>Añadir recurso
-			</a>
-
-		</div>
-		</div>
-	</div>
-	{% endfor %}
-
-										{% else %}
-										<div class="accordion-item mb-3">
-											<h6 class="accordion-header font-base" id="heading-1">
-												<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-1" aria-expanded="false" aria-controls="collapse-1">
-													No existen aún secciones, crea una
-												</button>
-											</h6>
-			
-											<div id="collapse-1" class="accordion-collapse collapse show" aria-labelledby="heading-1" data-bs-parent="#accordionExample2">
-												<!-- Topic START -->
-												<div class="accordion-body mt-3">												
-													<!-- Add topic -->
-													<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic"><i class="bi bi-plus-circle me-2"></i>Añadir recurso</a>
-													<!--<a href="#" class="btn btn-sm btn-danger-soft mb-0 mt-1 mt-sm-0">Delete this Lecture</a>-->
-												</div>
-												<!-- Topic END -->
-											</div>
-										</div>
+								<!-- Aquí listamos los recursos de esta sección -->
+									{% if seccion.recursos_ordenados %}
+									{% for recurso in seccion.recursos_ordenados %}
+										<div class="mb-2">
+										<a href="{% url 'detalle_recurso' recurso.id %}" class="fw-bold text-decoration-none text-dark">
+										{{ recurso.titulo }}
+										</a><br>
+										<small class="text-muted">{{ recurso.tipo.nombre|capfirst }}</small>
+										<p>{{ recurso.descripcion }}</p>
+										{% if recurso.practica %}
+										<a href="{% url 'ver_practica' recurso.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
+										{% if user.is_staff or user.es_profesor %}
+										<a href="{% url 'editar_practica' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar</a>
 										{% endif %}
+										{% endif %}
+
+										</div>
+										<hr>
+									{% endfor %}
+										{% else %}
+										<p class="text-muted">No hay recursos en esta sección.</p>
+										{% endif %}
+
+										<!-- Botón para agregar recurso -->
+										<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic" data-seccion-id="{{ seccion.id }}">
+										<i class="bi bi-plus-circle me-2"></i>Añadir recurso
+										</a>
+
+									</div>
+									</div>
+								</div>
+								{% endfor %}
+
+				{% else %}
+					<div class="accordion-item mb-3">
+						<h6 class="accordion-header font-base" id="heading-1">
+							<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-1" aria-expanded="false" aria-controls="collapse-1">No existen aún secciones, crea una</button>										
+						</h6>
+						<div id="collapse-1" class="accordion-collapse collapse show" aria-labelledby="heading-1" data-bs-parent="#accordionExample2">
+												<!-- Topic START -->
+							<div class="accordion-body mt-3">												
+										<!-- Add topic -->
+								<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic"><i class="bi bi-plus-circle me-2"></i>Añadir recurso</a>
+													<!--<a href="#" class="btn btn-sm btn-danger-soft mb-0 mt-1 mt-sm-0">Delete this Lecture</a>-->
+							</div>
+												<!-- Topic END -->
+						</div>
+						</div>
+					{% endif %}
 										<!-- Item END -->
 					
 										<!-- Item START -->										
@@ -264,7 +274,7 @@
 </div>
 <!-- Popup modal for add lecture END -->
 
-<!-- Popup modal for add topic START -->
+<!-- Popup modal for añadir recurso START -->
 <div class="modal fade" id="addTopic" tabindex="-1" aria-labelledby="addTopicLabel" aria-hidden="true">
 	<div class="modal-dialog" style="max-width: 80%;">
 		<div class="modal-content">
@@ -334,17 +344,13 @@
 				</div>
 
 				<!-- SI ES PRÁCTICA -->
-				<div class="mb-3 d-none" id="practicaFields">
-					<label for="nombre_practica" class="form-label">Nombre de la práctica</label>
-					<input type="text" name="nombre_practica" id="nombre_practica" class="form-control">
-
-					<label for="descripcion_practica" class="form-label mt-2">Descripción</label>
-					<textarea name="descripcion_practica" id="descripcion_practica" rows="3" class="form-control"></textarea>
-				</div>
+				 <!-- Voy a crear un recurso y aparte creare la molecula adicional -->
+				
 				<!-- SI ES TEXTO -->
 				<div class="mb-3 d-none" id="textoFields">
 				<label for="contenido_texto" class="form-label">Contenido del texto</label>
-				<textarea name="contenido_texto" id="contenido_texto" rows="6" class="form-control" placeholder="Escribe aquí el contenido del recurso textual..."></textarea>
+				  <textarea name="contenido_texto" id="contenido_texto" rows="8" class="form-control"></textarea>
+
 				</div>
 
 				<!-- BOTÓN -->
@@ -484,24 +490,20 @@ document.getElementById("formAgregarRecurso").addEventListener("submit", functio
     const tipoSelect = document.getElementById('tipo');
 
     const videoFields = document.getElementById('videoFields');
-    const cuestionarioFields = document.getElementById('cuestionarioFields');
-    const practicaFields = document.getElementById('practicaFields');
+    const cuestionarioFields = document.getElementById('cuestionarioFields');    
     const textoFields = document.getElementById('textoFields');
 
     function actualizarCampos() {
       const selectedOption = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
 
       videoFields.classList.add('d-none');
-      cuestionarioFields.classList.add('d-none');
-      practicaFields.classList.add('d-none');
+      cuestionarioFields.classList.add('d-none');      
       textoFields.classList.add('d-none');
 
       if (selectedOption.includes('video')) {
         videoFields.classList.remove('d-none');
       } else if (selectedOption.includes('cuestionario')) {
-        cuestionarioFields.classList.remove('d-none');
-      } else if (selectedOption.includes('práctica') || selectedOption.includes('practica')) {
-        practicaFields.classList.remove('d-none');
+        cuestionarioFields.classList.remove('d-none');      
       } else if (selectedOption.includes('texto')) {
         textoFields.classList.remove('d-none');
       }
@@ -537,6 +539,27 @@ document.getElementById("formAgregarRecurso").addEventListener("submit", functio
     });
 
     // Código para mostrar campos dinámicos según tipo de recurso (ya lo tienes)
+  });
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const tipoSelect = document.getElementById('tipo');
+
+    tipoSelect.addEventListener('change', function () {
+      const selectedOption = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
+      if (selectedOption.includes('texto')) {
+        if (!tinymce.get("contenido_texto")) {
+          tinymce.init({ selector: '#contenido_texto' });
+        }
+        document.getElementById('textoFields').classList.remove('d-none');
+      } else {
+        document.getElementById('textoFields').classList.add('d-none');
+        if (tinymce.get("contenido_texto")) {
+          tinymce.get("contenido_texto").remove();
+        }
+      }
+    });
   });
 </script>
 
