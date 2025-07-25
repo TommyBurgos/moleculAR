@@ -51,7 +51,9 @@ class TipoRecurso(models.Model):
 
 
 class Recurso(models.Model):
-    seccion = models.ForeignKey('Seccion', on_delete=models.CASCADE, related_name='recursos')
+    #seccion = models.ForeignKey('Seccion', on_delete=models.CASCADE, related_name='recursos')
+    seccion = models.ForeignKey('Seccion', on_delete=models.CASCADE, related_name='recursos', 
+                               null=True, blank=True) #ESTA SOLO ES DE PRUEBA, EN REALIDAD SE USA LA LINEA DE ARRIBA
     tipo = models.ForeignKey('TipoRecurso', on_delete=models.PROTECT)
     titulo = models.CharField(max_length=150)
     descripcion = models.TextField(blank=True)
@@ -71,9 +73,41 @@ class Cuestionario(models.Model):
     recurso = models.OneToOneField('Recurso', on_delete=models.CASCADE, related_name='cuestionario')
     instrucciones = models.TextField(blank=True)
     tiempo_limite = models.PositiveIntegerField(help_text='Tiempo en minutos', default=10)
+    
+    # NUEVOS CAMPOS A AGREGAR:
+    fecha_apertura = models.DateTimeField(null=True, blank=True, help_text='Fecha y hora de apertura del cuestionario')
+    fecha_cierre = models.DateTimeField(null=True, blank=True, help_text='Fecha y hora de cierre del cuestionario')
+    puntaje_total = models.DecimalField(max_digits=6, decimal_places=2, default=0.00, help_text='Puntaje total del cuestionario')
+    calificacion_automatica = models.BooleanField(default=True, help_text='Si se califica automáticamente o requiere revisión manual')
+    intentos_permitidos = models.PositiveIntegerField(default=1, help_text='Número de intentos permitidos')
+    mostrar_resultados = models.BooleanField(default=True, help_text='Mostrar resultados al estudiante después de completar')
+    orden_aleatorio = models.BooleanField(default=False, help_text='Mostrar preguntas en orden aleatorio')
 
     def __str__(self):
         return f"Cuestionario - {self.recurso.titulo}"
+    
+    def calcular_puntaje_total(self):
+        "Calcula el puntaje total sumando todas las preguntas"
+        return self.preguntas.aggregate(
+            total=models.Sum('puntaje')
+        )['total'] or 0
+    
+    def tiene_preguntas_manuales(self):
+        "Verifica si tiene preguntas que requieren calificación manual"
+        return self.preguntas.filter(
+            tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
+        ).exists()
+    
+    def esta_disponible(self):
+        "Verifica si el cuestionario está disponible según las fechas"
+        from django.utils import timezone
+        ahora = timezone.now()
+        
+        if self.fecha_apertura and ahora < self.fecha_apertura:
+            return False
+        if self.fecha_cierre and ahora > self.fecha_cierre:
+            return False
+        return True
 
 class Practica(models.Model):
     recurso = models.OneToOneField('Recurso', on_delete=models.CASCADE, related_name='practica')

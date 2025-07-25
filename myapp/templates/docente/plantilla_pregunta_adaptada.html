@@ -1,0 +1,393 @@
+<!-- plantilla_pregunta_adaptada.html -->
+<div class="plantilla-pregunta" data-tipo="{{ pregunta.tipo.nombre }}">
+    <!-- Encabezado de la pregunta -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <label class="form-label fw-bold">Enunciado de la pregunta</label>
+            <textarea class="form-control" rows="3" 
+                      placeholder="Escribe el enunciado de tu pregunta aquí..."
+                      data-field="enunciado">{{ pregunta.enunciado }}</textarea>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="col-6">
+                    <label class="form-label fw-bold">Puntaje</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" value="{{ pregunta.puntaje }}" 
+                               min="1" step="1" data-field="puntaje">
+                        <span class="input-group-text">pts</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">Calificación</label>
+                    <div class="calificacion-manual">
+                        <input type="checkbox" id="calificacion-manual-{{ pregunta.id }}" 
+                               data-field="calificacion_manual"
+                               {% if pregunta.calificacion_manual %}checked{% endif %}>
+                        <label for="calificacion-manual-{{ pregunta.id }}" class="small">
+                            Manual
+                        </label>
+                    </div>
+                    <small class="text-muted d-block">Marcar si requiere revisión manual</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' or pregunta.tipo.nombre == 'falso_verdadero' %}
+    <!-- Opciones -->
+    <div class="opciones-container">
+        <label class="form-label fw-bold">
+            {% if pregunta.tipo.nombre == 'opcion_unica' %}
+                Opciones (selecciona la respuesta correcta)
+            {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+                Opciones (puedes seleccionar múltiples respuestas correctas)
+            {% else %}
+                Opciones Verdadero/Falso
+            {% endif %}
+        </label>
+        
+        {% for opcion in pregunta.opciones.all %}
+        <div class="opcion-container {% if opcion.es_correcta %}opcion-correcta{% endif %}" 
+             data-opcion="{{ forloop.counter }}" data-opcion-id="{{ opcion.id }}">
+            
+            <input type="{% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'falso_verdadero' %}radio{% else %}checkbox{% endif %}" 
+                   name="correcta-{{ pregunta.id }}" 
+                   {% if opcion.es_correcta %}checked{% endif %}
+                   data-field="es_correcta"
+                   onchange="manejarCambioOpcionCorrecta(this, {{ pregunta.id }})">
+            
+            <input type="text" class="form-control opcion-input" 
+                   value="{{ opcion.texto }}" placeholder="Opción {{ forloop.counter }}"
+                   data-field="texto">
+            
+            {% if pregunta.opciones.all|length > 2 %}
+            <button type="button" class="btn btn-danger btn-sm btn-sm-custom" 
+                    onclick="eliminarOpcionExistente({{ opcion.id }})"
+                    title="Eliminar opción">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        <!-- Botón agregar opción mejorado (solo para opción única y múltiple) -->
+        {% if pregunta.tipo.nombre != 'falso_verdadero' %}
+        <div class="d-flex align-items-center mt-3">
+            <button type="button" class="btn-agregar-opcion" 
+                    onclick="agregarOpcionExistente({{ pregunta.id }})"
+                    title="Agregar nueva opción">
+                <i class="fas fa-plus"></i>
+            </button>
+            <span class="text-muted small ms-2">Agregar nueva opción</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
+    <!-- Respuesta abierta -->
+    <div class="respuesta-abierta-container">
+        <label class="form-label fw-bold">Configuración de respuesta abierta</label>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Esta pregunta será evaluada manualmente. Los estudiantes podrán escribir su respuesta en un campo de texto.
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Respuesta modelo (opcional)</label>
+            <textarea class="form-control" rows="4" 
+                      placeholder="Escribe una respuesta modelo para guiar la evaluación..."
+                      data-field="respuesta_modelo">{{ pregunta.respuesta_modelo|default:'' }}</textarea>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Criterios de evaluación (opcional)</label>
+            <textarea class="form-control" rows="3" 
+                      placeholder="Describe los criterios que se deben considerar al evaluar esta respuesta..."
+                      data-field="criterios_evaluacion">{{ pregunta.criterios_evaluacion|default:'' }}</textarea>
+        </div>
+    </div>
+    
+    {% elif pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}
+    <!-- Simuladores de moléculas -->
+    <div class="simulador-container">
+        <label class="form-label fw-bold">
+            Configuración de {{ pregunta.tipo.nombre|title }}
+        </label>
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Esta funcionalidad estará disponible en una próxima actualización.
+        </div>
+        
+        {% if pregunta.molecula_objetivo %}
+        <div class="mb-3">
+            <label class="form-label">SMILES objetivo actual</label>
+            <input type="text" class="form-control" readonly 
+                   value="{{ pregunta.molecula_objetivo.smiles_correcto }}">
+        </div>
+        {% endif %}
+        
+        <div class="mb-3">
+            <label class="form-label">Molécula objetivo (SMILES)</label>
+            <input type="text" class="form-control" 
+                   placeholder="Ej: CCO (etanol)"
+                   data-field="smiles_objetivo"
+                   title="Ingresa el código SMILES de la molécula que el estudiante debe armar">
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Descripción de la molécula</label>
+            <textarea class="form-control" rows="2" 
+                      placeholder="Ej: Etanol - alcohol etílico"
+                      data-field="descripcion_molecula"></textarea>
+        </div>
+    </div>
+    
+    {% elif pregunta.tipo.nombre == 'unir_lineas' %}
+    <!-- Unir con líneas -->
+    <div class="unir-lineas-container">
+        <label class="form-label fw-bold">Configuración - Unir con líneas</label>
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Esta funcionalidad estará disponible en una próxima actualización.
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <label class="form-label">Columna izquierda</label>
+                <textarea class="form-control" rows="5" 
+                          placeholder="Elemento 1&#10;Elemento 2&#10;Elemento 3&#10;..."
+                          data-field="columna_izquierda"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Columna derecha</label>
+                <textarea class="form-control" rows="5" 
+                          placeholder="Definición A&#10;Definición B&#10;Definición C&#10;..."
+                          data-field="columna_derecha"></textarea>
+            </div>
+        </div>
+    </div>
+    
+    {% elif pregunta.tipo.nombre == 'completar' %}
+    <!-- Completar -->
+    <div class="completar-container">
+        <label class="form-label fw-bold">Configuración - Completar texto</label>
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Esta funcionalidad estará disponible en una próxima actualización.
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Texto con espacios en blanco</label>
+            <textarea class="form-control" rows="4" 
+                      placeholder="El agua tiene la fórmula química _____ y es fundamental para la _____."
+                      title="Use _____ para marcar los espacios en blanco"
+                      data-field="texto_completar"></textarea>
+        </div>
+        
+        <div class="mb-3">
+            <label class="form-label">Respuestas correctas (separadas por comas)</label>
+            <input type="text" class="form-control" 
+                   placeholder="H2O, vida"
+                   title="Escriba las respuestas en el orden que aparecen los espacios"
+                   data-field="respuestas_completar">
+        </div>
+    </div>
+    
+    {% endif %}
+    
+    <!-- Acciones de la pregunta -->
+    <div class="pregunta-actions">
+        <button type="button" class="btn btn-success btn-sm" onclick="guardarPregunta({{ pregunta.id }})">
+            <i class="fas fa-save me-1"></i>Guardar cambios
+        </button>
+        
+        <button type="button" class="btn btn-warning btn-sm" 
+                onclick="iniciarCambioTipo({{ pregunta.id }})"
+                title="Cambiar el tipo de esta pregunta">
+            <i class="fas fa-exchange-alt me-1"></i>Cambiar tipo
+        </button>
+        
+        <button type="button" class="btn btn-danger btn-sm" 
+                onclick="eliminarPreguntaExistente({{ pregunta.id }})">
+            <i class="fas fa-trash me-1"></i>Eliminar pregunta
+        </button>
+        
+        <!-- Información adicional -->
+        <div class="ms-auto d-flex align-items-center">
+            <span class="text-muted small">
+                <i class="fas fa-info-circle me-1"></i>
+                Tipo: {{ pregunta.tipo.nombre|title }} | 
+                Orden: {{ pregunta.orden }}
+                {% if pregunta.cuestionario.recurso.fecha_creacion %}
+                | Creada: {{ pregunta.cuestionario.recurso.fecha_creacion|date:"d/m/Y" }}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos específicos para esta plantilla -->
+<style>
+/* Estilos mejorados para opciones correctas */
+.opcion-container.opcion-correcta {
+    background-color: #d4edda;
+    border: 1px solid #28a745;
+    border-left: 4px solid #28a745;
+}
+
+.opcion-container:not(.opcion-correcta) {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.opcion-container {
+    transition: all 0.2s ease;
+}
+
+.opcion-container:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Estilos para el botón + mejorado */
+.btn-agregar-opcion {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px dashed #0066cc;
+    background: transparent;
+    color: #0066cc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-agregar-opcion:hover {
+    background-color: #0066cc;
+    color: white;
+    transform: scale(1.1);
+    border-style: solid;
+}
+
+/* Mejorar estilos de checkbox de calificación manual */
+.calificacion-manual {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+}
+
+.calificacion-manual input[type="checkbox"] {
+    margin: 0;
+    transform: scale(1.1);
+}
+
+.calificacion-manual label {
+    margin: 0;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* Alertas mejoradas */
+.simulador-container .alert,
+.unir-lineas-container .alert,
+.completar-container .alert {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+}
+
+.respuesta-abierta-container .alert {
+    border-left: 4px solid #17a2b8;
+    background-color: #d1ecf1;
+}
+
+/* Acciones de pregunta mejoradas */
+.pregunta-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pregunta-actions .text-muted {
+    font-size: 0.8rem;
+}
+
+/* Botones pequeños personalizados */
+.btn-sm-custom {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border-radius: 4px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pregunta-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .pregunta-actions > * {
+        margin-bottom: 5px;
+    }
+    
+    .pregunta-actions .ms-auto {
+        margin-left: 0 !important;
+        margin-top: 10px;
+    }
+    
+    .calificacion-manual {
+        min-height: 35px;
+        padding: 4px 8px;
+    }
+}
+
+/* Mejor espaciado */
+.opciones-container .opcion-container:last-of-type {
+    margin-bottom: 10px;
+}
+</style>
+
+<script>
+// Script específico para esta plantilla
+document.addEventListener('DOMContentLoaded', function() {
+    // Aplicar estilos correctos al cargar la página
+    document.querySelectorAll('.opcion-container').forEach(container => {
+        const radio = container.querySelector('input[type="radio"], input[type="checkbox"]');
+        if (radio && radio.checked) {
+            container.classList.add('opcion-correcta');
+        } else {
+            container.classList.remove('opcion-correcta');
+        }
+    });
+});
+
+// Función para manejar el cambio de opción correcta (ya definida en el archivo principal)
+// Esta versión está incluida por compatibilidad
+if (typeof manejarCambioOpcionCorrecta !== 'function') {
+    function manejarCambioOpcionCorrecta(radio, preguntaId) {
+        // Quitar la clase de todas las opciones de esta pregunta
+        const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
+        preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
+            container.classList.remove('opcion-correcta');
+        });
+        
+        // Agregar la clase solo a la opción seleccionada
+        if (radio.checked) {
+            radio.closest('.opcion-container').classList.add('opcion-correcta');
+        }
+    }
+}
+</script>
