@@ -1203,7 +1203,7 @@ def cambiarTipoPregunta(request):
 @require_http_methods(["POST"])
 #@login_required
 def guardarCuestionarioCompleto(request):
-    """NUEVA: Guardar cuestionario completo con preguntas temporales y configuración"""
+    """CORREGIDA: Guardar cuestionario completo con preguntas temporales y configuración"""
     try:
         # Obtener datos básicos
         seccion_id = request.POST.get('seccion_id')
@@ -1261,40 +1261,54 @@ def guardarCuestionarioCompleto(request):
             }
             
             # Agregar campos de configuración si existen en el modelo
-            if hasattr(Cuestionario, 'tipo_calificacion'):
-                cuestionario_data['tipo_calificacion'] = configuracion_temporal.get('tipo_calificacion', 'automatica')
             if hasattr(Cuestionario, 'intentos_permitidos'):
                 intentos = configuracion_temporal.get('intentos_permitidos', 1)
                 cuestionario_data['intentos_permitidos'] = 999 if intentos == 'ilimitado' else int(intentos)
+            
             if hasattr(Cuestionario, 'mostrar_resultados'):
                 cuestionario_data['mostrar_resultados'] = configuracion_temporal.get('mostrar_resultados', True)
+            
             if hasattr(Cuestionario, 'orden_aleatorio'):
                 cuestionario_data['orden_aleatorio'] = configuracion_temporal.get('mezclar_preguntas', False)
             
             # Manejar fechas si existen en el modelo
             if hasattr(Cuestionario, 'fecha_apertura') and configuracion_temporal.get('fecha_inicio'):
                 try:
-                    cuestionario_data['fecha_apertura'] = datetime.fromisoformat(
-                        configuracion_temporal['fecha_inicio'].replace('Z', '+00:00')
-                    )
-                except:
+                    fecha_inicio = configuracion_temporal['fecha_inicio']
+                    # Asegurar que el formato de fecha sea correcto
+                    if 'T' in fecha_inicio:
+                        cuestionario_data['fecha_apertura'] = datetime.fromisoformat(
+                            fecha_inicio.replace('Z', '+00:00')
+                        )
+                except Exception as e:
+                    print(f"Error al parsear fecha_inicio: {e}")
                     pass
                     
             if hasattr(Cuestionario, 'fecha_cierre') and configuracion_temporal.get('fecha_fin'):
                 try:
-                    cuestionario_data['fecha_cierre'] = datetime.fromisoformat(
-                        configuracion_temporal['fecha_fin'].replace('Z', '+00:00')
-                    )
-                except:
+                    fecha_fin = configuracion_temporal['fecha_fin']
+                    # Asegurar que el formato de fecha sea correcto
+                    if 'T' in fecha_fin:
+                        cuestionario_data['fecha_cierre'] = datetime.fromisoformat(
+                            fecha_fin.replace('Z', '+00:00')
+                        )
+                except Exception as e:
+                    print(f"Error al parsear fecha_fin: {e}")
                     pass
             
             # Crear el cuestionario con toda la configuración
             cuestionario = Cuestionario.objects.create(**cuestionario_data)
             
             # Manejar imagen si se subió
-            if request.FILES.get('imagen') and hasattr(cuestionario, 'imagen'):
-                cuestionario.imagen = request.FILES['imagen']
-                cuestionario.save()
+            if request.FILES.get('imagen'):
+                # Si el modelo Cuestionario tiene campo imagen
+                if hasattr(cuestionario, 'imagen'):
+                    cuestionario.imagen = request.FILES['imagen']
+                    cuestionario.save()
+                # Si no, guardar en el recurso
+                else:
+                    recurso.imagen = request.FILES['imagen']
+                    recurso.save()
             
             # NUEVO: Crear preguntas temporales en la base de datos
             preguntas_creadas = 0
@@ -1352,6 +1366,64 @@ def guardarCuestionarioCompleto(request):
         })
         
     except Exception as e:
+        print(f"Error en guardarCuestionarioCompleto: {e}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=400)
+
+# =====================================================
+# NUEVA FUNCIÓN: ACTUALIZAR CUESTIONARIO EXISTENTE
+# =====================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+#@login_required
+def actualizarCuestionarioExistente(request, cuestionario_id):
+    """NUEVA: Actualizar un cuestionario existente"""
+    try:
+        cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
+        
+        # Verificar permisos
+        if cuestionario.recurso.seccion and cuestionario.recurso.seccion.curso.profesor != request.user:
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Obtener datos del formulario
+        titulo = request.POST.get('titulo', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        
+        if not titulo:
+            return JsonResponse({
+                'success': False,
+                'error': 'El título del cuestionario es obligatorio'
+            })
+        
+        with transaction.atomic():
+            # Actualizar el recurso
+            cuestionario.recurso.titulo = titulo
+            cuestionario.recurso.descripcion = descripcion
+            cuestionario.recurso.save()
+            
+            # Actualizar las instrucciones del cuestionario
+            cuestionario.instrucciones = descripcion
+            cuestionario.save()
+            
+            # Manejar imagen si se subió
+            if request.FILES.get('imagen'):
+                if hasattr(cuestionario, 'imagen'):
+                    cuestionario.imagen = request.FILES['imagen']
+                    cuestionario.save()
+                else:
+                    cuestionario.recurso.imagen = request.FILES['imagen']
+                    cuestionario.recurso.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Cuestionario actualizado exitosamente'
+        })
+        
+    except Exception as e:
+        print(f"Error en actualizarCuestionarioExistente: {e}")
         return JsonResponse({
             'success': False,
             'error': str(e)

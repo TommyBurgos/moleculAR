@@ -1,19 +1,19 @@
-<!-- plantilla_pregunta_adaptada.html -->
-<div class="plantilla-pregunta" data-tipo="{{ pregunta.tipo.nombre }}">
+<!-- plantilla_pregunta_adaptada.html - ARCHIVO COMPLETO CORREGIDO -->
+<div class="plantilla-pregunta" data-tipo="{{ pregunta.tipo.nombre }}" data-pregunta-id="{{ pregunta.id }}">
     <!-- Encabezado de la pregunta -->
     <div class="row mb-3">
         <div class="col-md-8">
             <label class="form-label fw-bold">Enunciado de la pregunta</label>
             <textarea class="form-control" rows="3" 
                       placeholder="Escribe el enunciado de tu pregunta aquí..."
-                      data-field="enunciado">{{ pregunta.enunciado }}</textarea>
+                      data-field="enunciado">{{ pregunta.enunciado|default:"" }}</textarea>
         </div>
         <div class="col-md-4">
             <div class="row">
                 <div class="col-6">
                     <label class="form-label fw-bold">Puntaje</label>
                     <div class="input-group">
-                        <input type="number" class="form-control" value="{{ pregunta.puntaje }}" 
+                        <input type="number" class="form-control" value="{{ pregunta.puntaje|default:1 }}" 
                                min="1" step="1" data-field="puntaje">
                         <span class="input-group-text">pts</span>
                     </div>
@@ -35,7 +35,7 @@
     </div>
     
     {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' or pregunta.tipo.nombre == 'falso_verdadero' %}
-    <!-- Opciones -->
+    <!-- Opciones de selección -->
     <div class="opciones-container">
         <label class="form-label fw-bold">
             {% if pregunta.tipo.nombre == 'opcion_unica' %}
@@ -55,15 +55,19 @@
                    name="correcta-{{ pregunta.id }}" 
                    {% if opcion.es_correcta %}checked{% endif %}
                    data-field="es_correcta"
-                   onchange="manejarCambioOpcionCorrecta(this, {{ pregunta.id }})">
+                   data-pregunta-id="{{ pregunta.id }}"
+                   onchange="manejarCambioOpcionCorrecta(this)">
             
             <input type="text" class="form-control opcion-input" 
-                   value="{{ opcion.texto }}" placeholder="Opción {{ forloop.counter }}"
-                   data-field="texto">
+                   value="{{ opcion.texto|default:"" }}" 
+                   placeholder="Opción {{ forloop.counter }}"
+                   data-field="texto"
+                   data-opcion-id="{{ opcion.id }}">
             
             {% if pregunta.opciones.all|length > 2 %}
             <button type="button" class="btn btn-danger btn-sm btn-sm-custom" 
-                    onclick="eliminarOpcionExistente({{ opcion.id }})"
+                    data-opcion-id="{{ opcion.id }}"
+                    onclick="eliminarOpcionExistente(this)"
                     title="Eliminar opción">
                 <i class="fas fa-trash"></i>
             </button>
@@ -75,7 +79,8 @@
         {% if pregunta.tipo.nombre != 'falso_verdadero' %}
         <div class="d-flex align-items-center mt-3">
             <button type="button" class="btn-agregar-opcion" 
-                    onclick="agregarOpcionExistente({{ pregunta.id }})"
+                    data-pregunta-id="{{ pregunta.id }}"
+                    onclick="agregarOpcionExistente(this)"
                     title="Agregar nueva opción">
                 <i class="fas fa-plus"></i>
             </button>
@@ -97,14 +102,41 @@
             <label class="form-label">Respuesta modelo (opcional)</label>
             <textarea class="form-control" rows="4" 
                       placeholder="Escribe una respuesta modelo para guiar la evaluación..."
-                      data-field="respuesta_modelo">{{ pregunta.respuesta_modelo|default:'' }}</textarea>
+                      data-field="respuesta_modelo">{{ pregunta.respuesta_modelo|default:"" }}</textarea>
+            <small class="text-muted">Esta respuesta servirá como guía para la calificación manual</small>
         </div>
         
         <div class="mb-3">
             <label class="form-label">Criterios de evaluación (opcional)</label>
             <textarea class="form-control" rows="3" 
                       placeholder="Describe los criterios que se deben considerar al evaluar esta respuesta..."
-                      data-field="criterios_evaluacion">{{ pregunta.criterios_evaluacion|default:'' }}</textarea>
+                      data-field="criterios_evaluacion">{{ pregunta.criterios_evaluacion|default:"" }}</textarea>
+            <small class="text-muted">Estos criterios ayudarán a mantener consistencia en la calificación</small>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <label class="form-label">Longitud mínima de respuesta</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" 
+                           value="{{ pregunta.longitud_minima|default:50 }}" 
+                           min="10" max="1000"
+                           data-field="longitud_minima">
+                    <span class="input-group-text">caracteres</span>
+                </div>
+                <small class="text-muted">Número mínimo de caracteres requeridos</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Longitud máxima de respuesta</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" 
+                           value="{{ pregunta.longitud_maxima|default:1000 }}" 
+                           min="50" max="5000"
+                           data-field="longitud_maxima">
+                    <span class="input-group-text">caracteres</span>
+                </div>
+                <small class="text-muted">Número máximo de caracteres permitidos</small>
+            </div>
         </div>
     </div>
     
@@ -112,34 +144,157 @@
     <!-- Simuladores de moléculas -->
     <div class="simulador-container">
         <label class="form-label fw-bold">
-            Configuración de {{ pregunta.tipo.nombre|title }}
+            Configuración de {{ pregunta.tipo.descripcion|title }}
         </label>
-        <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Esta funcionalidad estará disponible en una próxima actualización.
+        
+        <!-- Panel de configuración del simulador -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Configuración de la Molécula</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Fuente de la molécula</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fuente_simulador_{{ pregunta.id }}" 
+                                       value="jsme" checked 
+                                       data-pregunta-id="{{ pregunta.id }}"
+                                       onchange="toggleFuenteMolecula(this)">
+                                <label class="form-check-label">Dibujar con editor molecular</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fuente_simulador_{{ pregunta.id }}" 
+                                       value="pubchem" 
+                                       data-pregunta-id="{{ pregunta.id }}"
+                                       onchange="toggleFuenteMolecula(this)">
+                                <label class="form-check-label">Buscar en PubChem</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="fuente_simulador_{{ pregunta.id }}" 
+                                       value="smiles" 
+                                       data-pregunta-id="{{ pregunta.id }}"
+                                       onchange="toggleFuenteMolecula(this)">
+                                <label class="form-check-label">Ingresar SMILES manualmente</label>
+                            </div>
+                        </div>
+                        
+                        <!-- Opción PubChem -->
+                        <div id="pubchem_{{ pregunta.id }}" class="fuente-opcion" style="display: none;">
+                            <label class="form-label">Nombre del compuesto</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" 
+                                       placeholder="Ej: etanol, benzene, caffeine" 
+                                       id="nombre_pubchem_{{ pregunta.id }}"
+                                       data-pregunta-id="{{ pregunta.id }}">
+                                <button type="button" class="btn btn-outline-primary" 
+                                        data-pregunta-id="{{ pregunta.id }}"
+                                        onclick="buscarEnPubChem(this)">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Opción SMILES manual -->
+                        <div id="smiles_manual_{{ pregunta.id }}" class="fuente-opcion" style="display: none;">
+                            <label class="form-label">Código SMILES</label>
+                            <input type="text" class="form-control" 
+                                   placeholder="Ej: CCO (etanol)" 
+                                   id="smiles_input_{{ pregunta.id }}"
+                                   data-field="smiles_objetivo"
+                                   data-pregunta-id="{{ pregunta.id }}"
+                                   value="{{ pregunta.smiles_objetivo|default:"" }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descripción de la molécula</label>
+                            <textarea class="form-control" rows="2" 
+                                      placeholder="Ej: Etanol - alcohol etílico"
+                                      data-field="descripcion_molecula">{{ pregunta.descripcion_molecula|default:"" }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label">Tolerancia</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           value="{{ pregunta.tolerancia_similitud|default:95 }}" 
+                                           min="70" max="100" step="5"
+                                           data-field="tolerancia_similitud">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Permitir isómeros</label>
+                                <div class="form-check mt-2">
+                                    <input type="checkbox" class="form-check-input" 
+                                           id="permitir-isomeros-{{ pregunta.id }}"
+                                           data-field="permitir_isomeros"
+                                           {% if pregunta.permitir_isomeros %}checked{% endif %}>
+                                    <label class="form-check-label" for="permitir-isomeros-{{ pregunta.id }}">
+                                        Sí
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Vista Previa</h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Editor JSME -->
+                        <div id="jsme_container_{{ pregunta.id }}" class="mb-3" style="width: 100%; height: 200px; border: 1px solid #dee2e6;">
+                            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                <div class="text-center">
+                                    <i class="fas fa-atom fa-2x mb-2"></i>
+                                    <p>Editor molecular JSME</p>
+                                    <small>Se cargará al seleccionar "Dibujar"</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Visor 3D -->
+                        <div id="viewer_3d_{{ pregunta.id }}" style="width: 100%; height: 150px; border: 1px solid #dee2e6; background: #f8f9fa;">
+                            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                <div class="text-center">
+                                    <i class="fas fa-cube fa-2x mb-2"></i>
+                                    <p>Vista 3D</p>
+                                    <small>Aparecerá al definir una molécula</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-sm btn-primary" 
+                                    data-pregunta-id="{{ pregunta.id }}"
+                                    onclick="exportarMolecula(this)">
+                                <i class="fas fa-download me-1"></i>Exportar SMILES
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success" 
+                                    data-pregunta-id="{{ pregunta.id }}"
+                                    onclick="visualizar3D(this)">
+                                <i class="fas fa-cube me-1"></i>Ver en 3D
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        {% if pregunta.molecula_objetivo %}
-        <div class="mb-3">
-            <label class="form-label">SMILES objetivo actual</label>
-            <input type="text" class="form-control" readonly 
-                   value="{{ pregunta.molecula_objetivo.smiles_correcto }}">
-        </div>
-        {% endif %}
-        
-        <div class="mb-3">
-            <label class="form-label">Molécula objetivo (SMILES)</label>
-            <input type="text" class="form-control" 
-                   placeholder="Ej: CCO (etanol)"
-                   data-field="smiles_objetivo"
-                   title="Ingresa el código SMILES de la molécula que el estudiante debe armar">
-        </div>
-        
-        <div class="mb-3">
-            <label class="form-label">Descripción de la molécula</label>
-            <textarea class="form-control" rows="2" 
-                      placeholder="Ej: Etanol - alcohol etílico"
-                      data-field="descripcion_molecula"></textarea>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Los estudiantes usarán un simulador molecular interactivo para construir la molécula objetivo.
+            {% if pregunta.tipo.nombre == 'simulador_3d' %}
+            En modo 3D, podrán rotar y manipular la molécula en el espacio tridimensional.
+            {% else %}
+            En modo 2D, trabajarán con estructuras planas de Lewis.
+            {% endif %}
         </div>
     </div>
     
@@ -147,23 +302,112 @@
     <!-- Unir con líneas -->
     <div class="unir-lineas-container">
         <label class="form-label fw-bold">Configuración - Unir con líneas</label>
-        <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Esta funcionalidad estará disponible en una próxima actualización.
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Los estudiantes conectarán elementos de dos columnas arrastrando líneas entre ellos.
         </div>
         
         <div class="row">
             <div class="col-md-6">
-                <label class="form-label">Columna izquierda</label>
-                <textarea class="form-control" rows="5" 
-                          placeholder="Elemento 1&#10;Elemento 2&#10;Elemento 3&#10;..."
-                          data-field="columna_izquierda"></textarea>
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">Columna Izquierda</h6>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" rows="6" 
+                                  placeholder="Elemento 1&#10;Elemento 2&#10;Elemento 3&#10;Elemento 4"
+                                  data-field="columna_izquierda"
+                                  data-pregunta-id="{{ pregunta.id }}"
+                                  id="columna_izq_{{ pregunta.id }}"
+                                  onchange="actualizarVistaPrevia(this)">{{ pregunta.columna_izquierda|default:"" }}</textarea>
+                        <small class="text-muted">Un elemento por línea</small>
+                    </div>
+                </div>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Columna derecha</label>
-                <textarea class="form-control" rows="5" 
-                          placeholder="Definición A&#10;Definición B&#10;Definición C&#10;..."
-                          data-field="columna_derecha"></textarea>
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">Columna Derecha</h6>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" rows="6" 
+                                  placeholder="Definición A&#10;Definición B&#10;Definición C&#10;Definición D"
+                                  data-field="columna_derecha"
+                                  data-pregunta-id="{{ pregunta.id }}"
+                                  id="columna_der_{{ pregunta.id }}"
+                                  onchange="actualizarVistaPrevia(this)">{{ pregunta.columna_derecha|default:"" }}</textarea>
+                        <small class="text-muted">Un elemento por línea</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <label class="form-label">Conexiones correctas</label>
+            <div class="row">
+                <div class="col-md-8">
+                    <input type="text" class="form-control" 
+                           placeholder="1-A, 2-B, 3-C, 4-D"
+                           data-field="conexiones_correctas"
+                           value="{{ pregunta.conexiones_correctas|default:"" }}"
+                           data-pregunta-id="{{ pregunta.id }}"
+                           id="conexiones_{{ pregunta.id }}">
+                    <small class="text-muted">Define qué elementos de la izquierda van con cuáles de la derecha (formato: número-letra)</small>
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-outline-primary btn-sm" 
+                            data-pregunta-id="{{ pregunta.id }}"
+                            onclick="generarConexionesAutomaticas(this)">
+                        <i class="fas fa-magic me-1"></i>Auto-generar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" 
+                           id="mezclar-opciones-{{ pregunta.id }}"
+                           data-field="mezclar_opciones"
+                           {% if pregunta.mezclar_opciones %}checked{% endif %}>
+                    <label class="form-check-label" for="mezclar-opciones-{{ pregunta.id }}">
+                        Mezclar orden aleatoriamente
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" 
+                           id="permitir-multiple-{{ pregunta.id }}"
+                           data-field="permitir_conexiones_multiples"
+                           {% if pregunta.permitir_conexiones_multiples %}checked{% endif %}>
+                    <label class="form-check-label" for="permitir-multiple-{{ pregunta.id }}">
+                        Permitir conexiones múltiples
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista previa interactiva -->
+        <div class="mt-4">
+            <h6>Vista Previa:</h6>
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="row" id="vista_previa_{{ pregunta.id }}">
+                        <div class="col-6">
+                            <div class="list-group" id="preview_izq_{{ pregunta.id }}">
+                                <div class="list-group-item text-muted">Agregar elementos...</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="list-group" id="preview_der_{{ pregunta.id }}">
+                                <div class="list-group-item text-muted">Agregar elementos...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -172,9 +416,10 @@
     <!-- Completar -->
     <div class="completar-container">
         <label class="form-label fw-bold">Configuración - Completar texto</label>
-        <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            Esta funcionalidad estará disponible en una próxima actualización.
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Los estudiantes llenarán espacios en blanco en un texto. Use _____ (5 guiones bajos) para marcar cada espacio.
         </div>
         
         <div class="mb-3">
@@ -182,34 +427,122 @@
             <textarea class="form-control" rows="4" 
                       placeholder="El agua tiene la fórmula química _____ y es fundamental para la _____."
                       title="Use _____ para marcar los espacios en blanco"
-                      data-field="texto_completar"></textarea>
+                      data-field="texto_completar"
+                      data-pregunta-id="{{ pregunta.id }}"
+                      id="texto_completar_{{ pregunta.id }}"
+                      onchange="analizarEspacios(this)">{{ pregunta.texto_completar|default:"" }}</textarea>
+            <small class="text-muted">Use _____ (5 guiones bajos) para marcar cada espacio en blanco</small>
         </div>
         
         <div class="mb-3">
-            <label class="form-label">Respuestas correctas (separadas por comas)</label>
-            <input type="text" class="form-control" 
-                   placeholder="H2O, vida"
-                   title="Escriba las respuestas en el orden que aparecen los espacios"
-                   data-field="respuestas_completar">
+            <div class="row">
+                <div class="col-md-8">
+                    <label class="form-label">Respuestas correctas</label>
+                    <input type="text" class="form-control" 
+                           placeholder="H2O, vida, células"
+                           title="Escriba las respuestas en el orden que aparecen los espacios"
+                           data-field="respuestas_completar"
+                           data-pregunta-id="{{ pregunta.id }}"
+                           id="respuestas_{{ pregunta.id }}"
+                           value="{{ pregunta.respuestas_completar|default:"" }}">
+                    <small class="text-muted">Separar con comas, en el orden de aparición</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Espacios detectados</label>
+                    <div id="contador_espacios_{{ pregunta.id }}" class="form-control bg-light text-center">
+                        0 espacios
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" 
+                           id="sensible-mayusculas-{{ pregunta.id }}"
+                           data-field="sensible_mayusculas"
+                           {% if pregunta.sensible_mayusculas %}checked{% endif %}>
+                    <label class="form-check-label" for="sensible-mayusculas-{{ pregunta.id }}">
+                        Sensible a mayúsculas
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" 
+                           id="ignorar-espacios-{{ pregunta.id }}"
+                           data-field="ignorar_espacios"
+                           {% if pregunta.ignorar_espacios %}checked{% endif %}>
+                    <label class="form-check-label" for="ignorar-espacios-{{ pregunta.id }}">
+                        Ignorar espacios extra
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" 
+                           id="respuestas-alternativas-{{ pregunta.id }}"
+                           data-field="permitir_alternativas"
+                           {% if pregunta.permitir_alternativas %}checked{% endif %}>
+                    <label class="form-check-label" for="respuestas-alternativas-{{ pregunta.id }}">
+                        Permitir sinónimos
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Vista previa del texto -->
+        <div class="mt-4">
+            <h6>Vista Previa:</h6>
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div id="vista_previa_texto_{{ pregunta.id }}" class="fs-5">
+                        Escriba el texto arriba para ver la vista previa...
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Respuestas alternativas -->
+        <div class="mt-3" id="alternativas_container_{{ pregunta.id }}" style="display: none;">
+            <label class="form-label">Respuestas alternativas (opcional)</label>
+            <textarea class="form-control" rows="3" 
+                      placeholder="Para el primer espacio: agua,H2O,dihidróxido de hidrógeno&#10;Para el segundo espacio: vida,supervivencia"
+                      data-field="respuestas_alternativas">{{ pregunta.respuestas_alternativas|default:"" }}</textarea>
+            <small class="text-muted">Una línea por espacio. Separar alternativas con comas.</small>
         </div>
     </div>
     
+    {% else %}
+    <!-- Tipo de pregunta no reconocido -->
+    <div class="tipo-desconocido-container">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Tipo de pregunta "{{ pregunta.tipo.nombre }}" no está configurado aún.
+            <br><small>Contacta al administrador para agregar soporte para este tipo.</small>
+        </div>
+    </div>
     {% endif %}
     
     <!-- Acciones de la pregunta -->
     <div class="pregunta-actions">
-        <button type="button" class="btn btn-success btn-sm" onclick="guardarPregunta({{ pregunta.id }})">
+        <button type="button" class="btn btn-success btn-sm" 
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="guardarPregunta(this)">
             <i class="fas fa-save me-1"></i>Guardar cambios
         </button>
         
         <button type="button" class="btn btn-warning btn-sm" 
-                onclick="iniciarCambioTipo({{ pregunta.id }})"
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="iniciarCambioTipo(this)"
                 title="Cambiar el tipo de esta pregunta">
             <i class="fas fa-exchange-alt me-1"></i>Cambiar tipo
         </button>
         
         <button type="button" class="btn btn-danger btn-sm" 
-                onclick="eliminarPreguntaExistente({{ pregunta.id }})">
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="eliminarPreguntaExistente(this)">
             <i class="fas fa-trash me-1"></i>Eliminar pregunta
         </button>
         
@@ -217,7 +550,7 @@
         <div class="ms-auto d-flex align-items-center">
             <span class="text-muted small">
                 <i class="fas fa-info-circle me-1"></i>
-                Tipo: {{ pregunta.tipo.nombre|title }} | 
+                Tipo: {{ pregunta.tipo.descripcion|title }} | 
                 Orden: {{ pregunta.orden }}
                 {% if pregunta.cuestionario.recurso.fecha_creacion %}
                 | Creada: {{ pregunta.cuestionario.recurso.fecha_creacion|date:"d/m/Y" }}
@@ -243,10 +576,30 @@
 
 .opcion-container {
     transition: all 0.2s ease;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .opcion-container:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.opcion-container input[type="radio"],
+.opcion-container input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.opcion-container .opcion-input {
+    flex: 1;
+}
+
+.opcion-container .btn-sm-custom {
+    flex-shrink: 0;
 }
 
 /* Estilos para el botón + mejorado */
@@ -297,7 +650,7 @@
     cursor: pointer;
 }
 
-/* Alertas mejoradas */
+/* Alertas mejoradas para diferentes tipos */
 .simulador-container .alert,
 .unir-lineas-container .alert,
 .completar-container .alert {
@@ -308,6 +661,11 @@
 .respuesta-abierta-container .alert {
     border-left: 4px solid #17a2b8;
     background-color: #d1ecf1;
+}
+
+.tipo-desconocido-container .alert {
+    border-left: 4px solid #dc3545;
+    background-color: #f8d7da;
 }
 
 /* Acciones de pregunta mejoradas */
@@ -332,6 +690,139 @@
     border-radius: 4px;
 }
 
+/* Estilos específicos para contenedores de tipos de pregunta */
+.respuesta-abierta-container,
+.simulador-container,
+.unir-lineas-container,
+.completar-container {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+/* Estilos para campos específicos de cada tipo */
+.simulador-container .input-group,
+.completar-container .input-group {
+    margin-bottom: 10px;
+}
+
+.unir-lineas-container .col-md-6 {
+    padding: 0 10px;
+}
+
+/* Mejorar visualización de checkboxes */
+.form-check {
+    padding-left: 1.5em;
+}
+
+.form-check-input {
+    margin-left: -1.5em;
+    margin-top: 0.25em;
+}
+
+/* Estilos para simuladores moleculares */
+.simulador-container .card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.simulador-container .card-header {
+    font-weight: 600;
+}
+
+.fuente-opcion {
+    padding: 10px;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+}
+
+/* Estilos para el visor 3D */
+[id^="viewer_3d_"] {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Animaciones para carga */
+.cargando-simulador {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+    border-radius: 8px;
+}
+
+.spinner-molecular {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e3f2fd;
+    border-top: 4px solid #2196f3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Mejoras para unir líneas */
+.unir-lineas-container .list-group-item {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.unir-lineas-container .list-group-item:hover {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+/* Mejoras para completar texto */
+.completar-container .bg-warning {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Estilos para campos de texto específicos */
+.simulador-container textarea,
+.unir-lineas-container textarea,
+.completar-container textarea,
+.respuesta-abierta-container textarea {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+}
+
+.simulador-container textarea:focus,
+.unir-lineas-container textarea:focus,
+.completar-container textarea:focus,
+.respuesta-abierta-container textarea:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+/* Indicadores visuales para campos requeridos */
+.respuesta-abierta-container .form-label::after,
+.simulador-container .form-label::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Estilos para información adicional */
+.pregunta-actions .text-muted {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .pregunta-actions {
@@ -352,6 +843,35 @@
         min-height: 35px;
         padding: 4px 8px;
     }
+    
+    .respuesta-abierta-container,
+    .simulador-container,
+    .unir-lineas-container,
+    .completar-container {
+        padding: 15px;
+    }
+    
+    .simulador-container .row {
+        flex-direction: column;
+    }
+    
+    .simulador-container .card {
+        margin-bottom: 15px;
+    }
+    
+    [id^="jsme_container_"] {
+        height: 250px !important;
+    }
+    
+    .opcion-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .opcion-container > * {
+        width: 100%;
+    }
 }
 
 /* Mejor espaciado */
@@ -361,8 +881,10 @@
 </style>
 
 <script>
-// Script específico para esta plantilla
+// Script específico para esta plantilla - VERSIÓN CORREGIDA
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Plantilla pregunta adaptada cargada');
+    
     // Aplicar estilos correctos al cargar la página
     document.querySelectorAll('.opcion-container').forEach(container => {
         const radio = container.querySelector('input[type="radio"], input[type="checkbox"]');
@@ -372,22 +894,838 @@ document.addEventListener('DOMContentLoaded', function() {
             container.classList.remove('opcion-correcta');
         }
     });
+    
+    // Configurar validación para campos numéricos
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const min = parseInt(this.getAttribute('min'));
+            const max = parseInt(this.getAttribute('max'));
+            const value = parseInt(this.value);
+            
+            if (min && value < min) {
+                this.value = min;
+                mostrarAdvertencia(`Valor mínimo permitido: ${min}`);
+            }
+            if (max && value > max) {
+                this.value = max;
+                mostrarAdvertencia(`Valor máximo permitido: ${max}`);
+            }
+        });
+    });
+    
+    // Inicializar vista previa para completar texto
+    document.querySelectorAll('[id^="texto_completar_"]').forEach(textarea => {
+        const preguntaId = textarea.dataset.preguntaId;
+        if (preguntaId) {
+            analizarEspaciosElement(textarea);
+        }
+    });
+    
+    // Inicializar vista previa para unir líneas
+    document.querySelectorAll('[id^="columna_izq_"]').forEach(textarea => {
+        const preguntaId = textarea.dataset.preguntaId;
+        if (preguntaId) {
+            actualizarVistaPreviaElement(textarea);
+        }
+    });
+    
+    // Manejar cambios en permitir alternativas
+    document.querySelectorAll('[data-field="permitir_alternativas"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const preguntaId = this.id.split('-').pop();
+            const container = document.getElementById(`alternativas_container_${preguntaId}`);
+            if (container) {
+                container.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+        
+        // Inicializar estado
+        if (checkbox.checked) {
+            const preguntaId = checkbox.id.split('-').pop();
+            const container = document.getElementById(`alternativas_container_${preguntaId}`);
+            if (container) {
+                container.style.display = 'block';
+            }
+        }
+    });
 });
 
-// Función para manejar el cambio de opción correcta (ya definida en el archivo principal)
-// Esta versión está incluida por compatibilidad
-if (typeof manejarCambioOpcionCorrecta !== 'function') {
-    function manejarCambioOpcionCorrecta(radio, preguntaId) {
-        // Quitar la clase de todas las opciones de esta pregunta
-        const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
+// =====================================================
+// FUNCIONES PRINCIPALES CORREGIDAS
+// =====================================================
+
+// Función para obtener el ID de pregunta desde un elemento
+function obtenerPreguntaId(element) {
+    // Buscar en el elemento actual y sus padres
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        // También buscar en atributos id que contengan el patrón
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        current = current.parentElement;
+    }
+    return null;
+}
+
+// Función mejorada para manejar cambio de opción correcta
+function manejarCambioOpcionCorrecta(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        console.error('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
+    if (!preguntaElement) {
+        console.error('No se encontró el elemento de pregunta');
+        return;
+    }
+    
+    // Si es radio button, quitar la clase de todas las opciones
+    if (element.type === 'radio') {
         preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
             container.classList.remove('opcion-correcta');
         });
+    }
+    
+    // Agregar o quitar la clase según el estado
+    const container = element.closest('.opcion-container');
+    if (container) {
+        if (element.checked) {
+            container.classList.add('opcion-correcta');
+        } else {
+            container.classList.remove('opcion-correcta');
+        }
+    }
+    
+    console.log(`Opción correcta cambiada para pregunta ${preguntaId}`);
+}
+
+// =====================================================
+// FUNCIONES PARA SIMULADORES MOLECULARES
+// =====================================================
+
+// Variables globales para JSME
+let jsmeInstances = {};
+
+function toggleFuenteMolecula(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    const fuente = element.value;
+    
+    if (!preguntaId) return;
+    
+    // Ocultar todas las opciones
+    const pubchemDiv = document.getElementById(`pubchem_${preguntaId}`);
+    const smilesDiv = document.getElementById(`smiles_manual_${preguntaId}`);
+    
+    if (pubchemDiv) pubchemDiv.style.display = 'none';
+    if (smilesDiv) smilesDiv.style.display = 'none';
+    
+    // Mostrar la opción seleccionada
+    if (fuente === 'pubchem' && pubchemDiv) {
+        pubchemDiv.style.display = 'block';
+    } else if (fuente === 'smiles' && smilesDiv) {
+        smilesDiv.style.display = 'block';
+    } else if (fuente === 'jsme') {
+        cargarJSME(preguntaId);
+    }
+}
+
+function cargarJSME(preguntaId) {
+    const container = document.getElementById(`jsme_container_${preguntaId}`);
+    if (!container) return;
+    
+    if (typeof JSApplet !== 'undefined' && !jsmeInstances[preguntaId]) {
+        try {
+            jsmeInstances[preguntaId] = new JSApplet.JSME(`jsme_container_${preguntaId}`, "100%", "200px", {
+                options: "oldlook,star,query,hydrogens,noquery"
+            });
+            console.log(`JSME cargado para pregunta ${preguntaId}`);
+        } catch (error) {
+            console.error('Error al cargar JSME:', error);
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error al cargar el editor JSME. Verifique que la librería esté disponible.
+                </div>
+            `;
+        }
+    } else if (typeof JSApplet === 'undefined') {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Para usar el editor molecular, incluya la librería JSME en su proyecto.
+                <br><small>Mientras tanto, puede usar la opción "Ingresar SMILES manualmente".</small>
+            </div>
+        `;
+    }
+}
+
+function buscarEnPubChem(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const nombreInput = document.getElementById(`nombre_pubchem_${preguntaId}`);
+    if (!nombreInput) return;
+    
+    const nombreCompuesto = nombreInput.value.trim();
+    if (!nombreCompuesto) {
+        mostrarAdvertencia('Ingrese el nombre del compuesto');
+        return;
+    }
+    
+    const loadingToast = mostrarCargando('Buscando en PubChem...');
+    
+    fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(nombreCompuesto)}/property/IsomericSMILES/JSON`)
+        .then(response => response.json())
+        .then(data => {
+            loadingToast.hide();
+            if (data.PropertyTable && data.PropertyTable.Properties.length > 0) {
+                const smiles = data.PropertyTable.Properties[0].IsomericSMILES;
+                const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+                if (smilesInput) {
+                    smilesInput.value = smiles;
+                    mostrarExito(`SMILES encontrado: ${smiles}`);
+                    visualizar3DPorId(preguntaId, smiles);
+                }
+            } else {
+                mostrarError('No se encontró el compuesto en PubChem');
+            }
+        })
+        .catch(error => {
+            loadingToast.hide();
+            mostrarError('Error al buscar en PubChem: ' + error.message);
+        });
+}
+
+function exportarMolecula(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const fuente = document.querySelector(`input[name="fuente_simulador_${preguntaId}"]:checked`);
+    if (!fuente) return;
+    
+    let smiles = '';
+    
+    if (fuente.value === 'jsme' && jsmeInstances[preguntaId]) {
+        smiles = jsmeInstances[preguntaId].smiles();
+    } else if (fuente.value === 'smiles') {
+        const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+        if (smilesInput) smiles = smilesInput.value.trim();
+    }
+    
+    if (smiles) {
+        const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+        if (smilesInput) smilesInput.value = smiles;
+        mostrarExito(`SMILES exportado: ${smiles}`);
+    } else {
+        mostrarError('No hay molécula para exportar');
+    }
+}
+
+function visualizar3D(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+    const smiles = smilesInput ? smilesInput.value.trim() : '';
+    
+    visualizar3DPorId(preguntaId, smiles);
+}
+
+function visualizar3DPorId(preguntaId, smilesOverride = null) {
+    const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+    const smiles = smilesOverride || (smilesInput ? smilesInput.value.trim() : '');
+    
+    if (!smiles) {
+        mostrarError('No hay SMILES para visualizar');
+        return;
+    }
+    
+    // Cargar 3Dmol.js si no está disponible
+    if (typeof $3Dmol === 'undefined') {
+        mostrarAdvertencia('Librería 3Dmol.js no disponible. Cargando...');
+        cargar3DMol().then(() => inicializar3D(preguntaId, smiles));
+    } else {
+        inicializar3D(preguntaId, smiles);
+    }
+}
+
+function cargar3DMol() {
+    return new Promise((resolve, reject) => {
+        if (typeof $3Dmol !== 'undefined') {
+            resolve();
+            return;
+        }
         
-        // Agregar la clase solo a la opción seleccionada
-        if (radio.checked) {
-            radio.closest('.opcion-container').classList.add('opcion-correcta');
+        const script = document.createElement('script');
+        script.src = 'https://3Dmol.org/build/3Dmol-min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
+function inicializar3D(preguntaId, smiles) {
+    const viewerId = `viewer_3d_${preguntaId}`;
+    const container = document.getElementById(viewerId);
+    
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    try {
+        const viewer = $3Dmol.createViewer(viewerId, { 
+            backgroundColor: "white",
+            width: "100%",
+            height: "150px"
+        });
+        
+        fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(smiles)}/SDF`)
+            .then(response => response.text())
+            .then(sdfData => {
+                viewer.addModel(sdfData, "sdf");
+                viewer.setStyle({}, { stick: {}, sphere: { scale: 0.3 } });
+                viewer.zoomTo();
+                viewer.render();
+                mostrarExito('Molécula visualizada en 3D');
+            })
+            .catch(error => {
+                container.innerHTML = `
+                    <div class="alert alert-warning h-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle mb-2"></i>
+                            <br>No se pudo cargar la estructura 3D
+                            <br><small>SMILES: ${smiles}</small>
+                        </div>
+                    </div>
+                `;
+            });
+    } catch (error) {
+        container.innerHTML = `
+            <div class="alert alert-danger h-100 d-flex align-items-center justify-content-center">
+                <div class="text-center">
+                    <i class="fas fa-times mb-2"></i>
+                    <br>Error al inicializar el visor 3D
+                </div>
+            </div>
+        `;
+    }
+}
+
+// =====================================================
+// FUNCIONES PARA UNIR CON LÍNEAS
+// =====================================================
+
+function actualizarVistaPrevia(element) {
+    actualizarVistaPreviaElement(element);
+}
+
+function actualizarVistaPreviaElement(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const izqTextarea = document.getElementById(`columna_izq_${preguntaId}`);
+    const derTextarea = document.getElementById(`columna_der_${preguntaId}`);
+    
+    if (!izqTextarea || !derTextarea) return;
+    
+    const izquierda = izqTextarea.value.split('\n').filter(x => x.trim());
+    const derecha = derTextarea.value.split('\n').filter(x => x.trim());
+    
+    const prevIzq = document.getElementById(`preview_izq_${preguntaId}`);
+    const prevDer = document.getElementById(`preview_der_${preguntaId}`);
+    
+    if (!prevIzq || !prevDer) return;
+    
+    // Actualizar columna izquierda
+    if (izquierda.length > 0) {
+        prevIzq.innerHTML = izquierda.map((item, index) => 
+            `<div class="list-group-item">${index + 1}. ${item}</div>`
+        ).join('');
+    } else {
+        prevIzq.innerHTML = '<div class="list-group-item text-muted">Agregar elementos...</div>';
+    }
+    
+    // Actualizar columna derecha
+    if (derecha.length > 0) {
+        prevDer.innerHTML = derecha.map((item, index) => 
+            `<div class="list-group-item">${String.fromCharCode(65 + index)}. ${item}</div>`
+        ).join('');
+    } else {
+        prevDer.innerHTML = '<div class="list-group-item text-muted">Agregar elementos...</div>';
+    }
+}
+
+function generarConexionesAutomaticas(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const izqTextarea = document.getElementById(`columna_izq_${preguntaId}`);
+    const derTextarea = document.getElementById(`columna_der_${preguntaId}`);
+    const conexionesInput = document.getElementById(`conexiones_${preguntaId}`);
+    
+    if (!izqTextarea || !derTextarea || !conexionesInput) return;
+    
+    const izquierda = izqTextarea.value.split('\n').filter(x => x.trim());
+    const derecha = derTextarea.value.split('\n').filter(x => x.trim());
+    
+    if (izquierda.length === 0 || derecha.length === 0) {
+        mostrarAdvertencia('Primero agregue elementos a ambas columnas');
+        return;
+    }
+    
+    const minLength = Math.min(izquierda.length, derecha.length);
+    const conexiones = [];
+    
+    for (let i = 0; i < minLength; i++) {
+        conexiones.push(`${i + 1}-${String.fromCharCode(65 + i)}`);
+    }
+    
+    conexionesInput.value = conexiones.join(', ');
+    mostrarExito('Conexiones generadas automáticamente');
+}
+
+// =====================================================
+// FUNCIONES PARA COMPLETAR TEXTO
+// =====================================================
+
+function analizarEspacios(element) {
+    analizarEspaciosElement(element);
+}
+
+function analizarEspaciosElement(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const textoTextarea = document.getElementById(`texto_completar_${preguntaId}`);
+    const contadorDiv = document.getElementById(`contador_espacios_${preguntaId}`);
+    const vistaDiv = document.getElementById(`vista_previa_texto_${preguntaId}`);
+    const respuestasInput = document.getElementById(`respuestas_${preguntaId}`);
+    
+    if (!textoTextarea || !contadorDiv || !vistaDiv) return;
+    
+    const texto = textoTextarea.value;
+    const espacios = (texto.match(/_____/g) || []).length;
+    
+    contadorDiv.textContent = `${espacios} espacios`;
+    
+    // Actualizar vista previa
+    const vistaPrevia = texto.replace(/_____/g, '<span class="bg-warning px-2 mx-1">[____]</span>');
+    vistaDiv.innerHTML = vistaPrevia || 'Escriba el texto arriba para ver la vista previa...';
+    
+    // Validar respuestas
+    if (respuestasInput) {
+        const respuestas = respuestasInput.value.split(',').map(r => r.trim()).filter(r => r);
+        if (respuestas.length !== espacios && espacios > 0) {
+            mostrarAdvertencia(`Se detectaron ${espacios} espacios pero ${respuestas.length} respuestas`);
         }
     }
 }
-</script>
+
+// =====================================================
+// FUNCIONES DE ACCIONES PRINCIPALES
+// =====================================================
+
+function guardarPregunta(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`Guardando pregunta ${preguntaId}...`);
+    mostrarExito(`Pregunta ${preguntaId} guardada (función a implementar)`);
+}
+
+function iniciarCambioTipo(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`Cambiando tipo de pregunta ${preguntaId}...`);
+    mostrarAdvertencia(`Cambio de tipo para pregunta ${preguntaId} (función a implementar)`);
+}
+
+function eliminarPreguntaExistente(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    if (confirm(`¿Está seguro de que desea eliminar la pregunta ${preguntaId}?`)) {
+        console.log(`Eliminando pregunta ${preguntaId}...`);
+        mostrarAdvertencia(`Eliminación de pregunta ${preguntaId} (función a implementar)`);
+    }
+}
+
+function agregarOpcionExistente(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`Agregando opción a pregunta ${preguntaId}...`);
+    mostrarAdvertencia(`Agregar opción a pregunta ${preguntaId} (función a implementar)`);
+}
+
+function eliminarOpcionExistente(element) {
+    const opcionId = element.dataset.opcionId;
+    
+    if (!opcionId) {
+        mostrarError('No se pudo obtener el ID de opción');
+        return;
+    }
+    
+    if (confirm(`¿Está seguro de que desea eliminar esta opción?`)) {
+        console.log(`Eliminando opción ${opcionId}...`);
+        mostrarAdvertencia(`Eliminación de opción ${opcionId} (función a implementar)`);
+    }
+}
+
+// =====================================================
+// FUNCIONES DE UTILIDAD PARA NOTIFICACIONES
+// =====================================================
+
+function mostrarAdvertencia(mensaje) {
+    mostrarNotificacion(mensaje, 'warning', 'fas fa-exclamation-triangle');
+}
+
+function mostrarExito(mensaje) {
+    mostrarNotificacion(mensaje, 'success', 'fas fa-check-circle');
+}
+
+function mostrarError(mensaje) {
+    mostrarNotificacion(mensaje, 'danger', 'fas fa-exclamation-triangle', 4000);
+}
+
+function mostrarCargando(mensaje) {
+    const toast = crearToast(mensaje, 'primary', 'spinner-border spinner-border-sm', false);
+    return toast;
+}
+
+function mostrarNotificacion(mensaje, tipo, icono, duracion = 3000) {
+    const toast = crearToast(mensaje, tipo, icono, true, duracion);
+    return toast;
+}
+
+function crearToast(mensaje, tipo, icono, autohide = true, duracion = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${tipo} border-0 position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    
+    const iconoHtml = icono.includes('spinner') ? 
+        `<div class="${icono} me-2" role="status"></div>` : 
+        `<i class="${icono} me-2"></i>`;
+    
+    const closeButton = autohide ? 
+        `<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>` : 
+        '';
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${iconoHtml}
+                ${mensaje}
+            </div>
+            ${closeButton}
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Inicializar toast de Bootstrap si está disponible
+    let bsToast;
+    if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+        bsToast = new bootstrap.Toast(toast, { 
+            autohide: autohide,
+            delay: duracion 
+        });
+        bsToast.show();
+    } else {
+        // Fallback si Bootstrap no está disponible
+        toast.style.display = 'block';
+        if (autohide) {
+            setTimeout(() => {
+                toast.remove();
+            }, duracion);
+        }
+    }
+    
+    // Limpiar el DOM cuando se oculte
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+    
+    return bsToast || { 
+        hide: () => toast.remove(),
+        show: () => toast.style.display = 'block'
+    };
+}
+
+// =====================================================
+// VALIDACIONES Y UTILIDADES ADICIONALES
+// =====================================================
+
+// Validación específica para campos de tipo SMILES
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-field="smiles_objetivo"]').forEach(input => {
+        input.addEventListener('blur', function() {
+            const smiles = this.value.trim();
+            if (smiles && !validarSMILES(smiles)) {
+                mostrarAdvertencia('El formato SMILES ingresado podría no ser válido');
+            }
+        });
+    });
+    
+    // Autoguardado para campos de texto largos (opcional)
+    document.querySelectorAll('textarea[data-field]').forEach(textarea => {
+        let timeout;
+        textarea.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                console.log('Campo modificado:', this.dataset.field, 'Valor:', this.value.substring(0, 50) + '...');
+                // Aquí se puede implementar el autoguardado
+            }, 2000);
+        });
+    });
+});
+
+// Función básica de validación de SMILES
+function validarSMILES(smiles) {
+    // Patrón básico para validar SMILES
+    const patronSMILES = /^[a-zA-Z0-9\[\]()@+\-=#$:\.\\\/]*$/;
+    return patronSMILES.test(smiles) && smiles.length > 0;
+}
+
+// Función para validar campos requeridos
+function validarCamposRequeridos(preguntaId) {
+    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
+    if (!preguntaElement) return false;
+    
+    const enunciadoTextarea = preguntaElement.querySelector('[data-field="enunciado"]');
+    if (!enunciadoTextarea || !enunciadoTextarea.value.trim()) {
+        mostrarError('El enunciado de la pregunta es requerido');
+        enunciadoTextarea.focus();
+        return false;
+    }
+    
+    const puntajeInput = preguntaElement.querySelector('[data-field="puntaje"]');
+    if (!puntajeInput || parseInt(puntajeInput.value) <= 0) {
+        mostrarError('El puntaje debe ser mayor a 0');
+        puntajeInput.focus();
+        return false;
+    }
+    
+    return true;
+}
+
+// Función para recopilar datos de la pregunta
+function recopilarDatosPregunta(preguntaId) {
+    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
+    if (!preguntaElement) return null;
+    
+    const datos = {
+        id: preguntaId,
+        enunciado: '',
+        puntaje: 1,
+        calificacion_manual: false,
+        tipo: preguntaElement.dataset.tipo || '',
+        opciones: [],
+        configuracion_especifica: {}
+    };
+    
+    // Recopilar datos básicos
+    const enunciadoTextarea = preguntaElement.querySelector('[data-field="enunciado"]');
+    if (enunciadoTextarea) datos.enunciado = enunciadoTextarea.value.trim();
+    
+    const puntajeInput = preguntaElement.querySelector('[data-field="puntaje"]');
+    if (puntajeInput) datos.puntaje = parseInt(puntajeInput.value) || 1;
+    
+    const calificacionManual = preguntaElement.querySelector('[data-field="calificacion_manual"]');
+    if (calificacionManual) datos.calificacion_manual = calificacionManual.checked;
+    
+    // Recopilar opciones para preguntas de selección
+    if (['opcion_unica', 'opcion_multiple', 'falso_verdadero'].includes(datos.tipo)) {
+        const opcionesContainers = preguntaElement.querySelectorAll('.opcion-container');
+        opcionesContainers.forEach((container, index) => {
+            const textoInput = container.querySelector('[data-field="texto"]');
+            const esCorrectaInput = container.querySelector('[data-field="es_correcta"]');
+            
+            if (textoInput) {
+                datos.opciones.push({
+                    orden: index + 1,
+                    texto: textoInput.value.trim(),
+                    es_correcta: esCorrectaInput ? esCorrectaInput.checked : false,
+                    id: container.dataset.opcionId || null
+                });
+            }
+        });
+    }
+    
+    // Recopilar configuración específica según el tipo
+    switch (datos.tipo) {
+        case 'respuesta_abierta':
+            const respuestaModelo = preguntaElement.querySelector('[data-field="respuesta_modelo"]');
+            const criteriosEvaluacion = preguntaElement.querySelector('[data-field="criterios_evaluacion"]');
+            const longitudMinima = preguntaElement.querySelector('[data-field="longitud_minima"]');
+            const longitudMaxima = preguntaElement.querySelector('[data-field="longitud_maxima"]');
+            
+            datos.configuracion_especifica = {
+                respuesta_modelo: respuestaModelo ? respuestaModelo.value.trim() : '',
+                criterios_evaluacion: criteriosEvaluacion ? criteriosEvaluacion.value.trim() : '',
+                longitud_minima: longitudMinima ? parseInt(longitudMinima.value) || 50 : 50,
+                longitud_maxima: longitudMaxima ? parseInt(longitudMaxima.value) || 1000 : 1000
+            };
+            break;
+            
+        case 'simulador_2d':
+        case 'simulador_3d':
+            const smilesObjetivo = preguntaElement.querySelector('[data-field="smiles_objetivo"]');
+            const descripcionMolecula = preguntaElement.querySelector('[data-field="descripcion_molecula"]');
+            const toleranciaSimilitud = preguntaElement.querySelector('[data-field="tolerancia_similitud"]');
+            const permitirIsomeros = preguntaElement.querySelector('[data-field="permitir_isomeros"]');
+            
+            datos.configuracion_especifica = {
+                smiles_objetivo: smilesObjetivo ? smilesObjetivo.value.trim() : '',
+                descripcion_molecula: descripcionMolecula ? descripcionMolecula.value.trim() : '',
+                tolerancia_similitud: toleranciaSimilitud ? parseInt(toleranciaSimilitud.value) || 95 : 95,
+                permitir_isomeros: permitirIsomeros ? permitirIsomeros.checked : false
+            };
+            break;
+            
+        case 'unir_lineas':
+            const columnaIzquierda = preguntaElement.querySelector('[data-field="columna_izquierda"]');
+            const columnaDerecha = preguntaElement.querySelector('[data-field="columna_derecha"]');
+            const conexionesCorrectas = preguntaElement.querySelector('[data-field="conexiones_correctas"]');
+            const mezclarOpciones = preguntaElement.querySelector('[data-field="mezclar_opciones"]');
+            const permitirMultiple = preguntaElement.querySelector('[data-field="permitir_conexiones_multiples"]');
+            
+            datos.configuracion_especifica = {
+                columna_izquierda: columnaIzquierda ? columnaIzquierda.value.trim() : '',
+                columna_derecha: columnaDerecha ? columnaDerecha.value.trim() : '',
+                conexiones_correctas: conexionesCorrectas ? conexionesCorrectas.value.trim() : '',
+                mezclar_opciones: mezclarOpciones ? mezclarOpciones.checked : false,
+                permitir_conexiones_multiples: permitirMultiple ? permitirMultiple.checked : false
+            };
+            break;
+            
+        case 'completar':
+            const textoCompletar = preguntaElement.querySelector('[data-field="texto_completar"]');
+            const respuestasCompletar = preguntaElement.querySelector('[data-field="respuestas_completar"]');
+            const sensibleMayusculas = preguntaElement.querySelector('[data-field="sensible_mayusculas"]');
+            const ignorarEspacios = preguntaElement.querySelector('[data-field="ignorar_espacios"]');
+            const permitirAlternativas = preguntaElement.querySelector('[data-field="permitir_alternativas"]');
+            const respuestasAlternativas = preguntaElement.querySelector('[data-field="respuestas_alternativas"]');
+            
+            datos.configuracion_especifica = {
+                texto_completar: textoCompletar ? textoCompletar.value.trim() : '',
+                respuestas_completar: respuestasCompletar ? respuestasCompletar.value.trim() : '',
+                sensible_mayusculas: sensibleMayusculas ? sensibleMayusculas.checked : false,
+                ignorar_espacios: ignorarEspacios ? ignorarEspacios.checked : true,
+                permitir_alternativas: permitirAlternativas ? permitirAlternativas.checked : false,
+                respuestas_alternativas: respuestasAlternativas ? respuestasAlternativas.value.trim() : ''
+            };
+            break;
+    }
+    
+    return datos;
+}
+
+// Función para limpiar datos antes de enviar
+function limpiarDatosParaEnvio(datos) {
+    // Remover campos vacíos o innecesarios
+    if (datos.configuracion_especifica) {
+        Object.keys(datos.configuracion_especifica).forEach(key => {
+            if (datos.configuracion_especifica[key] === '' || datos.configuracion_especifica[key] === null) {
+                delete datos.configuracion_especifica[key];
+            }
+        });
+    }
+    
+    // Validar opciones para preguntas de selección
+    if (datos.opciones) {
+        datos.opciones = datos.opciones.filter(opcion => opcion.texto.trim() !== '');
+    }
+    
+    return datos;
+}
+
+// Función de debug para imprimir datos de pregunta
+function debugPregunta(preguntaId) {
+    const datos = recopilarDatosPregunta(preguntaId);
+    console.log('Datos de pregunta:', datos);
+    return datos;
+}
+
+// Event listeners adicionales para mejorar la experiencia del usuario
+document.addEventListener('DOMContentLoaded', function() {
+    // Prevenir envío accidental de formularios
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            // Ctrl+Enter para guardar
+            const activeElement = document.activeElement;
+            const preguntaElement = activeElement.closest('[data-pregunta-id]');
+            if (preguntaElement) {
+                const preguntaId = preguntaElement.dataset.preguntaId;
+                const botonGuardar = preguntaElement.querySelector('[onclick*="guardarPregunta"]');
+                if (botonGuardar) {
+                    botonGuardar.click();
+                }
+            }
+        }
+    });
+    
+    // Mejorar accesibilidad con indicadores visuales
+    document.querySelectorAll('input, textarea, select').forEach(element => {
+        element.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+        
+        element.addEventListener('blur', function() {
+            this.parentElement.classList.remove('focused');
+        });
+    });
+    
+    // Confirmar antes de salir si hay cambios sin guardar
+    let cambiosSinGuardar = false;
+    
+    document.querySelectorAll('[data-field]').forEach(field => {
+        const valorInicial = field.value || field.checked;
+        
+        field.addEventListener('change', function() {
+            const valorActual = this.type === 'checkbox' ? this.checked : this.value;
+            if (valorActual !== valorInicial) {
+                cambiosSinGuardar = true;
+            }
+        });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (cambiosSinGuardar) {
+            e.preventDefault();
+            e.returnValue = '¿Está seguro de que desea salir? Hay cambios sin guardar.';
+        }
+    });
+    
+    // Marcar como guardado cuando se presione guardar
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[onclick*="guardarPregunta"]')) {
+            cambiosSinGuardar = false;
+        }
+    });
+});
+
+console.log('Plantilla de pregunta adaptada cargada completamente - Versión corregida');
+</script>'

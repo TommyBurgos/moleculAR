@@ -26,6 +26,10 @@
     <!-- Theme CSS -->
     <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
     
+    <!-- Librerías adicionales para simuladores moleculares -->
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsme/2020-03-15/jsme.nocache.js"></script>
+    
     <!-- Custom CSS -->
     <style>
         .plantilla-pregunta {
@@ -280,28 +284,6 @@
             color: white;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .btn-configuracion {
-                padding: 6px 10px;
-                font-size: 0.8rem;
-            }
-            
-            .pregunta-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .pregunta-actions > * {
-                margin-bottom: 5px;
-            }
-
-            .calificacion-manual {
-                min-height: 35px;
-                padding: 4px 8px;
-            }
-        }
-
         /* Estilos para tipos de pregunta */
         .tipos-pregunta-container {
             padding: 10px 0;
@@ -404,6 +386,182 @@
             background-color: #fff3cd;
             color: #856404;
         }
+
+        /* NUEVOS ESTILOS PARA SIMULADORES MOLECULARES */
+        .simulador-container {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .simulador-container .card {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: none;
+        }
+
+        .simulador-container .card-header {
+            font-weight: 600;
+        }
+
+        .fuente-opcion {
+            padding: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+
+        /* Estilos para visor 3D y JSME */
+        [id^="jsme_container_"] {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        [id^="viewer_3d_"] {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* ESTILOS PARA UNIR LÍNEAS */
+        .unir-lineas-container {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .unir-lineas-container .list-group-item {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .unir-lineas-container .list-group-item:hover {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        /* ESTILOS PARA COMPLETAR TEXTO */
+        .completar-container {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .completar-container .bg-warning {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* ESTILOS PARA RESPUESTA ABIERTA */
+        .respuesta-abierta-container {
+            background-color: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        /* Estilos para alertas específicas */
+        .simulador-container .alert,
+        .unir-lineas-container .alert,
+        .completar-container .alert {
+            border-left: 4px solid #ffc107;
+            background-color: #fff3cd;
+        }
+
+        .respuesta-abierta-container .alert {
+            border-left: 4px solid #17a2b8;
+            background-color: #d1ecf1;
+        }
+
+        .tipo-desconocido-container .alert {
+            border-left: 4px solid #dc3545;
+            background-color: #f8d7da;
+        }
+
+        /* Animaciones para carga */
+        .cargando-simulador {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            border-radius: 8px;
+        }
+
+        .spinner-molecular {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e3f2fd;
+            border-top: 4px solid #2196f3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .btn-configuracion {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+            
+            .pregunta-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .pregunta-actions > * {
+                margin-bottom: 5px;
+            }
+
+            .calificacion-manual {
+                min-height: 35px;
+                padding: 4px 8px;
+            }
+
+            .simulador-container,
+            .unir-lineas-container,
+            .completar-container,
+            .respuesta-abierta-container {
+                padding: 15px;
+            }
+
+            .simulador-container .row {
+                flex-direction: column;
+            }
+
+            .simulador-container .card {
+                margin-bottom: 15px;
+            }
+
+            [id^="jsme_container_"] {
+                height: 250px !important;
+            }
+
+            .opcion-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .opcion-container > * {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 
@@ -483,22 +641,27 @@
                                                        id="titulo-cuestionario">
                                             </h3>
                                             {% if cuestionario %}
-                                            <div class="d-flex flex-wrap gap-3 text-muted small">
+                                            <div class="d-flex flex-wrap gap-3 text-muted small" id="info-cuestionario">
                                                 <span><i class="fas fa-clock me-1"></i>{{ cuestionario.tiempo_limite }} min</span>
                                                 <span><i class="fas fa-star me-1"></i>{{ cuestionario.puntaje_total|default:"100" }} pts</span>
                                                 {% if cuestionario.fecha_apertura %}
                                                 <span><i class="fas fa-calendar me-1"></i>{{ cuestionario.fecha_apertura|date:"d/m/Y" }} - {{ cuestionario.fecha_cierre|date:"d/m/Y" }}</span>
                                                 {% endif %}
                                             </div>
+                                            {% else %}
+                                            <!-- Para cuestionarios nuevos, mostrar configuración temporal -->
+                                            <div class="d-flex flex-wrap gap-3 text-muted small" id="info-cuestionario-temp">
+                                                <span><i class="fas fa-clock me-1"></i>30 min</span>
+                                                <span><i class="fas fa-star me-1"></i>100 pts</span>
+                                                <span><i class="fas fa-calendar me-1"></i>Sin fechas configuradas</span>
+                                            </div>
                                             {% endif %}
                                         </div>
                                         <div class="col-md-2 text-end">
-                                            {% if cuestionario %}
                                             <button class="btn btn-configuracion" data-bs-toggle="modal" data-bs-target="#modalConfiguracion">
                                                 <i class="fas fa-cog"></i>
                                                 Configuración
                                             </button>
-                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -520,6 +683,16 @@
                                             Esta descripción será visible para los estudiantes antes de iniciar el cuestionario.
                                         </small>
                                     </div>
+
+                                    <!-- Mensaje cuando no hay preguntas -->
+                                    {% if not preguntas and not cuestionario %}
+                                    <div class="text-center py-4" id="mensajeSinPreguntas">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Primero debes guardar el cuestionario para poder agregar preguntas
+                                        </div>
+                                    </div>
+                                    {% endif %}
 
                                     <!-- Acordeón de preguntas -->
                                     <div class="accordion" id="acordeonPreguntas">
@@ -554,12 +727,10 @@
                                         {% if not preguntas %}Agregar primera pregunta{% else %}Agregar pregunta{% endif %}
                                     </button>
                                     {% else %}
-                                    <div class="text-center py-4">
-                                        <div class="alert alert-info">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            Primero debes guardar el cuestionario para poder agregar preguntas
-                                        </div>
-                                    </div>
+                                    <button type="button" class="btn btn-agregar-pregunta" data-bs-toggle="modal" data-bs-target="#modalTiposPregunta">
+                                        <i class="fas fa-plus me-2"></i>
+                                        Agregar pregunta (temporal)
+                                    </button>
                                     {% endif %}
 
                                     <!-- Botón guardar cuestionario -->
@@ -570,7 +741,7 @@
                                         </button>
                                         <p class="text-muted small mt-2 mb-0">
                                             {% if not cuestionario %}
-                                            Guarda el cuestionario para poder agregar preguntas
+                                            Guarda el cuestionario para poder agregar preguntas reales
                                             {% else %}
                                             Asegúrate de configurar todas las preguntas antes de finalizar
                                             {% endif %}
@@ -596,7 +767,6 @@
 <!-- **************** MAIN CONTENT END **************** -->
 
 <!-- Modal de Configuración del Cuestionario -->
-{% if cuestionario %}
 <div class="modal fade modal-custom" id="modalConfiguracion" tabindex="-1" aria-labelledby="modalConfiguracionLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -613,14 +783,18 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Tiempo límite (minutos)</label>
-                                <input type="number" class="form-control" id="config-tiempo" value="{{ cuestionario.tiempo_limite }}" min="1" max="300">
+                                <input type="number" class="form-control" id="config-tiempo" 
+                                       value="{% if cuestionario %}{{ cuestionario.tiempo_limite }}{% else %}30{% endif %}" 
+                                       min="1" max="300">
                                 <small class="text-muted">Tiempo máximo para completar el cuestionario</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Puntos totales</label>
-                                <input type="number" class="form-control" id="config-puntos" value="{{ cuestionario.puntaje_total|default:'100' }}" min="1" readonly>
+                                <input type="number" class="form-control" id="config-puntos" 
+                                       value="{% if cuestionario %}{{ cuestionario.puntaje_total|default:'100' }}{% else %}100{% endif %}" 
+                                       min="1" readonly>
                                 <small class="text-muted">Se calcula automáticamente sumando todas las preguntas</small>
                             </div>
                         </div>
@@ -723,9 +897,9 @@
     </div>
 </div>
 
-<!-- Modal tipos de pregunta - DINÁMICO DESDE BASE DE DATOS -->
+<!-- Modal tipos de pregunta - ACTUALIZADO CON TODOS LOS TIPOS -->
 <div class="modal fade" id="modalTiposPregunta" tabindex="-1" aria-labelledby="modalTiposPreguntaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header bg-dark">
                 <h5 class="modal-title text-white" id="modalTiposPreguntaLabel">Seleccionar Tipo de Pregunta</h5>
@@ -738,8 +912,8 @@
                     <!-- TIPOS DINÁMICOS DESDE LA BASE DE DATOS -->
                     <div class="row g-3">
                         {% for tipo in tipos_pregunta %}
-                        <div class="col-4">
-                            <div class="tipo-pregunta-card {% if tipo.nombre not in 'opcion_unica,opcion_multiple,falso_verdadero' %}disabled{% endif %}" 
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="tipo-pregunta-card {% if tipo.nombre not in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}disabled{% endif %}" 
                                  data-tipo="{{ tipo.nombre }}">
                                 <div class="tipo-icono">
                                     {% if tipo.nombre == 'opcion_unica' %}
@@ -748,21 +922,23 @@
                                         <img src="https://cdn-icons-png.flaticon.com/512/845/845646.png" alt="Opción múltiple">
                                     {% elif tipo.nombre == 'falso_verdadero' %}
                                         <img src="https://cdn-icons-png.flaticon.com/512/1168/1168610.png" alt="Verdadero/Falso">
+                                    {% elif tipo.nombre == 'respuesta_abierta' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Respuesta abierta">
                                     {% elif tipo.nombre == 'unir_lineas' %}
                                         <img src="https://cdn-icons-png.flaticon.com/512/2920/2920277.png" alt="Unir con líneas">
                                     {% elif tipo.nombre == 'completar' %}
-                                        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Completar">
-                                    {% elif tipo.nombre == 'simulador_2d' or tipo.nombre == 'simulador_3d' %}
-                                        <img src="https://cdn-icons-png.flaticon.com/512/2920/2920255.png" alt="Simulador moléculas">
-                                    {% elif tipo.nombre == 'respuesta_abierta' %}
-                                        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Respuesta abierta">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="Completar texto">
+                                    {% elif tipo.nombre == 'simulador_2d' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/2920/2920255.png" alt="Simulador 2D">
+                                    {% elif tipo.nombre == 'simulador_3d' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/2920/2920255.png" alt="Simulador 3D">
                                     {% else %}
                                         <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="{{ tipo.nombre }}">
                                     {% endif %}
                                 </div>
                                 <h6 class="tipo-titulo">{{ tipo.descripcion|title }}</h6>
-                                <div class="tipo-estado {% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero' %}disponible{% else %}proximamente{% endif %}">
-                                    {% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero' %}
+                                <div class="tipo-estado {% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}disponible{% else %}proximamente{% endif %}">
+                                    {% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}
                                         <i class="fas fa-check-circle"></i>
                                     {% else %}
                                         <i class="fas fa-clock"></i>
@@ -793,7 +969,7 @@
                                 ¿Qué tipo necesitas?
                             </h6>
                             <p class="text-muted small mb-0">
-                                Selecciona el tipo de pregunta que mejor se adapte a tu evaluación.
+                                Selecciona el tipo de pregunta que mejor se adapte a tu evaluación. Los tipos disponibles incluyen desde preguntas básicas hasta simuladores moleculares avanzados.
                             </p>
                         </div>
                         <div class="col-4 text-end">
@@ -818,7 +994,6 @@
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Scripts -->
 <script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
@@ -831,7 +1006,7 @@ let cuestionarioId = {% if cuestionario %}{{ cuestionario.id }}{% else %}null{% 
 let preguntaParaCambiarTipo = null;
 let preguntasTemporales = []; // Array para guardar preguntas antes de crear el cuestionario
 let contadorPreguntasTemp = 1; // Contador para IDs temporales
-let configuracionTemporal = { // NUEVO: Configuración temporal
+let configuracionTemporal = { // Configuración temporal para cuestionarios nuevos
     tiempo_limite: 30,
     puntos_totales: 100,
     fecha_inicio: '',
@@ -863,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cambiarTipoPregunta(preguntaParaCambiarTipo, tipo);
                     preguntaParaCambiarTipo = null;
                 } else {
-                    // NUEVO: Crear pregunta temporal o real según el estado
+                    // Crear pregunta temporal o real según el estado
                     if (cuestionarioId) {
                         crearNuevaPregunta(tipo);
                     } else {
@@ -908,7 +1083,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// NUEVA FUNCIÓN: Crear pregunta temporal (antes de guardar cuestionario)
+// FUNCIÓN: Crear pregunta temporal (antes de guardar cuestionario)
 function crearPreguntaTemporal(tipo) {
     const modal = bootstrap.Modal.getInstance(document.getElementById('modalTiposPregunta'));
     modal.hide();
@@ -922,11 +1097,13 @@ function crearPreguntaTemporal(tipo) {
     // Crear objeto de pregunta temporal
     const preguntaTemporal = {
         id: `temp_${contadorPreguntasTemp}`,
-        tipo: tipo,
-        enunciado: `Nueva pregunta ${contadorPreguntasTemp}`,
+        tipo: { nombre: tipo },
+        enunciado: `Nueva pregunta ${contadorPreguntasTemp} - ${obtenerNombreTipo(tipo)}`,
         orden: contadorPreguntasTemp,
         puntaje: 1,
-        opciones: []
+        opciones: [],
+        calificacion_manual: tipo === 'respuesta_abierta' ? true : false,
+        configuracion_especifica: obtenerConfiguracionPorDefecto(tipo)
     };
     
     // Crear opciones por defecto según el tipo
@@ -953,16 +1130,72 @@ function crearPreguntaTemporal(tipo) {
     mostrarExito('Pregunta agregada. Recuerda guardar el cuestionario cuando termines.');
 }
 
-// NUEVA FUNCIÓN: Renderizar pregunta temporal en el DOM
+// FUNCIÓN: Obtener nombre legible del tipo
+function obtenerNombreTipo(tipo) {
+    const nombres = {
+        'opcion_unica': 'Opción Única',
+        'opcion_multiple': 'Opción Múltiple', 
+        'falso_verdadero': 'Verdadero/Falso',
+        'respuesta_abierta': 'Respuesta Abierta',
+        'simulador_2d': 'Simulador Molecular 2D',
+        'simulador_3d': 'Simulador Molecular 3D',
+        'unir_lineas': 'Unir con Líneas',
+        'completar': 'Completar Texto'
+    };
+    return nombres[tipo] || tipo;
+}
+
+// FUNCIÓN: Obtener configuración por defecto según tipo
+function obtenerConfiguracionPorDefecto(tipo) {
+    switch(tipo) {
+        case 'respuesta_abierta':
+            return {
+                respuesta_modelo: '',
+                criterios_evaluacion: '',
+                longitud_minima: 50,
+                longitud_maxima: 1000
+            };
+        case 'simulador_2d':
+        case 'simulador_3d':
+            return {
+                smiles_objetivo: '',
+                descripcion_molecula: '',
+                tolerancia_similitud: 95,
+                permitir_isomeros: false
+            };
+        case 'unir_lineas':
+            return {
+                columna_izquierda: '',
+                columna_derecha: '',
+                conexiones_correctas: '',
+                mezclar_opciones: false,
+                permitir_conexiones_multiples: false
+            };
+        case 'completar':
+            return {
+                texto_completar: '',
+                respuestas_completar: '',
+                sensible_mayusculas: false,
+                ignorar_espacios: true,
+                permitir_alternativas: false,
+                respuestas_alternativas: ''
+            };
+        default:
+            return {};
+    }
+}
+
+// FUNCIÓN: Renderizar pregunta temporal en el DOM
 function renderizarPreguntaTemporal(pregunta) {
     const acordeon = document.getElementById('acordeonPreguntas');
     
-    // NUEVO: Ocultar mensaje de "sin preguntas" si existe
+    // Ocultar mensaje de "sin preguntas" si existe
     const mensajeSinPreguntas = document.getElementById('mensajeSinPreguntas');
     if (mensajeSinPreguntas) {
         mensajeSinPreguntas.style.display = 'none';
     }
     
+    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
     const preguntaHTML = `
         <div class="accordion-item accordion-pregunta" data-pregunta-id="${pregunta.id}">
             <h6 class="accordion-header" id="heading${pregunta.id}">
@@ -971,7 +1204,7 @@ function renderizarPreguntaTemporal(pregunta) {
                         aria-expanded="true" aria-controls="collapse${pregunta.id}">
                     <span class="text-secondary fw-bold me-3">${pregunta.orden.toString().padStart(2, '0')}</span>  
                     <span class="fw-bold">${pregunta.enunciado}</span>
-                    <span class="tipo-pregunta-badge">${pregunta.tipo.replace('_', ' ')}</span>
+                    <span class="tipo-pregunta-badge">${obtenerNombreTipo(tipoNombre)}</span>
                     <small class="text-muted ms-auto me-3">${pregunta.puntaje} pts</small>
                     <span class="badge bg-warning ms-2">Temporal</span>
                 </button>
@@ -986,60 +1219,42 @@ function renderizarPreguntaTemporal(pregunta) {
     `;
     
     acordeon.insertAdjacentHTML('beforeend', preguntaHTML);
+    
+    // Inicializar funcionalidades específicas del tipo de pregunta
+    inicializarFuncionalidadesTemporal(pregunta);
 }
 
-// NUEVA FUNCIÓN: Generar HTML para pregunta temporal
+// FUNCIÓN: Generar HTML para pregunta temporal según tipo
 function generarHTMLPreguntaTemporal(pregunta) {
-    let opcionesHTML = '';
+    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
     
-    if (pregunta.opciones.length > 0) {
-        const tipoInput = (pregunta.tipo === 'opcion_unica' || pregunta.tipo === 'falso_verdadero') ? 'radio' : 'checkbox';
-        
-        opcionesHTML = `
-            <div class="opciones-container">
-                <label class="form-label fw-bold">
-                    ${pregunta.tipo === 'opcion_unica' ? 'Opciones (selecciona la respuesta correcta)' : 
-                      pregunta.tipo === 'opcion_multiple' ? 'Opciones (puedes seleccionar múltiples respuestas correctas)' : 
-                      'Opciones Verdadero/Falso'}
-                </label>
-                ${pregunta.opciones.map((opcion, index) => `
-                    <div class="opcion-container ${opcion.es_correcta ? 'opcion-correcta' : ''}" 
-                         data-opcion="${index + 1}" data-opcion-id="${opcion.id}">
-                        <input type="${tipoInput}" 
-                               name="correcta-${pregunta.id}" 
-                               ${opcion.es_correcta ? 'checked' : ''}
-                               data-field="es_correcta"
-                               onchange="manejarCambioOpcionCorrectaTemporal(this, '${pregunta.id}')">
-                        <input type="text" class="form-control opcion-input" 
-                               value="${opcion.texto}" placeholder="Opción ${index + 1}"
-                               data-field="texto"
-                               onchange="actualizarOpcionTemporal('${pregunta.id}', '${opcion.id}', this.value, 'texto')">
-                        ${pregunta.opciones.length > 2 ? `
-                            <button type="button" class="btn btn-danger btn-sm btn-sm-custom" 
-                                    onclick="eliminarOpcionTemporal('${pregunta.id}', '${opcion.id}')"
-                                    title="Eliminar opción">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        ` : ''}
-                    </div>
-                `).join('')}
-                
-                ${pregunta.tipo !== 'falso_verdadero' ? `
-                    <div class="d-flex align-items-center mt-3">
-                        <button type="button" class="btn-agregar-opcion" 
-                                onclick="agregarOpcionTemporal('${pregunta.id}')"
-                                title="Agregar nueva opción">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                        <span class="text-muted small ms-2">Agregar nueva opción</span>
-                    </div>
-                ` : ''}
-            </div>
-        `;
+    let contenidoEspecifico = '';
+    
+    switch(tipoNombre) {
+        case 'opcion_unica':
+        case 'opcion_multiple':
+        case 'falso_verdadero':
+            contenidoEspecifico = generarOpcionesTemporal(pregunta);
+            break;
+        case 'respuesta_abierta':
+            contenidoEspecifico = generarRespuestaAbiertaTemporal(pregunta);
+            break;
+        case 'simulador_2d':
+        case 'simulador_3d':
+            contenidoEspecifico = generarSimuladorTemporal(pregunta);
+            break;
+        case 'unir_lineas':
+            contenidoEspecifico = generarUnirLineasTemporal(pregunta);
+            break;
+        case 'completar':
+            contenidoEspecifico = generarCompletarTemporal(pregunta);
+            break;
+        default:
+            contenidoEspecifico = '<div class="alert alert-warning">Tipo de pregunta no soportado aún</div>';
     }
     
     return `
-        <div class="plantilla-pregunta" data-tipo="${pregunta.tipo}">
+        <div class="plantilla-pregunta" data-tipo="${tipoNombre}">
             <div class="row mb-3">
                 <div class="col-md-8">
                     <label class="form-label fw-bold">Enunciado de la pregunta</label>
@@ -1063,7 +1278,9 @@ function generarHTMLPreguntaTemporal(pregunta) {
                             <label class="form-label fw-bold">Calificación</label>
                             <div class="calificacion-manual">
                                 <input type="checkbox" id="calificacion-manual-${pregunta.id}" 
-                                       data-field="calificacion_manual">
+                                       data-field="calificacion_manual"
+                                       ${pregunta.calificacion_manual ? 'checked' : ''}
+                                       onchange="actualizarPreguntaTemporal('${pregunta.id}', 'calificacion_manual', this.checked)">
                                 <label for="calificacion-manual-${pregunta.id}" class="small">
                                     Manual
                                 </label>
@@ -1074,7 +1291,7 @@ function generarHTMLPreguntaTemporal(pregunta) {
                 </div>
             </div>
             
-            ${opcionesHTML}
+            ${contenidoEspecifico}
             
             <div class="pregunta-actions">
                 <button type="button" class="btn btn-danger btn-sm" 
@@ -1085,7 +1302,7 @@ function generarHTMLPreguntaTemporal(pregunta) {
                 <div class="ms-auto d-flex align-items-center">
                     <span class="text-muted small">
                         <i class="fas fa-info-circle me-1"></i>
-                        Tipo: ${pregunta.tipo.replace('_', ' ')} | 
+                        Tipo: ${obtenerNombreTipo(tipoNombre)} | 
                         Orden: ${pregunta.orden} |
                         <span class="text-warning">Temporal (se guardará al crear el cuestionario)</span>
                     </span>
@@ -1095,17 +1312,401 @@ function generarHTMLPreguntaTemporal(pregunta) {
     `;
 }
 
-// NUEVAS FUNCIONES: Manejar preguntas temporales
+// FUNCIÓN: Generar HTML para opciones (múltiple, única, verdadero/falso)
+function generarOpcionesTemporal(pregunta) {
+    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
+    const tipoInput = (tipoNombre === 'opcion_unica' || tipoNombre === 'falso_verdadero') ? 'radio' : 'checkbox';
+    
+    let tituloOpciones = '';
+    if (tipoNombre === 'opcion_unica') {
+        tituloOpciones = 'Opciones (selecciona la respuesta correcta)';
+    } else if (tipoNombre === 'opcion_multiple') {
+        tituloOpciones = 'Opciones (puedes seleccionar múltiples respuestas correctas)';
+    } else {
+        tituloOpciones = 'Opciones Verdadero/Falso';
+    }
+    
+    return `
+        <div class="opciones-container">
+            <label class="form-label fw-bold">${tituloOpciones}</label>
+            ${pregunta.opciones.map((opcion, index) => `
+                <div class="opcion-container ${opcion.es_correcta ? 'opcion-correcta' : ''}" 
+                     data-opcion="${index + 1}" data-opcion-id="${opcion.id}">
+                    <input type="${tipoInput}" 
+                           name="correcta-${pregunta.id}" 
+                           ${opcion.es_correcta ? 'checked' : ''}
+                           data-field="es_correcta"
+                           onchange="manejarCambioOpcionCorrectaTemporal(this, '${pregunta.id}')">
+                    <input type="text" class="form-control opcion-input" 
+                           value="${opcion.texto}" placeholder="Opción ${index + 1}"
+                           data-field="texto"
+                           onchange="actualizarOpcionTemporal('${pregunta.id}', '${opcion.id}', this.value, 'texto')">
+                    ${pregunta.opciones.length > 2 ? `
+                        <button type="button" class="btn btn-danger btn-sm btn-sm-custom" 
+                                onclick="eliminarOpcionTemporal('${pregunta.id}', '${opcion.id}')"
+                                title="Eliminar opción">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('')}
+            
+            ${tipoNombre !== 'falso_verdadero' ? `
+                <div class="d-flex align-items-center mt-3">
+                    <button type="button" class="btn-agregar-opcion" 
+                            onclick="agregarOpcionTemporal('${pregunta.id}')"
+                            title="Agregar nueva opción">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <span class="text-muted small ms-2">Agregar nueva opción</span>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+// FUNCIÓN: Generar HTML para respuesta abierta temporal
+function generarRespuestaAbiertaTemporal(pregunta) {
+    const config = pregunta.configuracion_especifica || {};
+    
+    return `
+        <div class="respuesta-abierta-container">
+            <label class="form-label fw-bold">Configuración de respuesta abierta</label>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Esta pregunta será evaluada manualmente. Los estudiantes podrán escribir su respuesta en un campo de texto.
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Respuesta modelo (opcional)</label>
+                <textarea class="form-control" rows="4" 
+                          placeholder="Escribe una respuesta modelo para guiar la evaluación..."
+                          data-field="respuesta_modelo"
+                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'respuesta_modelo', this.value)">${config.respuesta_modelo || ''}</textarea>
+                <small class="text-muted">Esta respuesta servirá como guía para la calificación manual</small>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Criterios de evaluación (opcional)</label>
+                <textarea class="form-control" rows="3" 
+                          placeholder="Describe los criterios que se deben considerar al evaluar esta respuesta..."
+                          data-field="criterios_evaluacion"
+                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'criterios_evaluacion', this.value)">${config.criterios_evaluacion || ''}</textarea>
+                <small class="text-muted">Estos criterios ayudarán a mantener consistencia en la calificación</small>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Longitud mínima de respuesta</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" 
+                               value="${config.longitud_minima || 50}" 
+                               min="10" max="1000"
+                               data-field="longitud_minima"
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'longitud_minima', this.value)">
+                        <span class="input-group-text">caracteres</span>
+                    </div>
+                    <small class="text-muted">Número mínimo de caracteres requeridos</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Longitud máxima de respuesta</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" 
+                               value="${config.longitud_maxima || 1000}" 
+                               min="50" max="5000"
+                               data-field="longitud_maxima"
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'longitud_maxima', this.value)">
+                        <span class="input-group-text">caracteres</span>
+                    </div>
+                    <small class="text-muted">Número máximo de caracteres permitidos</small>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// FUNCIÓN: Generar HTML para simulador temporal
+function generarSimuladorTemporal(pregunta) {
+    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
+    const config = pregunta.configuracion_especifica || {};
+    
+    return `
+        <div class="simulador-container">
+            <label class="form-label fw-bold">
+                Configuración de ${tipoNombre === 'simulador_2d' ? 'Simulador Molecular 2D' : 'Simulador Molecular 3D'}
+            </label>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Configuración de la Molécula</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Código SMILES de la molécula objetivo</label>
+                                <input type="text" class="form-control" 
+                                       placeholder="Ej: CCO (etanol)" 
+                                       data-field="smiles_objetivo"
+                                       value="${config.smiles_objetivo || ''}"
+                                       onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'smiles_objetivo', this.value)">
+                                <small class="text-muted">Estructura química en formato SMILES</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Descripción de la molécula</label>
+                                <textarea class="form-control" rows="2" 
+                                          placeholder="Ej: Etanol - alcohol etílico"
+                                          data-field="descripcion_molecula"
+                                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'descripcion_molecula', this.value)">${config.descripcion_molecula || ''}</textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="form-label">Tolerancia</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" 
+                                               value="${config.tolerancia_similitud || 95}" 
+                                               min="70" max="100" step="5"
+                                               data-field="tolerancia_similitud"
+                                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'tolerancia_similitud', this.value)">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Permitir isómeros</label>
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" class="form-check-input" 
+                                               id="permitir-isomeros-${pregunta.id}"
+                                               data-field="permitir_isomeros"
+                                               ${config.permitir_isomeros ? 'checked' : ''}
+                                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'permitir_isomeros', this.checked)">
+                                        <label class="form-check-label" for="permitir-isomeros-${pregunta.id}">
+                                            Sí
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Vista Previa</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="viewer_3d_${pregunta.id}" style="width: 100%; height: 200px; border: 1px solid #dee2e6; background: #f8f9fa;">
+                                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                    <div class="text-center">
+                                        <i class="fas fa-cube fa-2x mb-2"></i>
+                                        <p>Vista ${tipoNombre === 'simulador_3d' ? '3D' : '2D'}</p>
+                                        <small>Aparecerá al definir una molécula</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Los estudiantes usarán un simulador molecular interactivo para construir la molécula objetivo.
+                ${tipoNombre === 'simulador_3d' ? 
+                    'En modo 3D, podrán rotar y manipular la molécula en el espacio tridimensional.' : 
+                    'En modo 2D, trabajarán con estructuras planas de Lewis.'}
+            </div>
+        </div>
+    `;
+}
+
+// FUNCIÓN: Generar HTML para unir líneas temporal
+function generarUnirLineasTemporal(pregunta) {
+    const config = pregunta.configuracion_especifica || {};
+    
+    return `
+        <div class="unir-lineas-container">
+            <label class="form-label fw-bold">Configuración - Unir con líneas</label>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Los estudiantes conectarán elementos de dos columnas arrastrando líneas entre ellos.
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">Columna Izquierda</h6>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control" rows="6" 
+                                      placeholder="Elemento 1&#10;Elemento 2&#10;Elemento 3&#10;Elemento 4"
+                                      data-field="columna_izquierda"
+                                      onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'columna_izquierda', this.value)">${config.columna_izquierda || ''}</textarea>
+                            <small class="text-muted">Un elemento por línea</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">Columna Derecha</h6>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control" rows="6" 
+                                      placeholder="Definición A&#10;Definición B&#10;Definición C&#10;Definición D"
+                                      data-field="columna_derecha"
+                                      onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'columna_derecha', this.value)">${config.columna_derecha || ''}</textarea>
+                            <small class="text-muted">Un elemento por línea</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <label class="form-label">Conexiones correctas</label>
+                <div class="row">
+                    <div class="col-md-8">
+                        <input type="text" class="form-control" 
+                               placeholder="1-A, 2-B, 3-C, 4-D"
+                               data-field="conexiones_correctas"
+                               value="${config.conexiones_correctas || ''}"
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'conexiones_correctas', this.value)">
+                        <small class="text-muted">Define qué elementos de la izquierda van con cuáles de la derecha (formato: número-letra)</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="mezclar-opciones-${pregunta.id}"
+                               data-field="mezclar_opciones"
+                               ${config.mezclar_opciones ? 'checked' : ''}
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'mezclar_opciones', this.checked)">
+                        <label class="form-check-label" for="mezclar-opciones-${pregunta.id}">
+                            Mezclar orden aleatoriamente
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="permitir-multiple-${pregunta.id}"
+                               data-field="permitir_conexiones_multiples"
+                               ${config.permitir_conexiones_multiples ? 'checked' : ''}
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'permitir_conexiones_multiples', this.checked)">
+                        <label class="form-check-label" for="permitir-multiple-${pregunta.id}">
+                            Permitir conexiones múltiples
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// FUNCIÓN: Generar HTML para completar texto temporal
+function generarCompletarTemporal(pregunta) {
+    const config = pregunta.configuracion_especifica || {};
+    
+    return `
+        <div class="completar-container">
+            <label class="form-label fw-bold">Configuración - Completar texto</label>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Los estudiantes llenarán espacios en blanco en un texto. Use _____ (5 guiones bajos) para marcar cada espacio.
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">Texto con espacios en blanco</label>
+                <textarea class="form-control" rows="4" 
+                          placeholder="El agua tiene la fórmula química _____ y es fundamental para la _____."
+                          title="Use _____ para marcar los espacios en blanco"
+                          data-field="texto_completar"
+                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'texto_completar', this.value)">${config.texto_completar || ''}</textarea>
+                <small class="text-muted">Use _____ (5 guiones bajos) para marcar cada espacio en blanco</small>
+            </div>
+            
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Respuestas correctas</label>
+                        <input type="text" class="form-control" 
+                               placeholder="H2O, vida, células"
+                               title="Escriba las respuestas en el orden que aparecen los espacios"
+                               data-field="respuestas_completar"
+                               value="${config.respuestas_completar || ''}"
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'respuestas_completar', this.value)">
+                        <small class="text-muted">Separar con comas, en el orden de aparición</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="sensible-mayusculas-${pregunta.id}"
+                               data-field="sensible_mayusculas"
+                               ${config.sensible_mayusculas ? 'checked' : ''}
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'sensible_mayusculas', this.checked)">
+                        <label class="form-check-label" for="sensible-mayusculas-${pregunta.id}">
+                            Sensible a mayúsculas
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="ignorar-espacios-${pregunta.id}"
+                               data-field="ignorar_espacios"
+                               ${config.ignorar_espacios ? 'checked' : ''}
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'ignorar_espacios', this.checked)">
+                        <label class="form-check-label" for="ignorar-espacios-${pregunta.id}">
+                            Ignorar espacios extra
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" 
+                               id="respuestas-alternativas-${pregunta.id}"
+                               data-field="permitir_alternativas"
+                               ${config.permitir_alternativas ? 'checked' : ''}
+                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'permitir_alternativas', this.checked)">
+                        <label class="form-check-label" for="respuestas-alternativas-${pregunta.id}">
+                            Permitir sinónimos
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// FUNCIÓN: Inicializar funcionalidades específicas después de renderizar
+function inicializarFuncionalidadesTemporal(pregunta) {
+    console.log('Inicializando funcionalidades para:', pregunta.tipo.nombre || pregunta.tipo);
+}
+
+// FUNCIONES DE ACTUALIZACIÓN PARA PREGUNTAS TEMPORALES
 function actualizarPreguntaTemporal(preguntaId, campo, valor) {
     const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
     if (pregunta) {
         pregunta[campo] = valor;
         
-        // Actualizar título en el acordeón si es el enunciado
         if (campo === 'enunciado') {
             const tituloBtn = document.querySelector(`[data-pregunta-id="${preguntaId}"] .accordion-button span.fw-bold`);
-            const nuevoTexto = valor.length > 60 ? valor.substring(0, 60) + '...' : valor;
-            tituloBtn.textContent = nuevoTexto;
+            if (tituloBtn) {
+                const nuevoTexto = valor.length > 60 ? valor.substring(0, 60) + '...' : valor;
+                tituloBtn.textContent = nuevoTexto;
+            }
         }
     }
 }
@@ -1120,8 +1721,17 @@ function actualizarOpcionTemporal(preguntaId, opcionId, valor, campo) {
     }
 }
 
+function actualizarConfiguracionTemporal(preguntaId, campo, valor) {
+    const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
+    if (pregunta) {
+        if (!pregunta.configuracion_especifica) {
+            pregunta.configuracion_especifica = {};
+        }
+        pregunta.configuracion_especifica[campo] = valor;
+    }
+}
+
 function manejarCambioOpcionCorrectaTemporal(radio, preguntaId) {
-    // Actualizar visualmente
     const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
     preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
         container.classList.remove('opcion-correcta');
@@ -1131,18 +1741,15 @@ function manejarCambioOpcionCorrectaTemporal(radio, preguntaId) {
         radio.closest('.opcion-container').classList.add('opcion-correcta');
     }
     
-    // Actualizar datos temporales
     const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
     if (pregunta) {
         const opcionId = radio.closest('.opcion-container').dataset.opcionId;
         
-        // Para radio buttons, solo una puede estar correcta
         if (radio.type === 'radio') {
             pregunta.opciones.forEach(opt => opt.es_correcta = false);
             const opcion = pregunta.opciones.find(o => o.id === opcionId);
             if (opcion) opcion.es_correcta = radio.checked;
         } else {
-            // Para checkboxes, multiple pueden estar correctas
             const opcion = pregunta.opciones.find(o => o.id === opcionId);
             if (opcion) opcion.es_correcta = radio.checked;
         }
@@ -1161,7 +1768,6 @@ function agregarOpcionTemporal(preguntaId) {
     
     pregunta.opciones.push(nuevaOpcion);
     
-    // Re-renderizar la pregunta
     const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
     const acordeonBody = preguntaElement.querySelector('.accordion-body');
     acordeonBody.innerHTML = generarHTMLPreguntaTemporal(pregunta);
@@ -1180,7 +1786,6 @@ function eliminarOpcionTemporal(preguntaId, opcionId) {
     
     pregunta.opciones = pregunta.opciones.filter(o => o.id !== opcionId);
     
-    // Re-renderizar la pregunta
     const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
     const acordeonBody = preguntaElement.querySelector('.accordion-body');
     acordeonBody.innerHTML = generarHTMLPreguntaTemporal(pregunta);
@@ -1193,15 +1798,12 @@ function eliminarPreguntaTemporal(preguntaId) {
         'Eliminar Pregunta',
         '¿Estás seguro de que quieres eliminar esta pregunta? Se perderán todos los cambios.',
         function() {
-            // Eliminar del array
             preguntasTemporales = preguntasTemporales.filter(p => p.id !== preguntaId);
             
-            // Eliminar del DOM
             const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
             preguntaElement.remove();
             
-            // NUEVO: Si no quedan preguntas temporales, mostrar mensaje inicial
-            if (preguntasTemporales.length === 0) {
+            if (preguntasTemporales.length === 0 && !cuestionarioId) {
                 const mensajeSinPreguntas = document.getElementById('mensajeSinPreguntas');
                 if (mensajeSinPreguntas) {
                     mensajeSinPreguntas.style.display = 'block';
@@ -1213,7 +1815,8 @@ function eliminarPreguntaTemporal(preguntaId) {
     );
 }
 
-// Función para crear nueva pregunta
+// FUNCIONES PRINCIPALES DEL SISTEMA
+
 function crearNuevaPregunta(tipo) {
     if (!cuestionarioId) {
         mostrarError('Error: No hay cuestionario válido');
@@ -1254,7 +1857,6 @@ function crearNuevaPregunta(tipo) {
     });
 }
 
-// Función para cambiar imagen del cuestionario
 function cambiarImagen(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -1266,57 +1868,6 @@ function cambiarImagen(input) {
     }
 }
 
-// NUEVA FUNCIÓN: Guardar configuración temporal (para cuestionarios nuevos)
-function guardarConfiguracionTemporal() {
-    // Obtener valores del modal
-    configuracionTemporal = {
-        tiempo_limite: parseInt(document.getElementById('config-tiempo').value),
-        puntos_totales: parseInt(document.getElementById('config-puntos').value),
-        fecha_inicio: document.getElementById('config-fecha-inicio').value,
-        fecha_fin: document.getElementById('config-fecha-fin').value,
-        tipo_calificacion: document.getElementById('config-tipo-calificacion').value,
-        intentos_permitidos: document.getElementById('config-intentos').value,
-        mostrar_resultados: document.getElementById('config-mostrar-resultados').checked,
-        mezclar_preguntas: document.getElementById('config-mezclar-preguntas').checked
-    };
-    
-    // Si ya existe el cuestionario, usar la función normal
-    if (cuestionarioId) {
-        return guardarConfiguracion();
-    }
-    
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfiguracion'));
-    modal.hide();
-    
-    // Actualizar vista temporal
-    actualizarVistaConfiguracionTemporal();
-    
-    mostrarExito('Configuración aplicada. Se guardará al crear el cuestionario.');
-}
-
-// NUEVA FUNCIÓN: Actualizar vista de configuración temporal
-function actualizarVistaConfiguracionTemporal() {
-    const infoContainer = document.getElementById('info-cuestionario-temp');
-    if (infoContainer) {
-        const fechaInicioTexto = configuracionTemporal.fecha_inicio ? 
-            new Date(configuracionTemporal.fecha_inicio).toLocaleDateString('es-ES') : '';
-        const fechaFinTexto = configuracionTemporal.fecha_fin ? 
-            new Date(configuracionTemporal.fecha_fin).toLocaleDateString('es-ES') : '';
-        
-        let fechasTexto = 'Sin fechas configuradas';
-        if (fechaInicioTexto && fechaFinTexto) {
-            fechasTexto = `${fechaInicioTexto} - ${fechaFinTexto}`;
-        }
-        
-        infoContainer.innerHTML = `
-            <span><i class="fas fa-clock me-1"></i>${configuracionTemporal.tiempo_limite} min</span>
-            <span><i class="fas fa-star me-1"></i>${configuracionTemporal.puntos_totales} pts</span>
-            <span><i class="fas fa-calendar me-1"></i>${fechasTexto}</span>
-        `;
-    }
-}
-// Función para guardar configuración (cuestionarios existentes)
 function guardarConfiguracion() {
     const config = {
         tiempo_limite: document.getElementById('config-tiempo').value,
@@ -1330,7 +1881,11 @@ function guardarConfiguracion() {
     };
     
     if (!cuestionarioId) {
-        mostrarError('Error: No hay cuestionario válido');
+        configuracionTemporal = config;
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfiguracion'));
+        modal.hide();
+        actualizarVistaConfiguracionTemporal();
+        mostrarExito('Configuración aplicada. Se guardará al crear el cuestionario.');
         return;
     }
     
@@ -1367,7 +1922,27 @@ function guardarConfiguracion() {
     });
 }
 
-// Función para actualizar vista de configuración en el header
+function actualizarVistaConfiguracionTemporal() {
+    const infoContainer = document.getElementById('info-cuestionario-temp');
+    if (infoContainer) {
+        const fechaInicioTexto = configuracionTemporal.fecha_inicio ? 
+            new Date(configuracionTemporal.fecha_inicio).toLocaleDateString('es-ES') : '';
+        const fechaFinTexto = configuracionTemporal.fecha_fin ? 
+            new Date(configuracionTemporal.fecha_fin).toLocaleDateString('es-ES') : '';
+        
+        let fechasTexto = 'Sin fechas configuradas';
+        if (fechaInicioTexto && fechaFinTexto) {
+            fechasTexto = `${fechaInicioTexto} - ${fechaFinTexto}`;
+        }
+        
+        infoContainer.innerHTML = `
+            <span><i class="fas fa-clock me-1"></i>${configuracionTemporal.tiempo_limite} min</span>
+            <span><i class="fas fa-star me-1"></i>${configuracionTemporal.puntos_totales} pts</span>
+            <span><i class="fas fa-calendar me-1"></i>${fechasTexto}</span>
+        `;
+    }
+}
+
 function actualizarVistaConfiguracion(config) {
     const infoContainer = document.querySelector('.col-md-8 .d-flex.flex-wrap');
     if (infoContainer) {
@@ -1385,7 +1960,6 @@ function actualizarVistaConfiguracion(config) {
     }
 }
 
-// Función para guardar cuestionario completo
 function guardarCuestionario() {
     const titulo = document.getElementById('titulo-cuestionario').value.trim();
     const descripcion = document.getElementById('descripcion-cuestionario').value.trim();
@@ -1402,13 +1976,16 @@ function guardarCuestionario() {
     formData.append('descripcion', descripcion);
     formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
     
-    // Agregar seccion_id si existe
+    if (!cuestionarioId) {
+        formData.append('configuracion_temporal', JSON.stringify(configuracionTemporal));
+        formData.append('preguntas_temporales', JSON.stringify(preguntasTemporales));
+    }
+    
     const seccionIdInput = document.querySelector('[name="seccion_id"]');
     if (seccionIdInput && seccionIdInput.value) {
         formData.append('seccion_id', seccionIdInput.value);
     }
     
-    // Si hay imagen nueva, agregarla
     const inputImagen = document.getElementById('input-imagen');
     if (inputImagen.files[0]) {
         formData.append('imagen', inputImagen.files[0]);
@@ -1439,7 +2016,8 @@ function guardarCuestionario() {
                 cuestionarioId = data.cuestionario_id;
                 mostrarExito('Cuestionario creado exitosamente');
                 
-                // Redirigir a la página de edición después de 1 segundo
+                preguntasTemporales = [];
+                
                 setTimeout(() => {
                     if (data.redirect_url) {
                         window.location.href = data.redirect_url;
@@ -1461,7 +2039,6 @@ function guardarCuestionario() {
     });
 }
 
-// Función para cambiar tipo de pregunta
 function cambiarTipoPregunta(preguntaId, nuevoTipo) {
     const loadingToast = mostrarCargando('Cambiando tipo de pregunta...');
     
@@ -1498,14 +2075,13 @@ function cambiarTipoPregunta(preguntaId, nuevoTipo) {
     });
 }
 
-// Función para iniciar cambio de tipo (desde el botón en la pregunta)
 function iniciarCambioTipo(preguntaId) {
     preguntaParaCambiarTipo = preguntaId;
     const modal = new bootstrap.Modal(document.getElementById('modalTiposPregunta'));
     modal.show();
 }
 
-// Funciones para manejar preguntas existentes
+// FUNCIONES PARA PREGUNTAS EXISTENTES
 
 function agregarOpcionExistente(preguntaId) {
     const loadingToast = mostrarCargando('Agregando opción...');
@@ -1525,7 +2101,6 @@ function agregarOpcionExistente(preguntaId) {
         loadingToast.hide();
         
         if (data.success) {
-            // Mantener el acordeón abierto
             if (data.mantener_acordeon) {
                 const acordeonId = `collapse${preguntaId}`;
                 sessionStorage.setItem('acordeonAbierto', acordeonId);
@@ -1614,13 +2189,11 @@ function guardarPregunta(preguntaId) {
     const enunciado = preguntaElement.querySelector('[data-field="enunciado"]').value;
     const puntaje = preguntaElement.querySelector('[data-field="puntaje"]').value;
     
-    // Obtener calificación manual si existe
     const calificacionManualCheckbox = preguntaElement.querySelector('[data-field="calificacion_manual"]');
     const calificacionManual = calificacionManualCheckbox ? calificacionManualCheckbox.checked : false;
     
     const loadingToast = mostrarCargando('Guardando pregunta...');
     
-    // Guardar pregunta
     fetch('/docente/cuestionario/actualizar-pregunta/', {
         method: 'POST',
         headers: {
@@ -1642,7 +2215,6 @@ function guardarPregunta(preguntaId) {
             return;
         }
         
-        // Guardar opciones
         const promesasOpciones = [];
         preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
             const opcionId = container.dataset.opcionId;
@@ -1672,7 +2244,6 @@ function guardarPregunta(preguntaId) {
         loadingToast.hide();
         mostrarExito('Pregunta guardada exitosamente');
         
-        // Actualizar el título en el acordeón
         const tituloBtn = preguntaElement.querySelector('.accordion-button span.fw-bold');
         const nuevoTexto = enunciado.length > 60 ? enunciado.substring(0, 60) + '...' : enunciado;
         tituloBtn.textContent = nuevoTexto;
@@ -1684,21 +2255,18 @@ function guardarPregunta(preguntaId) {
     });
 }
 
-// Función para manejar cambio de opción correcta (solo una verde)
 function manejarCambioOpcionCorrecta(radio, preguntaId) {
-    // Quitar la clase de todas las opciones de esta pregunta
     const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
     preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
         container.classList.remove('opcion-correcta');
     });
     
-    // Agregar la clase solo a la opción seleccionada
     if (radio.checked) {
         radio.closest('.opcion-container').classList.add('opcion-correcta');
     }
 }
 
-// Funciones de utilidad para mostrar mensajes
+// FUNCIONES DE UTILIDAD
 
 function mostrarConfirmacion(titulo, mensaje, callback) {
     document.getElementById('modalConfirmacionTitulo').textContent = titulo;
@@ -1819,6 +2387,83 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+function crearTiposAutomaticamente() {
+    const loadingToast = mostrarCargando('Creando tipos de pregunta...');
+    
+    fetch('/docente/cuestionario/crear-tipos-automatico/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingToast.hide();
+        
+        if (data.success) {
+            mostrarExito('Tipos de pregunta creados exitosamente');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            mostrarError('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('Error:', error);
+        mostrarError('Error al crear los tipos de pregunta');
+    });
+}
+
+// FUNCIONES ADICIONALES
+
+let cambiosSinGuardar = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input, textarea, select').forEach(element => {
+        element.addEventListener('change', function() {
+            cambiosSinGuardar = true;
+        });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (cambiosSinGuardar && (preguntasTemporales.length > 0 || cuestionarioId)) {
+            e.preventDefault();
+            e.returnValue = '¿Estás seguro de que deseas salir? Hay cambios sin guardar.';
+        }
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('.btn-guardar-cuestionario')) {
+            // Se marcará como guardado en el callback de éxito
+        }
+    });
+});
+
+function manejarErrorRed(error) {
+    console.error('Error de red:', error);
+    mostrarError('Error de conexión. Verifique su conexión a internet e intente nuevamente.');
+}
+
+function debugEstado() {
+    console.log('Estado actual del cuestionario:');
+    console.log('- ID:', cuestionarioId);
+    console.log('- Preguntas temporales:', preguntasTemporales.length);
+    console.log('- Configuración temporal:', configuracionTemporal);
+    console.log('- Cambios sin guardar:', cambiosSinGuardar);
+}
+
+window.debugEstado = debugEstado;
+
+console.log('Crear cuestionario - Sistema cargado completamente');
+console.log('Tipos de pregunta soportados:', [
+    'opcion_unica', 'opcion_multiple', 'falso_verdadero', 
+    'respuesta_abierta', 'simulador_2d', 'simulador_3d', 
+    'unir_lineas', 'completar'
+]);
 </script>
 
 </body>
