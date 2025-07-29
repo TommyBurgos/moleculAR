@@ -131,6 +131,7 @@ def vistaLogin(request):
 
 @role_required('Admin')
 def inicioAdmin(request):
+    print("Inicie a la función de inicio Admin")
     user = request.user    
     imgPerfil=user.imgPerfil  
     context = {                  
@@ -483,7 +484,9 @@ def custom_login(request):
             login(request, user)
             print("Loguie al usuario")
             rol = user.rol_id  # Asignar rol después de la autenticación   
-            print(rol)         
+            print(rol)
+            print(rol==1)
+            print(type(rol))         
             if rol == 1:
                 print("Ingrese al rol 1")
                 return redirect('dashboard-adm')
@@ -493,7 +496,7 @@ def custom_login(request):
                 return redirect('teacher_dashboard')
         else:
             # Manejar error de autenticación
-            return render(request, 'generales/accesoDenegado.html', {'error': 'Credenciales inválidas'})
+            return render(request, 'dashboard-adm', {'error': 'Credenciales inválidas'})
     return redirect('inicio')
 
 def signout(request):
@@ -552,21 +555,14 @@ from datetime import datetime
 
 #@login_required
 def instructorQuiz(request, seccion_id=None):
-    """Vista principal para crear cuestionarios - MEJORADA"""
+    """Vista principal para crear cuestionarios"""
     seccion = None
     if seccion_id:
         seccion = get_object_or_404(Seccion, id=seccion_id)
-        # Verificar que el usuario sea el profesor del curso
         if seccion.curso.profesor != request.user:
             return redirect('dashboard')
     
-    # CAMBIO: No crear cuestionario automáticamente en POST
-    # Solo mostrar el formulario, el cuestionario se crea al hacer clic en "Guardar"
-    
-    # NUEVO: Obtener tipos de pregunta desde la base de datos
     tipos_pregunta = TipoPregunta.objects.all()
-    
-    # Si no hay tipos de pregunta, crear los básicos
     if not tipos_pregunta.exists():
         tipos_pregunta = crear_tipos_pregunta_basicos()
     
@@ -575,11 +571,10 @@ def instructorQuiz(request, seccion_id=None):
         'preguntas': [],
         'seccion': seccion,
         'seccion_id': seccion_id,
-        'tipos_pregunta': tipos_pregunta,  # NUEVO: Pasar tipos de pregunta al template
+        'tipos_pregunta': tipos_pregunta, 
     }
     return render(request, 'docente/crear_cuestionario.html', context)
 
-# NUEVA FUNCIÓN AUXILIAR: Crear tipos de pregunta básicos
 def crear_tipos_pregunta_basicos():
     """Crear tipos de pregunta básicos si no existen"""
     tipos_basicos = [
@@ -598,11 +593,10 @@ def crear_tipos_pregunta_basicos():
             nombre=nombre,
             defaults={'descripcion': descripcion}
         )
-    
     return TipoPregunta.objects.all()
 
 # =====================================================
-# 2. FUNCIÓN EDITAR CUESTIONARIO (consistencia con tipos dinámicos)
+# 2. VISTA PARA EDITAR CUESTIONARIOS EXISTENTES
 # =====================================================
 
 #@login_required
@@ -610,14 +604,12 @@ def editarCuestionario(request, cuestionario_id):
     """Vista para editar un cuestionario existente"""
     cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
     
-    # Verificar permisos - solo si hay sección
     if cuestionario.recurso.seccion and cuestionario.recurso.seccion.curso.profesor != request.user:
         return redirect('dashboard')
     
     preguntas = cuestionario.preguntas.all().order_by('orden')
-    tipos_pregunta = TipoPregunta.objects.all()  # CONSISTENCIA: Obtener tipos dinámicamente
+    tipos_pregunta = TipoPregunta.objects.all()
     
-    # Calcular puntaje total y verificar calificación automática
     puntaje_calculado = preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
     tiene_preguntas_manuales = preguntas.filter(
         tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
@@ -637,51 +629,42 @@ def editarCuestionario(request, cuestionario_id):
     return render(request, 'docente/crear_cuestionario.html', context)
 
 # =====================================================
-# 3. FUNCIÓN ACTUALIZAR CONFIGURACIÓN MEJORADA
+# 3. CONFIGURACIÓN DE CUESTIONARIOS
 # =====================================================
 
 @csrf_exempt
 @require_http_methods(["POST"])
 #@login_required
 def actualizarConfiguracion(request):
-    """Actualizar configuración general del cuestionario - MEJORADA"""
+    """Actualizar configuración general del cuestionario - COMPLETA"""
     try:
         data = json.loads(request.body)
         cuestionario_id = data.get('cuestionario_id')
-        configuracion = data.get('configuracion')  # NUEVO: para el modal de configuración
+        configuracion = data.get('configuracion')
         
         cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
         
-        # Verificar permisos (solo si hay sección)
         if cuestionario.recurso.seccion and cuestionario.recurso.seccion.curso.profesor != request.user:
             return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
         
-        # NUEVO: Manejar datos del modal de configuración
+        # Manejar configuración del modal O configuración básica
         if configuracion:
             # Configuración avanzada del modal
             if 'tiempo_limite' in configuracion:
                 cuestionario.tiempo_limite = int(configuracion['tiempo_limite'])
             
-            if 'puntos_totales' in configuracion:
-                # El puntaje se calcula automáticamente, pero se puede permitir override
-                pass
-            
-            # NUEVO: Campos adicionales si existen en tu modelo
-            if hasattr(cuestionario, 'intentos_permitidos') and 'intentos_permitidos' in configuracion:
+            if 'intentos_permitidos' in configuracion:
                 intentos = configuracion['intentos_permitidos']
                 cuestionario.intentos_permitidos = 999 if intentos == 'ilimitado' else int(intentos)
             
-            if hasattr(cuestionario, 'mostrar_resultados') and 'mostrar_resultados' in configuracion:
+            if 'mostrar_resultados' in configuracion:
                 cuestionario.mostrar_resultados = bool(configuracion['mostrar_resultados'])
             
-            if hasattr(cuestionario, 'orden_aleatorio') and 'mezclar_preguntas' in configuracion:
+            if 'orden_aleatorio' in configuracion:
                 cuestionario.orden_aleatorio = bool(configuracion['mezclar_preguntas'])
             
-            if hasattr(cuestionario, 'tipo_calificacion') and 'tipo_calificacion' in configuracion:
-                cuestionario.tipo_calificacion = configuracion['tipo_calificacion']
-            
-            # NUEVO: Manejar fechas del modal
-            if hasattr(cuestionario, 'fecha_apertura') and 'fecha_inicio' in configuracion and configuracion['fecha_inicio']:
+            # Manejar fechas
+            if 'fecha_inicio' in configuracion and configuracion['fecha_inicio']:
                 try:
                     cuestionario.fecha_apertura = datetime.fromisoformat(
                         configuracion['fecha_inicio'].replace('Z', '+00:00')
@@ -689,7 +672,7 @@ def actualizarConfiguracion(request):
                 except:
                     pass
             
-            if hasattr(cuestionario, 'fecha_cierre') and 'fecha_fin' in configuracion and configuracion['fecha_fin']:
+            if 'fecha_fin' in configuracion and configuracion['fecha_fin']:
                 try:
                     cuestionario.fecha_cierre = datetime.fromisoformat(
                         configuracion['fecha_fin'].replace('Z', '+00:00')
@@ -697,7 +680,7 @@ def actualizarConfiguracion(request):
                 except:
                     pass
         else:
-            # Configuración básica (código original)
+            # Configuración básica
             if 'titulo' in data:
                 cuestionario.recurso.titulo = data['titulo']
                 cuestionario.recurso.save()
@@ -707,49 +690,15 @@ def actualizarConfiguracion(request):
             
             if 'tiempo_limite' in data:
                 cuestionario.tiempo_limite = int(data['tiempo_limite'])
-            
-            # Tu código original para fechas
-            if hasattr(cuestionario, 'fecha_apertura') and 'fecha_apertura' in data and data['fecha_apertura']:
-                try:
-                    cuestionario.fecha_apertura = datetime.fromisoformat(
-                        data['fecha_apertura'].replace('Z', '+00:00')
-                    )
-                except:
-                    pass
-            
-            if hasattr(cuestionario, 'fecha_cierre') and 'fecha_cierre' in data and data['fecha_cierre']:
-                try:
-                    cuestionario.fecha_cierre = datetime.fromisoformat(
-                        data['fecha_cierre'].replace('Z', '+00:00')
-                    )
-                except:
-                    pass
-            
-            # Resto de tu código original...
-            if hasattr(cuestionario, 'intentos_permitidos') and 'intentos_permitidos' in data:
-                cuestionario.intentos_permitidos = int(data['intentos_permitidos'])
-            
-            if hasattr(cuestionario, 'mostrar_resultados') and 'mostrar_resultados' in data:
-                cuestionario.mostrar_resultados = bool(data['mostrar_resultados'])
-            
-            if hasattr(cuestionario, 'orden_aleatorio') and 'orden_aleatorio' in data:
-                cuestionario.orden_aleatorio = bool(data['orden_aleatorio'])
         
-        # Calcular puntaje total automáticamente (código original)
-        puntaje_total = cuestionario.preguntas.aggregate(
-            total=Sum('puntaje')
-        )['total'] or 0
+        # Calcular puntaje total y calificación automática
+        puntaje_total = cuestionario.preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+        cuestionario.puntaje_total = puntaje_total
         
-        if hasattr(cuestionario, 'puntaje_total'):
-            cuestionario.puntaje_total = puntaje_total
-        
-        # Determinar si requiere calificación manual (código original)
         tiene_preguntas_manuales = cuestionario.preguntas.filter(
             tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
         ).exists()
-        
-        if hasattr(cuestionario, 'calificacion_automatica'):
-            cuestionario.calificacion_automatica = not tiene_preguntas_manuales
+        cuestionario.calificacion_automatica = not tiene_preguntas_manuales
         
         cuestionario.save()
         
@@ -761,13 +710,10 @@ def actualizarConfiguracion(request):
         })
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 # =====================================================
-# 4. FUNCIÓN AGREGAR PREGUNTA (mantén tu función original)
+# 4. GESTIÓN DE PREGUNTAS
 # =====================================================
 
 @csrf_exempt
@@ -782,14 +728,11 @@ def agregarPregunta(request):
         
         cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
         
-        # Verificar permisos (solo si hay sección)
         if cuestionario.recurso.seccion and cuestionario.recurso.seccion.curso.profesor != request.user:
             return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
         
-        # Obtener el tipo de pregunta
         tipo_pregunta = get_object_or_404(TipoPregunta, nombre=tipo_nombre)
         
-        # Obtener el próximo número de orden
         ultima_pregunta = cuestionario.preguntas.order_by('-orden').first()
         orden = ultima_pregunta.orden + 1 if ultima_pregunta else 1
         
@@ -801,18 +744,12 @@ def agregarPregunta(request):
             puntaje=1
         )
         
-        # Crear opciones por defecto para preguntas de opción única/múltiple
-        if tipo_nombre in ['opcion_unica', 'opcion_multiple', 'seleccion_multiple', 'falso_verdadero']:
+        # Crear opciones por defecto para tipos que las requieren
+        if tipo_nombre in ['opcion_unica', 'opcion_multiple', 'falso_verdadero']:
             if tipo_nombre == 'falso_verdadero':
-                opciones_default = [
-                    ('Verdadero', True),
-                    ('Falso', False)
-                ]
+                opciones_default = [('Verdadero', True), ('Falso', False)]
             else:
-                opciones_default = [
-                    ('Opción 1', True),
-                    ('Opción 2', False)
-                ]
+                opciones_default = [('Opción 1', True), ('Opción 2', False)]
             
             for texto, es_correcta in opciones_default:
                 OpcionPregunta.objects.create(
@@ -821,22 +758,14 @@ def agregarPregunta(request):
                     es_correcta=es_correcta
                 )
         
-        # Recalcular puntaje total del cuestionario
-        puntaje_total = cuestionario.preguntas.aggregate(
-            total=Sum('puntaje')
-        )['total'] or 0
+        # Recalcular totales
+        puntaje_total = cuestionario.preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+        cuestionario.puntaje_total = puntaje_total
         
-        if hasattr(cuestionario, 'puntaje_total'):
-            cuestionario.puntaje_total = puntaje_total
-        
-        # Actualizar calificación automática
         tiene_preguntas_manuales = cuestionario.preguntas.filter(
             tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
         ).exists()
-        
-        if hasattr(cuestionario, 'calificacion_automatica'):
-            cuestionario.calificacion_automatica = not tiene_preguntas_manuales
-            
+        cuestionario.calificacion_automatica = not tiene_preguntas_manuales
         cuestionario.save()
         
         return JsonResponse({
@@ -848,40 +777,174 @@ def agregarPregunta(request):
         })
         
     except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+#@login_required
+def actualizar_pregunta(request):
+    """Función PRINCIPAL para actualizar pregunta - Con multimedia"""
+    try:
+        # Detectar tipo de contenido
+        if request.content_type and request.content_type.startswith('multipart/form-data'):
+            # FormData (con archivos)
+            pregunta_id = request.POST.get('pregunta_id')
+            enunciado = request.POST.get('enunciado', '').strip()
+            puntaje = request.POST.get('puntaje', 1)
+            calificacion_manual = request.POST.get('calificacion_manual') == 'true'
+            youtube_video_id = request.POST.get('youtube_video_id', '').strip()
+            tiene_archivo = 'archivo_multimedia' in request.FILES
+        else:
+            # JSON (sin archivos)
+            data = json.loads(request.body)
+            pregunta_id = data.get('pregunta_id')
+            enunciado = data.get('enunciado', '').strip()
+            puntaje = data.get('puntaje', 1)
+            calificacion_manual = data.get('calificacion_manual', False)
+            youtube_video_id = data.get('youtube_video_id', '').strip()
+            tiene_archivo = False
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        if not enunciado:
+            return JsonResponse({'success': False, 'error': 'El enunciado es obligatorio'})
+        
+        with transaction.atomic():
+            # Actualizar campos básicos
+            pregunta.enunciado = enunciado
+            pregunta.puntaje = int(puntaje)
+            if hasattr(pregunta, 'calificacion_manual'):
+                pregunta.calificacion_manual = calificacion_manual
+            
+            # Manejar multimedia
+            if tiene_archivo:
+                pregunta.archivo_multimedia = request.FILES['archivo_multimedia']
+            
+            if youtube_video_id:
+                if len(youtube_video_id) == 11:
+                    pregunta.url_youtube = youtube_video_id
+                else:
+                    return JsonResponse({'success': False, 'error': 'ID de YouTube inválido'})
+            
+            pregunta.save()
+            
+            # Recalcular puntaje total
+            cuestionario = pregunta.cuestionario
+            puntaje_total = cuestionario.preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+            cuestionario.puntaje_total = puntaje_total
+            cuestionario.save()
+        
         return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+            'success': True,
+            'mensaje': 'Pregunta actualizada exitosamente',
+            'puntaje_total': float(puntaje_total)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+#@login_required
+def eliminarPregunta(request, pregunta_id):
+    """Eliminar una pregunta completa"""
+    try:
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        cuestionario = pregunta.cuestionario
+        pregunta.delete()
+        
+        # Recalcular totales
+        puntaje_total = cuestionario.preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+        cuestionario.puntaje_total = puntaje_total
+        
+        tiene_preguntas_manuales = cuestionario.preguntas.filter(
+            tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
+        ).exists()
+        cuestionario.calificacion_automatica = not tiene_preguntas_manuales
+        cuestionario.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Pregunta eliminada exitosamente',
+            'puntaje_total': float(puntaje_total),
+            'calificacion_automatica': not tiene_preguntas_manuales
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+#@login_required
+def cambiarTipoPregunta(request):
+    """Cambiar el tipo de una pregunta existente"""
+    try:
+        data = json.loads(request.body)
+        pregunta_id = data.get('pregunta_id')
+        nuevo_tipo = data.get('nuevo_tipo')
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        with transaction.atomic():
+            # Eliminar opciones existentes
+            pregunta.opciones.all().delete()
+            
+            # Cambiar tipo
+            tipo_pregunta = get_object_or_404(TipoPregunta, nombre=nuevo_tipo)
+            pregunta.tipo = tipo_pregunta
+            if hasattr(pregunta, 'calificacion_manual'):
+                pregunta.calificacion_manual = False
+            pregunta.save()
+            
+            # Crear nuevas opciones según el tipo
+            if nuevo_tipo in ['opcion_unica', 'opcion_multiple']:
+                opciones_default = [
+                    ('Opción 1', True), ('Opción 2', False),
+                    ('Opción 3', False), ('Opción 4', False)
+                ]
+                for texto, es_correcta in opciones_default:
+                    OpcionPregunta.objects.create(pregunta=pregunta, texto=texto, es_correcta=es_correcta)
+            elif nuevo_tipo == 'falso_verdadero':
+                OpcionPregunta.objects.create(pregunta=pregunta, texto='Verdadero', es_correcta=True)
+                OpcionPregunta.objects.create(pregunta=pregunta, texto='Falso', es_correcta=False)
+        
+        return JsonResponse({'success': True, 'mensaje': 'Tipo de pregunta cambiado exitosamente'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 # =====================================================
-# 5. FUNCIÓN AGREGAR OPCIÓN MEJORADA
+# 5. GESTIÓN DE OPCIONES
 # =====================================================
 
 @csrf_exempt
 @require_http_methods(["POST"])
 #@login_required
 def agregarOpcion(request):
-    """Agregar una nueva opción a una pregunta - MEJORADA"""
+    """Agregar una nueva opción a una pregunta"""
     try:
         data = json.loads(request.body)
         pregunta_id = data.get('pregunta_id')
         
         pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
         
-        # Verificar permisos (solo si hay sección)
         if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
             return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
         
-        # NUEVO: Verificar que el tipo de pregunta permita agregar opciones
         if pregunta.tipo.nombre not in ['opcion_unica', 'opcion_multiple']:
-            return JsonResponse({
-                'success': False,
-                'error': 'No se pueden agregar opciones a este tipo de pregunta'
-            })
+            return JsonResponse({'success': False, 'error': 'No se pueden agregar opciones a este tipo de pregunta'})
         
-        # Obtener el próximo número de opción
         opciones_count = pregunta.opciones.count()
-        
         opcion = OpcionPregunta.objects.create(
             pregunta=pregunta,
             texto=f"Nueva opción {opciones_count + 1}",
@@ -892,18 +955,11 @@ def agregarOpcion(request):
             'success': True,
             'opcion_id': opcion.id,
             'mensaje': 'Opción agregada exitosamente',
-            'mantener_acordeon': True  # NUEVO: Flag para mantener acordeón abierto
+            'mantener_acordeon': True
         })
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
-# =====================================================
-# 6. FUNCIÓN ACTUALIZAR OPCIÓN (mantén tu función original)
-# =====================================================
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -918,7 +974,6 @@ def actualizarOpcion(request):
         
         opcion = get_object_or_404(OpcionPregunta, id=opcion_id)
         
-        # Verificar permisos (solo si hay sección)
         if opcion.pregunta.cuestionario.recurso.seccion and opcion.pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
             return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
         
@@ -926,73 +981,10 @@ def actualizarOpcion(request):
         opcion.es_correcta = es_correcta
         opcion.save()
         
-        return JsonResponse({
-            'success': True,
-            'mensaje': 'Opción actualizada exitosamente'
-        })
+        return JsonResponse({'success': True, 'mensaje': 'Opción actualizada exitosamente'})
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
-# =====================================================
-# 7. FUNCIÓN ACTUALIZAR PREGUNTA MEJORADA
-# =====================================================
-
-@csrf_exempt
-@require_http_methods(["POST"])
-#@login_required
-def actualizarPregunta(request):
-    """Actualizar el enunciado de una pregunta - MEJORADA"""
-    try:
-        data = json.loads(request.body)
-        pregunta_id = data.get('pregunta_id')
-        enunciado = data.get('enunciado')
-        puntaje = data.get('puntaje', 1)
-        calificacion_manual = data.get('calificacion_manual', False)  # NUEVO
-        
-        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
-        
-        # Verificar permisos (solo si hay sección)
-        if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
-            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
-        
-        pregunta.enunciado = enunciado
-        pregunta.puntaje = int(puntaje)
-        
-        # NUEVO: Manejar calificación manual si el campo existe
-        if hasattr(pregunta, 'calificacion_manual'):
-            pregunta.calificacion_manual = bool(calificacion_manual)
-        
-        pregunta.save()
-        
-        # Recalcular puntaje total del cuestionario
-        cuestionario = pregunta.cuestionario
-        puntaje_total = cuestionario.preguntas.aggregate(
-            total=Sum('puntaje')
-        )['total'] or 0
-        
-        if hasattr(cuestionario, 'puntaje_total'):
-            cuestionario.puntaje_total = puntaje_total
-            cuestionario.save()
-        
-        return JsonResponse({
-            'success': True,
-            'mensaje': 'Pregunta actualizada exitosamente',
-            'puntaje_total': float(puntaje_total)
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
-# =====================================================
-# 8. FUNCIÓN ELIMINAR OPCIÓN (mantén tu función original)
-# =====================================================
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
@@ -1002,82 +994,143 @@ def eliminarOpcion(request, opcion_id):
     try:
         opcion = get_object_or_404(OpcionPregunta, id=opcion_id)
         
-        # Verificar permisos (solo si hay sección)
         if opcion.pregunta.cuestionario.recurso.seccion and opcion.pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
             return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
         
-        # No permitir eliminar si solo quedan 2 opciones
         if opcion.pregunta.opciones.count() <= 2:
-            return JsonResponse({
-                'success': False,
-                'error': 'No se puede eliminar. Mínimo 2 opciones requeridas.'
-            }, status=400)
+            return JsonResponse({'success': False, 'error': 'No se puede eliminar. Mínimo 2 opciones requeridas.'}, status=400)
         
         opcion.delete()
-        
-        return JsonResponse({
-            'success': True,
-            'mensaje': 'Opción eliminada exitosamente'
-        })
+        return JsonResponse({'success': True, 'mensaje': 'Opción eliminada exitosamente'})
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 # =====================================================
-# 9. FUNCIÓN ELIMINAR PREGUNTA (mantén tu función original)
+# 6. GESTIÓN DE CUESTIONARIOS
 # =====================================================
 
 @csrf_exempt
-@require_http_methods(["DELETE"])
+@require_http_methods(["POST"])
 #@login_required
-def eliminarPregunta(request, pregunta_id):
-    """Eliminar una pregunta completa"""
+def guardar_cuestionario(request):
+    """Guardar cuestionario básico"""
     try:
-        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        seccion_id = request.POST.get('seccion_id')
+        titulo = request.POST.get('titulo', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
         
-        # Verificar permisos (solo si hay sección)
-        if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
-            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        if not titulo:
+            return JsonResponse({'success': False, 'error': 'El título del cuestionario es obligatorio'})
         
-        cuestionario = pregunta.cuestionario
-        pregunta.delete()
+        seccion = None
+        if seccion_id:
+            seccion = get_object_or_404(Seccion, id=seccion_id)
+            if seccion.curso.profesor != request.user:
+                return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
         
-        # Recalcular puntaje total del cuestionario
-        puntaje_total = cuestionario.preguntas.aggregate(
-            total=Sum('puntaje')
-        )['total'] or 0
-        
-        if hasattr(cuestionario, 'puntaje_total'):
-            cuestionario.puntaje_total = puntaje_total
-        
-        # Actualizar calificación automática
-        tiene_preguntas_manuales = cuestionario.preguntas.filter(
-            tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
-        ).exists()
-        
-        if hasattr(cuestionario, 'calificacion_automatica'):
-            cuestionario.calificacion_automatica = not tiene_preguntas_manuales
+        with transaction.atomic():
+            tipo_cuestionario, created = TipoRecurso.objects.get_or_create(
+                nombre='cuestionario',
+                defaults={'descripcion': 'Recurso tipo cuestionario'}
+            )
             
-        cuestionario.save()
+            recurso = Recurso.objects.create(
+                seccion=seccion,
+                tipo=tipo_cuestionario,
+                titulo=titulo,
+                descripcion=descripcion,
+                orden=seccion.recursos.count() + 1 if seccion else 1
+            )
+            
+            cuestionario = Cuestionario.objects.create(
+                recurso=recurso,
+                instrucciones=descripcion,
+                tiempo_limite=30,
+                puntaje_total=0.00,
+                calificacion_automatica=True,
+                intentos_permitidos=1,
+                mostrar_resultados=True,
+                orden_aleatorio=False
+            )
         
         return JsonResponse({
             'success': True,
-            'mensaje': 'Pregunta eliminada exitosamente',
-            'puntaje_total': float(puntaje_total),
-            'calificacion_automatica': not tiene_preguntas_manuales
+            'cuestionario_id': cuestionario.id,
+            'mensaje': 'Cuestionario creado exitosamente',
+            'redirect_url': f'/docente/editar_cuestionario/{cuestionario.id}/'
         })
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+#@login_required
+def actualizarCuestionarioExistente(request, cuestionario_id):
+    """Actualizar un cuestionario existente"""
+    try:
+        cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
+        
+        if cuestionario.recurso.seccion and cuestionario.recurso.seccion.curso.profesor != request.user:
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        titulo = request.POST.get('titulo', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        
+        if not titulo:
+            return JsonResponse({'success': False, 'error': 'El título del cuestionario es obligatorio'})
+        
+        with transaction.atomic():
+            cuestionario.recurso.titulo = titulo
+            cuestionario.recurso.descripcion = descripcion
+            cuestionario.recurso.save()
+            
+            cuestionario.instrucciones = descripcion
+            cuestionario.save()
+        
+        return JsonResponse({'success': True, 'mensaje': 'Cuestionario actualizado exitosamente'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 # =====================================================
-# 10. FUNCIÓN CREAR TIPOS PREGUNTA (mantén tu función original)
+# 7. GESTIÓN DE RECURSOS MULTIMEDIA
+# =====================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+#@login_required
+def eliminar_recurso_pregunta(request):
+    """Eliminar recurso multimedia de una pregunta"""
+    try:
+        data = json.loads(request.body)
+        pregunta_id = data.get('pregunta_id')
+        tipo_recurso = data.get('tipo')
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        if tipo_recurso == 'archivo':
+            if pregunta.archivo_multimedia:
+                try:
+                    pregunta.archivo_multimedia.delete()
+                except:
+                    pass
+                pregunta.archivo_multimedia = None
+        elif tipo_recurso == 'youtube':
+            pregunta.url_youtube = None
+        
+        pregunta.save()
+        return JsonResponse({'success': True, 'mensaje': 'Recurso eliminado exitosamente'})
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+# =====================================================
+# 8. UTILIDADES
 # =====================================================
 
 @csrf_exempt
@@ -1086,7 +1139,6 @@ def eliminarPregunta(request, pregunta_id):
 def crearTiposPregunta(request):
     """Crear tipos de pregunta automáticamente"""
     try:
-        # Crear tipos de pregunta
         tipos = [
             ('opcion_unica', 'Opción Única - Seleccionar una sola respuesta correcta'),
             ('opcion_multiple', 'Opción Múltiple - Seleccionar múltiples respuestas correctas'),
@@ -1119,312 +1171,43 @@ def crearTiposPregunta(request):
         })
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
-# =====================================================
-# 11. NUEVA FUNCIÓN: CAMBIAR TIPO DE PREGUNTA
-# =====================================================
+
+#@login_required
+def inicializar_tipos_pregunta(request):
+    """Inicializar tipos de pregunta básicos en la base de datos"""
+    tipos_creados = crear_tipos_pregunta_basicos()
+    return JsonResponse({
+        'success': True,
+        'mensaje': f'Se crearon {tipos_creados.count()} tipos de pregunta',
+        'tipos': list(tipos_creados.values('nombre', 'descripcion'))
+    })
+
 
 @csrf_exempt
 @require_http_methods(["POST"])
 #@login_required
-def cambiarTipoPregunta(request):
-    """NUEVA: Cambiar el tipo de una pregunta existente"""
+def actualizar_configuracion_pregunta(request):
+    """Actualizar configuración específica de pregunta según su tipo - Para extensiones futuras"""
     try:
         data = json.loads(request.body)
         pregunta_id = data.get('pregunta_id')
-        nuevo_tipo = data.get('nuevo_tipo')
+        configuracion = data.get('configuracion')
         
         pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
         
-        # Verificar permisos
         if pregunta.cuestionario.recurso.seccion and pregunta.cuestionario.recurso.seccion.curso.profesor != request.user:
             return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
         
-        with transaction.atomic():
-            # Eliminar opciones existentes
-            pregunta.opciones.all().delete()
-            
-            # Cambiar tipo
-            tipo_pregunta = get_object_or_404(TipoPregunta, nombre=nuevo_tipo)
-            pregunta.tipo = tipo_pregunta
-            
-            # Resetear calificación manual si el campo existe
-            if hasattr(pregunta, 'calificacion_manual'):
-                pregunta.calificacion_manual = False
-            
-            pregunta.save()
-            
-            # Crear nuevas opciones según el tipo
-            if nuevo_tipo in ['opcion_unica', 'opcion_multiple']:
-                opciones_default = [
-                    ('Opción 1', True),
-                    ('Opción 2', False),
-                    ('Opción 3', False),
-                    ('Opción 4', False)
-                ]
-                for texto, es_correcta in opciones_default:
-                    OpcionPregunta.objects.create(
-                        pregunta=pregunta,
-                        texto=texto,
-                        es_correcta=es_correcta
-                    )
-            elif nuevo_tipo == 'falso_verdadero':
-                OpcionPregunta.objects.create(
-                    pregunta=pregunta,
-                    texto='Verdadero',
-                    es_correcta=True
-                )
-                OpcionPregunta.objects.create(
-                    pregunta=pregunta,
-                    texto='Falso',
-                    es_correcta=False
-                )
+        # Esta función está preparada para manejar configuraciones específicas por tipo de pregunta
+        # Por ejemplo: respuesta abierta (longitud mínima/máxima), simuladores (SMILES objetivo), etc.
+        # Se puede extender en el futuro según necesidades específicas
         
         return JsonResponse({
             'success': True,
-            'mensaje': 'Tipo de pregunta cambiado exitosamente'
+            'mensaje': 'Configuración actualizada exitosamente'
         })
         
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
-# =====================================================
-# 12. NUEVA FUNCIÓN: GUARDAR CUESTIONARIO COMPLETO CON PREGUNTAS Y CONFIGURACIÓN
-# =====================================================
-
-@csrf_exempt
-@require_http_methods(["POST"])
-#@login_required
-def guardarCuestionarioCompleto(request):
-    """CORREGIDA: Guardar cuestionario completo con preguntas temporales y configuración"""
-    try:
-        # Obtener datos básicos
-        seccion_id = request.POST.get('seccion_id')
-        titulo = request.POST.get('titulo', '').strip()
-        descripcion = request.POST.get('descripcion', '').strip()
-        
-        # NUEVO: Obtener preguntas temporales y configuración
-        preguntas_temporales_json = request.POST.get('preguntas_temporales', '[]')
-        configuracion_temporal_json = request.POST.get('configuracion_temporal', '{}')
-        
-        try:
-            preguntas_temporales = json.loads(preguntas_temporales_json)
-        except:
-            preguntas_temporales = []
-            
-        try:
-            configuracion_temporal = json.loads(configuracion_temporal_json)
-        except:
-            configuracion_temporal = {}
-        
-        if not titulo:
-            return JsonResponse({
-                'success': False,
-                'error': 'El título del cuestionario es obligatorio'
-            })
-        
-        seccion = None
-        if seccion_id:
-            seccion = get_object_or_404(Seccion, id=seccion_id)
-            # Verificar permisos
-            if seccion.curso.profesor != request.user:
-                return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
-        
-        with transaction.atomic():
-            # Obtener o crear el tipo de recurso "cuestionario"
-            tipo_cuestionario, created = TipoRecurso.objects.get_or_create(
-                nombre='cuestionario',
-                defaults={'descripcion': 'Recurso tipo cuestionario'}
-            )
-            
-            # Crear el recurso
-            recurso = Recurso.objects.create(
-                seccion=seccion,
-                tipo=tipo_cuestionario,
-                titulo=titulo,
-                descripcion=descripcion,
-                orden=seccion.recursos.count() + 1 if seccion else 1
-            )
-            
-            # Crear el cuestionario vinculado al recurso CON configuración temporal
-            cuestionario_data = {
-                'recurso': recurso,
-                'instrucciones': descripcion,
-                'tiempo_limite': configuracion_temporal.get('tiempo_limite', 30),
-            }
-            
-            # Agregar campos de configuración si existen en el modelo
-            if hasattr(Cuestionario, 'intentos_permitidos'):
-                intentos = configuracion_temporal.get('intentos_permitidos', 1)
-                cuestionario_data['intentos_permitidos'] = 999 if intentos == 'ilimitado' else int(intentos)
-            
-            if hasattr(Cuestionario, 'mostrar_resultados'):
-                cuestionario_data['mostrar_resultados'] = configuracion_temporal.get('mostrar_resultados', True)
-            
-            if hasattr(Cuestionario, 'orden_aleatorio'):
-                cuestionario_data['orden_aleatorio'] = configuracion_temporal.get('mezclar_preguntas', False)
-            
-            # Manejar fechas si existen en el modelo
-            if hasattr(Cuestionario, 'fecha_apertura') and configuracion_temporal.get('fecha_inicio'):
-                try:
-                    fecha_inicio = configuracion_temporal['fecha_inicio']
-                    # Asegurar que el formato de fecha sea correcto
-                    if 'T' in fecha_inicio:
-                        cuestionario_data['fecha_apertura'] = datetime.fromisoformat(
-                            fecha_inicio.replace('Z', '+00:00')
-                        )
-                except Exception as e:
-                    print(f"Error al parsear fecha_inicio: {e}")
-                    pass
-                    
-            if hasattr(Cuestionario, 'fecha_cierre') and configuracion_temporal.get('fecha_fin'):
-                try:
-                    fecha_fin = configuracion_temporal['fecha_fin']
-                    # Asegurar que el formato de fecha sea correcto
-                    if 'T' in fecha_fin:
-                        cuestionario_data['fecha_cierre'] = datetime.fromisoformat(
-                            fecha_fin.replace('Z', '+00:00')
-                        )
-                except Exception as e:
-                    print(f"Error al parsear fecha_fin: {e}")
-                    pass
-            
-            # Crear el cuestionario con toda la configuración
-            cuestionario = Cuestionario.objects.create(**cuestionario_data)
-            
-            # Manejar imagen si se subió
-            if request.FILES.get('imagen'):
-                # Si el modelo Cuestionario tiene campo imagen
-                if hasattr(cuestionario, 'imagen'):
-                    cuestionario.imagen = request.FILES['imagen']
-                    cuestionario.save()
-                # Si no, guardar en el recurso
-                else:
-                    recurso.imagen = request.FILES['imagen']
-                    recurso.save()
-            
-            # NUEVO: Crear preguntas temporales en la base de datos
-            preguntas_creadas = 0
-            for pregunta_temp in preguntas_temporales:
-                # Obtener o crear el tipo de pregunta
-                tipo_pregunta, created = TipoPregunta.objects.get_or_create(
-                    nombre=pregunta_temp['tipo'],
-                    defaults={'descripcion': f'Pregunta de tipo {pregunta_temp["tipo"]}'}
-                )
-                
-                # Crear la pregunta
-                pregunta_data = {
-                    'cuestionario': cuestionario,
-                    'tipo': tipo_pregunta,
-                    'enunciado': pregunta_temp['enunciado'],
-                    'orden': pregunta_temp['orden'],
-                    'puntaje': int(pregunta_temp['puntaje'])
-                }
-                
-                # Agregar calificación manual si el campo existe
-                if hasattr(PreguntaCuestionario, 'calificacion_manual'):
-                    pregunta_data['calificacion_manual'] = pregunta_temp.get('calificacion_manual', False)
-                
-                pregunta = PreguntaCuestionario.objects.create(**pregunta_data)
-                
-                # Crear las opciones si existen
-                for opcion_temp in pregunta_temp.get('opciones', []):
-                    OpcionPregunta.objects.create(
-                        pregunta=pregunta,
-                        texto=opcion_temp['texto'],
-                        es_correcta=opcion_temp['es_correcta']
-                    )
-                
-                preguntas_creadas += 1
-            
-            # Calcular puntaje total
-            puntaje_total = cuestionario.preguntas.aggregate(
-                total=Sum('puntaje')
-            )['total'] or 0
-            
-            if hasattr(cuestionario, 'puntaje_total'):
-                cuestionario.puntaje_total = puntaje_total
-                cuestionario.save()
-        
-        # URL de redirección corregida con tu patrón de URLs
-        redirect_url = f'/docente/editar_cuestionario/{cuestionario.id}/'
-        
-        return JsonResponse({
-            'success': True,
-            'cuestionario_id': cuestionario.id,
-            'preguntas_creadas': preguntas_creadas,
-            'puntaje_total': float(puntaje_total),
-            'mensaje': f'Cuestionario creado exitosamente con {preguntas_creadas} preguntas',
-            'redirect_url': redirect_url
-        })
-        
-    except Exception as e:
-        print(f"Error en guardarCuestionarioCompleto: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
-# =====================================================
-# NUEVA FUNCIÓN: ACTUALIZAR CUESTIONARIO EXISTENTE
-# =====================================================
-
-@csrf_exempt
-@require_http_methods(["POST"])
-#@login_required
-def actualizarCuestionarioExistente(request, cuestionario_id):
-    """NUEVA: Actualizar un cuestionario existente"""
-    try:
-        cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
-        
-        # Verificar permisos
-        if cuestionario.recurso.seccion and cuestionario.recurso.seccion.curso.profesor != request.user:
-            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
-        
-        # Obtener datos del formulario
-        titulo = request.POST.get('titulo', '').strip()
-        descripcion = request.POST.get('descripcion', '').strip()
-        
-        if not titulo:
-            return JsonResponse({
-                'success': False,
-                'error': 'El título del cuestionario es obligatorio'
-            })
-        
-        with transaction.atomic():
-            # Actualizar el recurso
-            cuestionario.recurso.titulo = titulo
-            cuestionario.recurso.descripcion = descripcion
-            cuestionario.recurso.save()
-            
-            # Actualizar las instrucciones del cuestionario
-            cuestionario.instrucciones = descripcion
-            cuestionario.save()
-            
-            # Manejar imagen si se subió
-            if request.FILES.get('imagen'):
-                if hasattr(cuestionario, 'imagen'):
-                    cuestionario.imagen = request.FILES['imagen']
-                    cuestionario.save()
-                else:
-                    cuestionario.recurso.imagen = request.FILES['imagen']
-                    cuestionario.recurso.save()
-        
-        return JsonResponse({
-            'success': True,
-            'mensaje': 'Cuestionario actualizado exitosamente'
-        })
-        
-    except Exception as e:
-        print(f"Error en actualizarCuestionarioExistente: {e}")
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)

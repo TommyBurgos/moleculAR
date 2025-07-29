@@ -30,286 +30,425 @@
     <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsme/2020-03-15/jsme.nocache.js"></script>
     
-    <!-- Custom CSS -->
+    <!-- Custom CSS - Estilo profesional y limpio -->
     <style>
-        .plantilla-pregunta {
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 15px;
-            background-color: #f8f9fa;
+        /* Configuración base de fuentes más grandes y legibles */
+        body {
+            font-size: 17px;
+            line-height: 1.6;
+            color: #2c3e50;
         }
         
+        .fs-4 {
+            font-size: 2rem !important;
+        }
+        
+        .fs-5 {
+            font-size: 1.5rem !important;
+        }
+        
+        .fs-6 {
+            font-size: 1.3rem !important;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-label {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+        
+        .form-control {
+            font-size: 1.05rem;
+            padding: 14px 18px;
+            border: 2px solid #e8f4fd;
+            border-radius: 8px;
+            background-color: #ffffff;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.15);
+            background-color: #ffffff;
+        }
+        
+        .btn {
+            font-size: 1.05rem;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Contenedor principal del cuestionario */
+        .plantilla-pregunta {
+            border: 2px solid #e8f4fd;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+        }
+        
+        .plantilla-pregunta:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-color: #3498db;
+        }
+        
+        /* Contenedores de opciones mejorados */
         .opcion-container {
             display: flex;
             align-items: center;
             margin-bottom: 15px;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            transition: all 0.2s ease;
+            gap: 15px;
+            padding: 18px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 2px solid #f8f9fa;
+            background-color: #ffffff;
         }
 
         .opcion-container.opcion-correcta {
-            background-color: #d4edda;
-            border: 1px solid #28a745;
-            border-left: 4px solid #28a745;
+            background: linear-gradient(135deg, #d5f4e6 0%, #e8f5e8 100%);
+            border: 2px solid #27ae60;
+            border-left: 5px solid #27ae60;
         }
 
         .opcion-container:not(.opcion-correcta) {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
+            background-color: #fafbfc;
+            border: 2px solid #e9ecef;
+        }
+        
+        .opcion-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #3498db;
         }
         
         .opcion-input {
             flex: 1;
+            font-size: 1.05rem;
         }
         
+        /* Botón agregar opción más elegante */
         .btn-agregar-opcion {
-            width: 35px;
-            height: 35px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 16px;
             font-weight: bold;
-            border: 2px dashed #0066cc;
+            border: 2px dashed #3498db;
             background: transparent;
-            color: #0066cc;
+            color: #3498db;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .btn-agregar-opcion:hover {
-            background-color: #0066cc;
+            background-color: #3498db;
             color: white;
             transform: scale(1.1);
             border-style: solid;
         }
         
+        /* Acciones de pregunta */
         .pregunta-actions {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #dee2e6;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #f8f9fa;
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
         }
         
+        /* Acordeón de preguntas */
         .accordion-pregunta {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #e8f4fd;
+            border-radius: 12px;
+            overflow: hidden;
         }
         
         .accordion-pregunta .accordion-header button {
-            background-color: #fff;
-            color: #333;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            color: #2c3e50;
+            font-size: 1.1rem;
+            padding: 20px 25px;
+            border: none;
+            font-weight: 600;
         }
         
+        .accordion-pregunta .accordion-header button:not(.collapsed) {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1565c0;
+        }
+        
+        .accordion-pregunta .accordion-header button:hover {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+        
+        /* Botón agregar pregunta estilo punteado */
         .btn-agregar-pregunta {
-            margin-top: 20px;
+            margin-top: 25px;
             width: 100%;
-            padding: 15px;
-            border: 2px dashed #0066cc;
+            padding: 25px;
+            border: 3px dashed #3498db;
             background: transparent;
-            color: #0066cc;
-            border-radius: 8px;
-            font-weight: 500;
+            color: #3498db;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.15rem;
+            transition: all 0.3s ease;
         }
         
         .btn-agregar-pregunta:hover {
-            background-color: #0066cc;
-            color: white;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            color: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(52,152,219,0.15);
+            border-color: #2980b9;
         }
         
+        /* Badge de tipo de pregunta */
         .tipo-pregunta-badge {
             display: inline-block;
-            padding: 4px 8px;
-            background-color: #e3f2fd;
-            color: #1976d2;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            margin-left: 10px;
-        }
-
-        .breadcrumb-curso {
-            background-color: #f8f9fa;
-            padding: 10px 15px;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            color: #1565c0;
             border-radius: 8px;
-            margin-bottom: 20px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-left: 15px;
         }
 
-        /* Estilos para el botón de configuración */
+        /* Breadcrumb */
+        .breadcrumb-curso {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 18px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .breadcrumb-curso .breadcrumb-item {
+            font-size: 1.05rem;
+        }
+
+        .breadcrumb-curso .breadcrumb-item a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .breadcrumb-curso .breadcrumb-item a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+
+        /* Botón configuración elegante */
         .btn-configuracion {
-            background: linear-gradient(45deg, #0066cc, #004499);
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             border: none;
             color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.875rem;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 1.05rem;
             display: flex;
             align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,102,204,0.2);
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(52,152,219,0.25);
+            font-weight: 600;
         }
 
         .btn-configuracion:hover {
-            background: linear-gradient(45deg, #004499, #003366);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0,102,204,0.3);
-            color: white;
-        }
-
-        /* Estilos para el área de imagen */
-        .imagen-cuestionario {
-            position: relative;
-            cursor: pointer;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 2px dashed #dee2e6;
-            transition: all 0.2s ease;
-        }
-
-        .imagen-cuestionario:hover {
-            border-color: #0066cc;
-        }
-
-        .imagen-cuestionario img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .overlay-imagen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            color: white;
-            font-size: 0.875rem;
-        }
-
-        .imagen-cuestionario:hover .overlay-imagen {
-            opacity: 1;
-        }
-
-        /* Estilos para modales personalizados */
-        .modal-custom .modal-content {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .modal-custom .modal-header {
-            border-bottom: 1px solid #e9ecef;
-            padding: 1.5rem 1.5rem 1rem;
-        }
-
-        .modal-custom .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-custom .modal-footer {
-            border-top: 1px solid #e9ecef;
-            padding: 1rem 1.5rem 1.5rem;
-        }
-
-        /* Estilos para checkbox de calificación manual */
-        .calificacion-manual {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 0.875rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 38px;
-        }
-
-        .calificacion-manual input[type="checkbox"] {
-            margin: 0;
-            transform: scale(1.1);
-        }
-
-        .calificacion-manual label {
-            margin: 0;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        /* Estilos para botones pequeños */
-        .btn-sm-custom {
-            padding: 4px 8px;
-            font-size: 0.75rem;
-            border-radius: 4px;
-        }
-
-        /* Área de descripción siempre visible */
-        .descripcion-cuestionario {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        /* Botón guardar cuestionario */
-        .btn-guardar-cuestionario {
-            background: linear-gradient(45deg, #28a745, #20c997);
-            border: none;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            box-shadow: 0 4px 12px rgba(40,167,69,0.3);
-            transition: all 0.2s ease;
-        }
-
-        .btn-guardar-cuestionario:hover {
-            background: linear-gradient(45deg, #20c997, #17a2b8);
+            background: linear-gradient(135deg, #2980b9 0%, #1f4e79 100%);
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(40,167,69,0.4);
+            box-shadow: 0 6px 15px rgba(52,152,219,0.35);
             color: white;
         }
 
-        /* Estilos para tipos de pregunta */
+        .btn-configuracion:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Descripción del cuestionario sutil */
+        .descripcion-cuestionario {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .descripcion-cuestionario .form-label {
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+
+        .descripcion-cuestionario .form-control {
+            font-size: 1.05rem;
+            border: 2px solid #e9ecef;
+            background-color: #ffffff;
+        }
+
+        .descripcion-cuestionario .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.2rem rgba(52,152,219,0.15);
+        }
+
+        /* Botón principal de guardado */
+        .btn-guardar-cuestionario {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            border: none;
+            color: white;
+            padding: 18px 40px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            box-shadow: 0 6px 15px rgba(39,174,96,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-guardar-cuestionario:hover:not(:disabled) {
+            background: linear-gradient(135deg, #229954 0%, #27ae60 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(39,174,96,0.4);
+            color: white;
+        }
+
+        .btn-guardar-cuestionario:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Estados del cuestionario */
+        .estado-cuestionario {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .estado-cuestionario.nuevo {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border: 2px solid #f39c12;
+        }
+
+        .estado-cuestionario.guardado {
+            background: linear-gradient(135deg, #d5f4e6 0%, #a8e6cf 100%);
+            color: #155724;
+            border: 2px solid #27ae60;
+        }
+
+        /* Sección sin cuestionario */
+        .sin-cuestionario {
+            text-align: center;
+            padding: 60px 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 15px;
+            border: 3px dashed #bdc3c7;
+        }
+
+        .sin-cuestionario .icon {
+            font-size: 4.5rem;
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+
+        .sin-cuestionario h4 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .sin-cuestionario p {
+            font-size: 1.15rem;
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+
+        /* Recursos de apoyo estilo sutil punteado */
+        .recursos-apoyo-toggle {
+            border: 2px dashed #3498db;
+            background: transparent;
+            color: #3498db;
+            border-radius: 10px;
+            padding: 15px 20px;
+            width: 100%;
+            font-size: 1.05rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .recursos-apoyo-toggle:hover {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+            color: #2980b9;
+            border-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .recursos-apoyo-toggle.active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1565c0;
+            border-color: #1565c0;
+            border-style: solid;
+        }
+
+        .recursos-content {
+            background: #ffffff;
+            border: 2px solid #e8f4fd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        /* Tipos de pregunta */
         .tipos-pregunta-container {
-            padding: 10px 0;
+            padding: 20px 0;
         }
 
         .tipo-pregunta-card {
             background: white;
             border: 2px solid #e9ecef;
             border-radius: 16px;
-            padding: 24px 16px;
+            padding: 30px 20px;
             text-align: center;
             transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
-            height: 140px;
+            height: 160px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         }
 
         .tipo-pregunta-card:hover {
-            border-color: #0066cc;
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,102,204,0.15);
+            border-color: #3498db;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(52,152,219,0.15);
         }
 
         .tipo-pregunta-card.disabled {
@@ -322,201 +461,219 @@
         .tipo-pregunta-card.disabled:hover {
             transform: none;
             border-color: #dee2e6;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .tipo-icono {
-            margin-bottom: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         }
 
         .tipo-icono img {
-            width: 48px;
-            height: 48px;
+            width: 55px;
+            height: 55px;
             object-fit: contain;
+            margin-bottom: 15px;
         }
 
         .tipo-titulo {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 8px;
-            line-height: 1.2;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.3;
         }
 
         .tipo-estado {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 20px;
-            height: 20px;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 14px;
         }
 
         .tipo-estado.disponible {
-            background-color: #d4edda;
+            background: linear-gradient(135deg, #d5f4e6 0%, #a8e6cf 100%);
             color: #155724;
         }
 
         .tipo-estado.proximamente {
-            background-color: #fff3cd;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
             color: #856404;
         }
-
-        .tipo-estado-mini {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            margin: 0 auto;
-        }
-
-        .tipo-estado-mini.disponible {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .tipo-estado-mini.proximamente {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        /* NUEVOS ESTILOS PARA SIMULADORES MOLECULARES */
-        .simulador-container {
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 15px;
-        }
-
-        .simulador-container .card {
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        /* Modales elegantes y acordes al estilo */
+        .modal-custom .modal-content {
+            border-radius: 16px;
             border: none;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
         }
 
-        .simulador-container .card-header {
+        .modal-custom .modal-header {
+            border-bottom: 2px solid #e9ecef;
+            padding: 2rem 2rem 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-custom .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .modal-custom .modal-body {
+            padding: 2rem;
+            font-size: 1.05rem;
+        }
+
+        .modal-custom .modal-footer {
+            border-top: 2px solid #e9ecef;
+            padding: 1.5rem 2rem 2rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+
+        /* Pop-up de confirmación personalizado y elegante */
+        .confirmacion-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            padding: 30px;
+            z-index: 10000;
+            min-width: 400px;
+            border: 2px solid #e8f4fd;
+        }
+
+        .confirmacion-popup .icono {
+            text-align: center;
+            font-size: 3rem;
+            color: #f39c12;
+            margin-bottom: 20px;
+        }
+
+        .confirmacion-popup .titulo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .confirmacion-popup .mensaje {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .confirmacion-popup .botones {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .confirmacion-popup .btn-cancelar {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
             font-weight: 600;
+            transition: all 0.3s ease;
         }
 
-        .fuente-opcion {
-            padding: 10px;
-            border: 1px solid #e9ecef;
+        .confirmacion-popup .btn-cancelar:hover {
+            background: #7f8c8d;
+        }
+
+        .confirmacion-popup .btn-confirmar {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .confirmacion-popup .btn-confirmar:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+        }
+
+        .confirmacion-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        }
+
+        /* Botones de acción más pequeños y elegantes */
+        .btn-sm-elegante {
+            padding: 8px 16px;
+            font-size: 0.9rem;
             border-radius: 6px;
-            margin-bottom: 10px;
-            background-color: #f8f9fa;
-        }
-
-        /* Estilos para visor 3D y JSME */
-        [id^="jsme_container_"] {
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        [id^="viewer_3d_"] {
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        /* ESTILOS PARA UNIR LÍNEAS */
-        .unir-lineas-container {
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 15px;
-        }
-
-        .unir-lineas-container .list-group-item {
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .unir-lineas-container .list-group-item:hover {
-            background-color: #e3f2fd;
-            border-color: #2196f3;
-        }
-
-        /* ESTILOS PARA COMPLETAR TEXTO */
-        .completar-container {
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 15px;
-        }
-
-        .completar-container .bg-warning {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
             font-weight: 600;
+            transition: all 0.3s ease;
         }
 
-        /* ESTILOS PARA RESPUESTA ABIERTA */
-        .respuesta-abierta-container {
-            background-color: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 15px;
-        }
-
-        /* Estilos para alertas específicas */
-        .simulador-container .alert,
-        .unir-lineas-container .alert,
-        .completar-container .alert {
-            border-left: 4px solid #ffc107;
-            background-color: #fff3cd;
-        }
-
-        .respuesta-abierta-container .alert {
-            border-left: 4px solid #17a2b8;
-            background-color: #d1ecf1;
-        }
-
-        .tipo-desconocido-container .alert {
-            border-left: 4px solid #dc3545;
-            background-color: #f8d7da;
-        }
-
-        /* Animaciones para carga */
-        .cargando-simulador {
+        .btn-eliminar-opcion {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100px;
-            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-eliminar-opcion:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: scale(1.1);
+        }
+
+        /* Input de opciones mejorado */
+        .opcion-input {
+            border: 2px solid #e9ecef;
             border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 1.05rem;
+            transition: all 0.3s ease;
         }
 
-        .spinner-molecular {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #e3f2fd;
-            border-top: 4px solid #2196f3;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        .opcion-input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.15rem rgba(52,152,219,0.15);
+            outline: none;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Radio buttons y checkboxes más grandes */
+        .opcion-container input[type="radio"],
+        .opcion-container input[type="checkbox"] {
+            transform: scale(1.4);
+            margin-right: 8px;
+            accent-color: #27ae60;
         }
 
-        /* Responsive */
+        /* Responsive mejorado */
         @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+            
             .btn-configuracion {
-                padding: 6px 10px;
-                font-size: 0.8rem;
+                padding: 12px 20px;
+                font-size: 1rem;
             }
             
             .pregunta-actions {
@@ -525,42 +682,70 @@
             }
             
             .pregunta-actions > * {
-                margin-bottom: 5px;
-            }
-
-            .calificacion-manual {
-                min-height: 35px;
-                padding: 4px 8px;
-            }
-
-            .simulador-container,
-            .unir-lineas-container,
-            .completar-container,
-            .respuesta-abierta-container {
-                padding: 15px;
-            }
-
-            .simulador-container .row {
-                flex-direction: column;
-            }
-
-            .simulador-container .card {
-                margin-bottom: 15px;
-            }
-
-            [id^="jsme_container_"] {
-                height: 250px !important;
+                margin-bottom: 10px;
+                width: 100%;
             }
 
             .opcion-container {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 8px;
+                gap: 12px;
             }
 
-            .opcion-container > * {
-                width: 100%;
+            .tipo-pregunta-card {
+                height: 140px;
+                padding: 20px 15px;
             }
+            
+            .tipo-icono img {
+                width: 45px;
+                height: 45px;
+                margin-bottom: 10px;
+            }
+            
+            .tipo-titulo {
+                font-size: 1rem;
+            }
+
+            .confirmacion-popup {
+                min-width: 320px;
+                margin: 20px;
+            }
+        }
+
+        /* Toast notifications mejorados */
+        .toast-custom {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            min-width: 350px;
+        }
+
+        .toast-custom .toast-body {
+            padding: 18px 20px;
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
+
+        /* Eliminar icono del título del cuestionario */
+        .titulo-cuestionario-sin-icono {
+            border: none;
+            background: transparent;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            width: 100%;
+            padding: 8px 0;
+        }
+
+        .titulo-cuestionario-sin-icono:focus {
+            outline: none;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .titulo-cuestionario-sin-icono::placeholder {
+            color: #bdc3c7;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -595,13 +780,37 @@
                                 <nav aria-label="breadcrumb">
                                     <ol class="breadcrumb mb-0">
                                         <li class="breadcrumb-item">
-                                            <a href="#">{{ cuestionario.recurso.seccion.curso.titulo }}</a>
+                                            <a href="{% url 'detalle_curso' cuestionario.recurso.seccion.curso.id %}">
+                                                <i class="fas fa-book me-2"></i>{{ cuestionario.recurso.seccion.curso.titulo }}
+                                            </a>
                                         </li>
                                         <li class="breadcrumb-item">
-                                            <a href="#">{{ cuestionario.recurso.seccion.titulo }}</a>
+                                            <a href="{% url 'detalle_curso' cuestionario.recurso.seccion.curso.id %}">
+                                                <i class="fas fa-folder me-2"></i>{{ cuestionario.recurso.seccion.titulo }}
+                                            </a>
                                         </li>
                                         <li class="breadcrumb-item active" aria-current="page">
-                                            {{ cuestionario.recurso.titulo }}
+                                            <i class="fas fa-clipboard-list me-2"></i>{{ cuestionario.recurso.titulo }}
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+                            {% elif seccion %}
+                            <div class="breadcrumb-curso">
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb mb-0">
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'detalle_curso' seccion.curso.id %}">
+                                                <i class="fas fa-book me-2"></i>{{ seccion.curso.titulo }}
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'detalle_curso' seccion.curso.id %}">
+                                                <i class="fas fa-folder me-2"></i>{{ seccion.titulo }}
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item active" aria-current="page">
+                                            <i class="fas fa-plus-circle me-2"></i>Nuevo Cuestionario
                                         </li>
                                     </ol>
                                 </nav>
@@ -610,58 +819,73 @@
 
                             <!-- Input hidden para seccion_id -->
                             {% if seccion_id %}
-                            <input type="hidden" name="seccion_id" value="{{ seccion_id }}">
+                            <input type="hidden" id="seccion_id" value="{{ seccion_id }}">
                             {% endif %}
 
                             <!-- Card START -->
                             <div class="card border bg-transparent rounded-3">
                                 <!-- Card header START -->
-                                <div class="card-header bg-transparent border-bottom px-3">
+                                <div class="card-header bg-transparent border-bottom px-4 py-4">
                                     <div class="row g-4 align-items-center">
-                                        <div class="col-md-2">
-                                            <div class="imagen-cuestionario" onclick="document.getElementById('input-imagen').click()">
-                                                {% if cuestionario and cuestionario.recurso.seccion and cuestionario.recurso.seccion.curso.imagen_portada %}
-                                                    <img src="{{ cuestionario.recurso.seccion.curso.imagen_portada.url }}" alt="Imagen del curso">
-                                                {% else %}
-                                                    <img src="{% static 'assets/images/courses/4by3/01.jpg' %}" alt="Imagen por defecto">
-                                                {% endif %}
-                                                <div class="overlay-imagen">
-                                                    <i class="fas fa-camera me-2"></i>
-                                                    Cambiar imagen
-                                                </div>
-                                            </div>
-                                            <input type="file" id="input-imagen" accept="image/*" style="display: none;" onchange="cambiarImagen(this)">
-                                        </div>
                                         <div class="col-md-8">
-                                            <!-- Title -->
-                                            <h3 class="card-title mb-2">
-                                                <input type="text" class="form-control border-0 bg-transparent fs-4 fw-bold" 
-                                                       value="{% if cuestionario %}{{ cuestionario.recurso.titulo }}{% else %}Nuevo Cuestionario{% endif %}" 
-                                                       placeholder="Título del cuestionario"
-                                                       id="titulo-cuestionario">
+                                            <!-- Title SIN ICONO -->
+                                            <h3 class="card-title mb-3">
+                                                <input type="text" class="titulo-cuestionario-sin-icono" 
+                                                       value="{% if cuestionario %}{{ cuestionario.recurso.titulo }}{% else %}{% endif %}" 
+                                                       placeholder="Ingresa el título de tu cuestionario"
+                                                       id="titulo-cuestionario"
+                                                       {% if not cuestionario %}required{% endif %}>
                                             </h3>
-                                            {% if cuestionario %}
-                                            <div class="d-flex flex-wrap gap-3 text-muted small" id="info-cuestionario">
-                                                <span><i class="fas fa-clock me-1"></i>{{ cuestionario.tiempo_limite }} min</span>
-                                                <span><i class="fas fa-star me-1"></i>{{ cuestionario.puntaje_total|default:"100" }} pts</span>
-                                                {% if cuestionario.fecha_apertura %}
-                                                <span><i class="fas fa-calendar me-1"></i>{{ cuestionario.fecha_apertura|date:"d/m/Y" }} - {{ cuestionario.fecha_cierre|date:"d/m/Y" }}</span>
+                                            
+                                            <!-- Estado y información -->
+                                            <div class="d-flex flex-wrap gap-3 align-items-center">
+                                                <!-- Estado del cuestionario -->
+                                                {% if cuestionario %}
+                                                <div class="estado-cuestionario guardado">
+                                                    <i class="fas fa-check-circle"></i>
+                                                    <span>Cuestionario guardado</span>
+                                                </div>
+                                                {% else %}
+                                                <div class="estado-cuestionario nuevo">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                    <span>Nuevo cuestionario</span>
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <!-- Información básica SOLO SI HAY CUESTIONARIO -->
+                                                {% if cuestionario %}
+                                                <div id="info-cuestionario" class="d-flex flex-wrap gap-3 text-muted">
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-clock me-2 text-primary"></i>
+                                                        <strong>{{ cuestionario.tiempo_limite|default:"30" }} min</strong>
+                                                    </span>
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-star me-2 text-warning"></i>
+                                                        <strong>{{ cuestionario.puntaje_total|default:"0" }} pts</strong>
+                                                    </span>
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-list me-2 text-info"></i>
+                                                        <strong>{{ preguntas.count|default:"0" }} pregunta{{ preguntas.count|pluralize:"s" }}</strong>
+                                                    </span>
+                                                    {% if cuestionario.fecha_apertura %}
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-calendar me-2 text-success"></i>
+                                                        <strong>{{ cuestionario.fecha_apertura|date:"d/m/Y" }}</strong>
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
                                                 {% endif %}
                                             </div>
-                                            {% else %}
-                                            <!-- Para cuestionarios nuevos, mostrar configuración temporal -->
-                                            <div class="d-flex flex-wrap gap-3 text-muted small" id="info-cuestionario-temp">
-                                                <span><i class="fas fa-clock me-1"></i>30 min</span>
-                                                <span><i class="fas fa-star me-1"></i>100 pts</span>
-                                                <span><i class="fas fa-calendar me-1"></i>Sin fechas configuradas</span>
-                                            </div>
-                                            {% endif %}
                                         </div>
-                                        <div class="col-md-2 text-end">
-                                            <button class="btn btn-configuracion" data-bs-toggle="modal" data-bs-target="#modalConfiguracion">
+                                        <div class="col-md-4 text-end">
+                                            <!-- Botón de configuración SOLO SI HAY CUESTIONARIO -->
+                                            {% if cuestionario %}
+                                            <button class="btn btn-configuracion" 
+                                                    data-bs-toggle="modal" data-bs-target="#modalConfiguracion">
                                                 <i class="fas fa-cog"></i>
-                                                Configuración
+                                                <span>Configuración</span>
                                             </button>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -672,81 +896,93 @@
 
                                     <!-- Descripción del cuestionario - SIEMPRE VISIBLE -->
                                     <div class="descripcion-cuestionario">
-                                        <label class="form-label fw-bold mb-2">
-                                            <i class="fas fa-align-left me-2"></i>
+                                        <label class="form-label fw-bold mb-3">
+                                            <i class="fas fa-align-left me-2 text-primary"></i>
                                             Descripción e instrucciones del cuestionario
                                         </label>
-                                        <textarea class="form-control" rows="3" 
-                                                  placeholder="Escriba las instrucciones y descripción del cuestionario..."
-                                                  id="descripcion-cuestionario">{% if cuestionario %}{{ cuestionario.instrucciones }}{% endif %}</textarea>
-                                        <small class="text-muted mt-2 d-block">
+                                        <textarea class="form-control" rows="4" 
+                                                  placeholder="Escriba las instrucciones y descripción del cuestionario que verán los estudiantes..."
+                                                  id="descripcion-cuestionario"
+                                                  {% if not cuestionario %}required{% endif %}>{% if cuestionario %}{{ cuestionario.instrucciones|default:"" }}{% endif %}</textarea>
+                                        <small class="text-muted mt-3 d-block">
+                                            <i class="fas fa-lightbulb me-2"></i>
                                             Esta descripción será visible para los estudiantes antes de iniciar el cuestionario.
                                         </small>
                                     </div>
 
-                                    <!-- Mensaje cuando no hay preguntas -->
-                                    {% if not preguntas and not cuestionario %}
-                                    <div class="text-center py-4" id="mensajeSinPreguntas">
-                                        <div class="alert alert-info">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            Primero debes guardar el cuestionario para poder agregar preguntas
+                                    <!-- SECCIÓN PRINCIPAL: CUESTIONARIO NO GUARDADO -->
+                                    {% if not cuestionario %}
+                                    <div class="sin-cuestionario" id="seccion-sin-cuestionario">
+                                        <div class="icon">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </div>
+                                        <h4 class="mb-4">Crea tu cuestionario</h4>
+                                        <p class="text-muted mb-4">
+                                            Ingresa un título y descripción para tu cuestionario. Una vez guardado, podrás configurar opciones avanzadas y agregar preguntas.
+                                        </p>
+                                        
+                                        <!-- Botón guardar cuestionario inicial -->
+                                        <button type="button" class="btn btn-guardar-cuestionario" onclick="crearCuestionarioInicial()">
+                                            <i class="fas fa-save me-2"></i>
+                                            Crear Cuestionario
+                                        </button>
+                                        
+                                        <div class="mt-4">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Después de guardar podrás agregar preguntas y configurar opciones avanzadas
+                                            </small>
                                         </div>
                                     </div>
                                     {% endif %}
 
-                                    <!-- Acordeón de preguntas -->
-                                    <div class="accordion" id="acordeonPreguntas">
-                                        {% if preguntas %}
-                                            {% for pregunta in preguntas %}
-                                                <div class="accordion-item accordion-pregunta" data-pregunta-id="{{ pregunta.id }}">
-                                                    <h6 class="accordion-header" id="heading{{ pregunta.id }}">
-                                                        <button class="accordion-button collapsed" type="button" 
-                                                                data-bs-toggle="collapse" data-bs-target="#collapse{{ pregunta.id }}" 
-                                                                aria-expanded="false" aria-controls="collapse{{ pregunta.id }}">
-                                                            <span class="text-secondary fw-bold me-3">{{ pregunta.orden|stringformat:"02d" }}</span>  
-                                                            <span class="fw-bold">{{ pregunta.enunciado|truncatechars:60 }}</span>
-                                                            <span class="tipo-pregunta-badge">{{ pregunta.tipo.nombre|title }}</span>
-                                                            <small class="text-muted ms-auto me-3">{{ pregunta.puntaje }} pts</small>
-                                                        </button>
-                                                    </h6>
-                                                    <div id="collapse{{ pregunta.id }}" class="accordion-collapse collapse" 
-                                                         aria-labelledby="heading{{ pregunta.id }}" data-bs-parent="#acordeonPreguntas">
-                                                        <div class="accordion-body mt-3">
-                                                            {% include 'docente/plantilla_pregunta_adaptada.html' with pregunta=pregunta %}
+                                    <!-- SECCIÓN PRINCIPAL: CUESTIONARIO GUARDADO -->
+                                    {% if cuestionario %}
+                                    <div id="seccion-cuestionario-existente">
+
+                                        <!-- Acordeón de preguntas -->
+                                        <div class="accordion" id="acordeonPreguntas">
+                                            {% if preguntas %}
+                                                {% for pregunta in preguntas %}
+                                                    <div class="accordion-item accordion-pregunta" data-pregunta-id="{{ pregunta.id }}">
+                                                        <h6 class="accordion-header" id="heading{{ pregunta.id }}">
+                                                            <button class="accordion-button collapsed" type="button" 
+                                                                    data-bs-toggle="collapse" data-bs-target="#collapse{{ pregunta.id }}" 
+                                                                    aria-expanded="false" aria-controls="collapse{{ pregunta.id }}">
+                                                                <span class="text-secondary fw-bold me-3">{{ pregunta.orden|stringformat:"02d" }}</span>  
+                                                                <span class="fw-bold">{{ pregunta.enunciado|truncatechars:60 }}</span>
+                                                                <span class="tipo-pregunta-badge">{{ pregunta.tipo.descripcion|title }}</span>
+                                                                <small class="text-muted ms-auto me-3">{{ pregunta.puntaje }} pts</small>
+                                                            </button>
+                                                        </h6>
+                                                        <div id="collapse{{ pregunta.id }}" class="accordion-collapse collapse" 
+                                                             aria-labelledby="heading{{ pregunta.id }}" data-bs-parent="#acordeonPreguntas">
+                                                            <div class="accordion-body mt-3">
+                                                                {% include 'docente/plantilla_pregunta_adaptada.html' with pregunta=pregunta %}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            {% endfor %}
-                                        {% endif %}
-                                    </div>
-
-                                    <!-- Botón agregar pregunta -->
-                                    {% if cuestionario %}
-                                    <button type="button" class="btn btn-agregar-pregunta" data-bs-toggle="modal" data-bs-target="#modalTiposPregunta">
-                                        <i class="fas fa-plus me-2"></i>
-                                        {% if not preguntas %}Agregar primera pregunta{% else %}Agregar pregunta{% endif %}
-                                    </button>
-                                    {% else %}
-                                    <button type="button" class="btn btn-agregar-pregunta" data-bs-toggle="modal" data-bs-target="#modalTiposPregunta">
-                                        <i class="fas fa-plus me-2"></i>
-                                        Agregar pregunta (temporal)
-                                    </button>
-                                    {% endif %}
-
-                                    <!-- Botón guardar cuestionario -->
-                                    <div class="text-center mt-4 pt-4 border-top">
-                                        <button type="button" class="btn btn-guardar-cuestionario" onclick="guardarCuestionario()">
-                                            <i class="fas fa-save me-2"></i>
-                                            {% if cuestionario %}Actualizar Cuestionario{% else %}Crear Cuestionario{% endif %}
-                                        </button>
-                                        <p class="text-muted small mt-2 mb-0">
-                                            {% if not cuestionario %}
-                                            Guarda el cuestionario para poder agregar preguntas reales
+                                                {% endfor %}
                                             {% else %}
-                                            Asegúrate de configurar todas las preguntas antes de finalizar
+                                                <!-- Mensaje cuando no hay preguntas -->
+                                                <div class="text-center py-5" id="mensajeSinPreguntas">
+                                                    <div class="alert alert-info border-2">
+                                                        <i class="fas fa-question-circle fa-3x mb-4 d-block text-info"></i>
+                                                        <h5 class="mb-3">No hay preguntas aún</h5>
+                                                        <p class="mb-0 fs-6">Agrega tu primera pregunta para comenzar a construir tu cuestionario</p>
+                                                    </div>
+                                                </div>
                                             {% endif %}
-                                        </p>
+                                        </div>
+
+                                        <!-- Botón agregar pregunta ESTILO PUNTEADO -->
+                                        <button type="button" class="btn btn-agregar-pregunta" data-bs-toggle="modal" data-bs-target="#modalTiposPregunta">
+                                            <i class="fas fa-plus me-3"></i>
+                                            {% if not preguntas %}Agregar primera pregunta{% else %}Agregar nueva pregunta{% endif %}
+                                        </button>
+
                                     </div>
+                                    {% endif %}
                                     
                                 </div>
                                 <!-- Card body END -->
@@ -772,7 +1008,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalConfiguracionLabel">
-                    <i class="fas fa-cog me-2"></i>
+                    <i class="fas fa-cog me-3"></i>
                     Configuración del Cuestionario
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -781,8 +1017,11 @@
                 <form id="formConfiguracion">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Tiempo límite (minutos)</label>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-clock me-2"></i>
+                                    Tiempo límite (minutos)
+                                </label>
                                 <input type="number" class="form-control" id="config-tiempo" 
                                        value="{% if cuestionario %}{{ cuestionario.tiempo_limite }}{% else %}30{% endif %}" 
                                        min="1" max="300">
@@ -790,11 +1029,14 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Puntos totales</label>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-star me-2"></i>
+                                    Puntos totales
+                                </label>
                                 <input type="number" class="form-control" id="config-puntos" 
-                                       value="{% if cuestionario %}{{ cuestionario.puntaje_total|default:'100' }}{% else %}100{% endif %}" 
-                                       min="1" readonly>
+                                       value="{% if cuestionario %}{{ cuestionario.puntaje_total|default:'0' }}{% else %}0{% endif %}" 
+                                       min="0" readonly>
                                 <small class="text-muted">Se calcula automáticamente sumando todas las preguntas</small>
                             </div>
                         </div>
@@ -802,70 +1044,83 @@
                     
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Fecha de inicio</label>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-calendar-plus me-2"></i>
+                                    Fecha de inicio
+                                </label>
                                 <input type="datetime-local" class="form-control" id="config-fecha-inicio" 
                                        value="{% if cuestionario.fecha_apertura %}{{ cuestionario.fecha_apertura|date:'Y-m-d\TH:i' }}{% endif %}">
-                                <small class="text-muted">Cuándo estará disponible</small>
+                                <small class="text-muted">Cuándo estará disponible para los estudiantes</small>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Fecha de fin</label>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-calendar-times me-2"></i>
+                                    Fecha de fin
+                                </label>
                                 <input type="datetime-local" class="form-control" id="config-fecha-fin"
                                        value="{% if cuestionario.fecha_cierre %}{{ cuestionario.fecha_cierre|date:'Y-m-d\TH:i' }}{% endif %}">
-                                <small class="text-muted">Hasta cuándo estará disponible</small>
+                                <small class="text-muted">Hasta cuándo estará disponible para los estudiantes</small>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tipo de calificación</label>
-                        <select class="form-select" id="config-tipo-calificacion">
-                            <option value="automatica" {% if cuestionario.tipo_calificacion == 'automatica' %}selected{% endif %}>
-                                Automática - El sistema califica todas las preguntas
-                            </option>
-                            <option value="mixta" {% if cuestionario.tipo_calificacion == 'mixta' %}selected{% endif %}>
-                                Mixta - Algunas preguntas requieren calificación manual
-                            </option>
-                            <option value="manual" {% if cuestionario.tipo_calificacion == 'manual' %}selected{% endif %}>
-                                Manual - Todas las preguntas requieren calificación manual
-                            </option>
-                        </select>
-                        <small class="text-muted">Define cómo se calificarán las respuestas</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Intentos permitidos</label>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-redo me-2"></i>
+                            Intentos permitidos
+                        </label>
                         <select class="form-select" id="config-intentos">
                             <option value="1" {% if cuestionario.intentos_permitidos == 1 %}selected{% endif %}>1 intento</option>
                             <option value="2" {% if cuestionario.intentos_permitidos == 2 %}selected{% endif %}>2 intentos</option>
                             <option value="3" {% if cuestionario.intentos_permitidos == 3 %}selected{% endif %}>3 intentos</option>
-                            <option value="ilimitado" {% if cuestionario.intentos_permitidos > 900 %}selected{% endif %}>Intentos ilimitados</option>
+                            <option value="999" {% if cuestionario.intentos_permitidos > 900 %}selected{% endif %}>Intentos ilimitados</option>
                         </select>
+                        <small class="text-muted">Número de veces que un estudiante puede realizar el cuestionario</small>
                     </div>
 
-                    <div class="form-check mb-3">
-                        <input type="checkbox" class="form-check-input" id="config-mostrar-resultados" 
-                               {% if cuestionario.mostrar_resultados %}checked{% endif %}>
-                        <label class="form-check-label" for="config-mostrar-resultados">
-                            <strong>Mostrar resultados inmediatamente</strong>
-                            <small class="d-block text-muted">Los estudiantes verán sus calificaciones al terminar</small>
-                        </label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-4">
+                                <input type="checkbox" class="form-check-input" id="config-mostrar-resultados" 
+                                       {% if cuestionario.mostrar_resultados %}checked{% endif %}>
+                                <label class="form-check-label" for="config-mostrar-resultados">
+                                    <strong>
+                                        <i class="fas fa-eye me-2"></i>
+                                        Mostrar resultados inmediatamente
+                                    </strong>
+                                    <small class="d-block text-muted">Los estudiantes verán sus calificaciones al terminar</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-4">
+                                <input type="checkbox" class="form-check-input" id="config-mezclar-preguntas"
+                                       {% if cuestionario.orden_aleatorio %}checked{% endif %}>
+                                <label class="form-check-label" for="config-mezclar-preguntas">
+                                    <strong>
+                                        <i class="fas fa-random me-2"></i>
+                                        Mezclar orden de preguntas
+                                    </strong>
+                                    <small class="d-block text-muted">Las preguntas aparecerán en orden aleatorio</small>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-check mb-3">
-                        <input type="checkbox" class="form-check-input" id="config-mezclar-preguntas"
-                               {% if cuestionario.orden_aleatorio %}checked{% endif %}>
-                        <label class="form-check-label" for="config-mezclar-preguntas">
-                            <strong>Mezclar orden de preguntas</strong>
-                            <small class="d-block text-muted">Las preguntas aparecerán en orden aleatorio</small>
-                        </label>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota importante:</strong> Las fechas de inicio y fin se aplicarán automáticamente. El cuestionario se habilitará y deshabilitará según las fechas configuradas.
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Cancelar
+                </button>
                 <button type="button" class="btn btn-primary" onclick="guardarConfiguracion()">
                     <i class="fas fa-save me-2"></i>
                     Guardar Configuración
@@ -875,34 +1130,15 @@
     </div>
 </div>
 
-<!-- Modal de Confirmación Personalizado -->
-<div class="modal fade modal-custom" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalConfirmacionTitulo">Confirmar acción</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="text-center">
-                    <i class="fas fa-exclamation-triangle text-warning fs-1 mb-3"></i>
-                    <p id="modalConfirmacionMensaje">¿Estás seguro de realizar esta acción?</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="btnConfirmarAccion">Confirmar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal tipos de pregunta - ACTUALIZADO CON TODOS LOS TIPOS -->
+<!-- Modal tipos de pregunta -->
 <div class="modal fade" id="modalTiposPregunta" tabindex="-1" aria-labelledby="modalTiposPreguntaLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header bg-dark">
-                <h5 class="modal-title text-white" id="modalTiposPreguntaLabel">Seleccionar Tipo de Pregunta</h5>
+                <h5 class="modal-title text-white" id="modalTiposPreguntaLabel">
+                    <i class="fas fa-plus-circle me-3"></i>
+                    Seleccionar Tipo de Pregunta
+                </h5>
                 <button type="button" class="btn btn-sm btn-light mb-0 ms-auto" data-bs-dismiss="modal" aria-label="Close">
                     <i class="bi bi-x-lg"></i>
                 </button>
@@ -910,11 +1146,12 @@
             <div class="modal-body p-4">
                 <div class="tipos-pregunta-container">
                     <!-- TIPOS DINÁMICOS DESDE LA BASE DE DATOS -->
-                    <div class="row g-3">
+                    <div class="row g-4">
                         {% for tipo in tipos_pregunta %}
                         <div class="col-lg-3 col-md-4 col-sm-6">
                             <div class="tipo-pregunta-card {% if tipo.nombre not in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}disabled{% endif %}" 
-                                 data-tipo="{{ tipo.nombre }}">
+                                 data-tipo="{{ tipo.nombre }}"
+                                 onclick="{% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}seleccionarTipoPregunta('{{ tipo.nombre }}'){% else %}mostrarMensajeProximamente('{{ tipo.descripcion }}'){% endif %}">
                                 <div class="tipo-icono">
                                     {% if tipo.nombre == 'opcion_unica' %}
                                         <img src="https://cdn-icons-png.flaticon.com/512/709/709510.png" alt="Opción única">
@@ -951,7 +1188,8 @@
                             <div class="alert alert-warning text-center">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 No se encontraron tipos de pregunta. 
-                                <button type="button" class="btn btn-warning btn-sm ms-2" onclick="crearTiposAutomaticamente()">
+                                <button type="button" class="btn btn-warning btn-sm ms-3" onclick="crearTiposAutomaticamente()">
+                                    <i class="fas fa-magic me-2"></i>
                                     Crear tipos automáticamente
                                 </button>
                             </div>
@@ -961,28 +1199,28 @@
                 </div>
                 
                 <!-- Información adicional -->
-                <div class="mt-4 p-3 bg-light rounded-3">
+                <div class="mt-5 p-4 bg-light rounded-3">
                     <div class="row align-items-center">
                         <div class="col-8">
-                            <h6 class="text-primary mb-1">
+                            <h6 class="text-primary mb-2">
                                 <i class="fas fa-lightbulb me-2"></i>
                                 ¿Qué tipo necesitas?
                             </h6>
-                            <p class="text-muted small mb-0">
+                            <p class="text-muted mb-0">
                                 Selecciona el tipo de pregunta que mejor se adapte a tu evaluación. Los tipos disponibles incluyen desde preguntas básicas hasta simuladores moleculares avanzados.
                             </p>
                         </div>
                         <div class="col-4 text-end">
-                            <div class="d-flex justify-content-end gap-3">
+                            <div class="d-flex justify-content-end gap-4">
                                 <div class="text-center">
-                                    <div class="tipo-estado-mini disponible mb-1">
-                                        <i class="fas fa-check-circle"></i>
+                                    <div class="tipo-estado disponible mb-2" style="width: 20px; height: 20px; margin: 0 auto;">
+                                        <i class="fas fa-check-circle" style="font-size: 12px;"></i>
                                     </div>
                                     <small class="text-muted">Disponible</small>
                                 </div>
                                 <div class="text-center">
-                                    <div class="tipo-estado-mini proximamente mb-1">
-                                        <i class="fas fa-clock"></i>
+                                    <div class="tipo-estado proximamente mb-2" style="width: 20px; height: 20px; margin: 0 auto;">
+                                        <i class="fas fa-clock" style="font-size: 12px;"></i>
                                     </div>
                                     <small class="text-muted">Próximamente</small>
                                 </div>
@@ -1001,829 +1239,244 @@
 <script src="{% static 'assets/js/functions.js' %}"></script>
 
 <script>
-// Variables globales
+// =====================================================
+// SISTEMA DE CUESTIONARIOS - MEJORADO Y FUNCIONAL
+// =====================================================
+
+// =====================================================
+// VARIABLES GLOBALES
+// =====================================================
+
 let cuestionarioId = {% if cuestionario %}{{ cuestionario.id }}{% else %}null{% endif %};
 let preguntaParaCambiarTipo = null;
-let preguntasTemporales = []; // Array para guardar preguntas antes de crear el cuestionario
-let contadorPreguntasTemp = 1; // Contador para IDs temporales
-let configuracionTemporal = { // Configuración temporal para cuestionarios nuevos
-    tiempo_limite: 30,
-    puntos_totales: 100,
-    fecha_inicio: '',
-    fecha_fin: '',
-    tipo_calificacion: 'automatica',
-    intentos_permitidos: 1,
-    mostrar_resultados: true,
-    mezclar_preguntas: false
-};
 
-document.addEventListener('DOMContentLoaded', function() {
-    const modalTipos = document.getElementById('modalTiposPregunta');
-    
-    // Configurar eventos del modal (siempre disponible)
-    if (modalTipos) {
-        // Manejar clics en las cards de tipos de pregunta
-        document.querySelectorAll('.tipo-pregunta-card:not(.disabled)').forEach(card => {
-            card.addEventListener('click', function() {
-                const tipo = this.dataset.tipo;
-                
-                // Efecto visual de selección
-                this.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    this.style.transform = '';
-                }, 150);
-                
-                // Si estamos cambiando tipo de pregunta existente
-                if (preguntaParaCambiarTipo) {
-                    cambiarTipoPregunta(preguntaParaCambiarTipo, tipo);
-                    preguntaParaCambiarTipo = null;
-                } else {
-                    // Crear pregunta temporal o real según el estado
-                    if (cuestionarioId) {
-                        crearNuevaPregunta(tipo);
-                    } else {
-                        crearPreguntaTemporal(tipo);
-                    }
-                }
-            });
-            
-            // Efectos hover
-            card.addEventListener('mouseenter', function() {
-                if (!this.classList.contains('disabled')) {
-                    this.style.borderColor = '#0066cc';
-                    this.style.transform = 'translateY(-4px)';
-                }
-            });
-            
-            card.addEventListener('mouseleave', function() {
-                if (!this.classList.contains('disabled')) {
-                    this.style.borderColor = '#e9ecef';
-                    this.style.transform = 'translateY(0)';
-                }
-            });
-        });
-        
-        // Manejar clics en cards deshabilitadas
-        document.querySelectorAll('.tipo-pregunta-card.disabled').forEach(card => {
-            card.addEventListener('click', function() {
-                const tipoNombre = this.querySelector('.tipo-titulo').textContent;
-                mostrarMensajeProximamente(tipoNombre);
-            });
-        });
-    }
-    
-    // Restaurar acordeón abierto después de reload
-    const acordeonAbierto = sessionStorage.getItem('acordeonAbierto');
-    if (acordeonAbierto) {
-        const elemento = document.getElementById(acordeonAbierto);
-        if (elemento) {
-            const collapse = new bootstrap.Collapse(elemento, { show: true });
-        }
-        sessionStorage.removeItem('acordeonAbierto');
-    }
-});
+// =====================================================
+// FUNCIONES PRINCIPALES DEL CUESTIONARIO
+// =====================================================
 
-// FUNCIÓN: Crear pregunta temporal (antes de guardar cuestionario)
-function crearPreguntaTemporal(tipo) {
-    const modal = bootstrap.Modal.getInstance(document.getElementById('modalTiposPregunta'));
-    modal.hide();
-    
+/**
+ * Crea un cuestionario inicial con información básica
+ */
+function crearCuestionarioInicial() {
     const titulo = document.getElementById('titulo-cuestionario').value.trim();
+    const descripcion = document.getElementById('descripcion-cuestionario').value.trim();
+    
+    // Validaciones mejoradas
     if (!titulo) {
-        mostrarError('Por favor, ingresa un título para el cuestionario primero');
+        mostrarErrorElegante('El título del cuestionario es obligatorio');
+        document.getElementById('titulo-cuestionario').focus();
         return;
     }
     
-    // Crear objeto de pregunta temporal
-    const preguntaTemporal = {
-        id: `temp_${contadorPreguntasTemp}`,
-        tipo: { nombre: tipo },
-        enunciado: `Nueva pregunta ${contadorPreguntasTemp} - ${obtenerNombreTipo(tipo)}`,
-        orden: contadorPreguntasTemp,
-        puntaje: 1,
-        opciones: [],
-        calificacion_manual: tipo === 'respuesta_abierta' ? true : false,
-        configuracion_especifica: obtenerConfiguracionPorDefecto(tipo)
-    };
-    
-    // Crear opciones por defecto según el tipo
-    if (tipo === 'opcion_unica' || tipo === 'opcion_multiple') {
-        preguntaTemporal.opciones = [
-            { id: `temp_opt_1`, texto: 'Opción 1', es_correcta: true },
-            { id: `temp_opt_2`, texto: 'Opción 2', es_correcta: false },
-            { id: `temp_opt_3`, texto: 'Opción 3', es_correcta: false },
-            { id: `temp_opt_4`, texto: 'Opción 4', es_correcta: false }
-        ];
-    } else if (tipo === 'falso_verdadero') {
-        preguntaTemporal.opciones = [
-            { id: `temp_opt_v`, texto: 'Verdadero', es_correcta: true },
-            { id: `temp_opt_f`, texto: 'Falso', es_correcta: false }
-        ];
-    }
-    
-    preguntasTemporales.push(preguntaTemporal);
-    contadorPreguntasTemp++;
-    
-    // Renderizar pregunta temporal en el acordeón
-    renderizarPreguntaTemporal(preguntaTemporal);
-    
-    mostrarExito('Pregunta agregada. Recuerda guardar el cuestionario cuando termines.');
-}
-
-// FUNCIÓN: Obtener nombre legible del tipo
-function obtenerNombreTipo(tipo) {
-    const nombres = {
-        'opcion_unica': 'Opción Única',
-        'opcion_multiple': 'Opción Múltiple', 
-        'falso_verdadero': 'Verdadero/Falso',
-        'respuesta_abierta': 'Respuesta Abierta',
-        'simulador_2d': 'Simulador Molecular 2D',
-        'simulador_3d': 'Simulador Molecular 3D',
-        'unir_lineas': 'Unir con Líneas',
-        'completar': 'Completar Texto'
-    };
-    return nombres[tipo] || tipo;
-}
-
-// FUNCIÓN: Obtener configuración por defecto según tipo
-function obtenerConfiguracionPorDefecto(tipo) {
-    switch(tipo) {
-        case 'respuesta_abierta':
-            return {
-                respuesta_modelo: '',
-                criterios_evaluacion: '',
-                longitud_minima: 50,
-                longitud_maxima: 1000
-            };
-        case 'simulador_2d':
-        case 'simulador_3d':
-            return {
-                smiles_objetivo: '',
-                descripcion_molecula: '',
-                tolerancia_similitud: 95,
-                permitir_isomeros: false
-            };
-        case 'unir_lineas':
-            return {
-                columna_izquierda: '',
-                columna_derecha: '',
-                conexiones_correctas: '',
-                mezclar_opciones: false,
-                permitir_conexiones_multiples: false
-            };
-        case 'completar':
-            return {
-                texto_completar: '',
-                respuestas_completar: '',
-                sensible_mayusculas: false,
-                ignorar_espacios: true,
-                permitir_alternativas: false,
-                respuestas_alternativas: ''
-            };
-        default:
-            return {};
-    }
-}
-
-// FUNCIÓN: Renderizar pregunta temporal en el DOM
-function renderizarPreguntaTemporal(pregunta) {
-    const acordeon = document.getElementById('acordeonPreguntas');
-    
-    // Ocultar mensaje de "sin preguntas" si existe
-    const mensajeSinPreguntas = document.getElementById('mensajeSinPreguntas');
-    if (mensajeSinPreguntas) {
-        mensajeSinPreguntas.style.display = 'none';
-    }
-    
-    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
-    const preguntaHTML = `
-        <div class="accordion-item accordion-pregunta" data-pregunta-id="${pregunta.id}">
-            <h6 class="accordion-header" id="heading${pregunta.id}">
-                <button class="accordion-button" type="button" 
-                        data-bs-toggle="collapse" data-bs-target="#collapse${pregunta.id}" 
-                        aria-expanded="true" aria-controls="collapse${pregunta.id}">
-                    <span class="text-secondary fw-bold me-3">${pregunta.orden.toString().padStart(2, '0')}</span>  
-                    <span class="fw-bold">${pregunta.enunciado}</span>
-                    <span class="tipo-pregunta-badge">${obtenerNombreTipo(tipoNombre)}</span>
-                    <small class="text-muted ms-auto me-3">${pregunta.puntaje} pts</small>
-                    <span class="badge bg-warning ms-2">Temporal</span>
-                </button>
-            </h6>
-            <div id="collapse${pregunta.id}" class="accordion-collapse collapse show" 
-                 aria-labelledby="heading${pregunta.id}" data-bs-parent="#acordeonPreguntas">
-                <div class="accordion-body mt-3">
-                    ${generarHTMLPreguntaTemporal(pregunta)}
-                </div>
-            </div>
-        </div>
-    `;
-    
-    acordeon.insertAdjacentHTML('beforeend', preguntaHTML);
-    
-    // Inicializar funcionalidades específicas del tipo de pregunta
-    inicializarFuncionalidadesTemporal(pregunta);
-}
-
-// FUNCIÓN: Generar HTML para pregunta temporal según tipo
-function generarHTMLPreguntaTemporal(pregunta) {
-    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
-    
-    let contenidoEspecifico = '';
-    
-    switch(tipoNombre) {
-        case 'opcion_unica':
-        case 'opcion_multiple':
-        case 'falso_verdadero':
-            contenidoEspecifico = generarOpcionesTemporal(pregunta);
-            break;
-        case 'respuesta_abierta':
-            contenidoEspecifico = generarRespuestaAbiertaTemporal(pregunta);
-            break;
-        case 'simulador_2d':
-        case 'simulador_3d':
-            contenidoEspecifico = generarSimuladorTemporal(pregunta);
-            break;
-        case 'unir_lineas':
-            contenidoEspecifico = generarUnirLineasTemporal(pregunta);
-            break;
-        case 'completar':
-            contenidoEspecifico = generarCompletarTemporal(pregunta);
-            break;
-        default:
-            contenidoEspecifico = '<div class="alert alert-warning">Tipo de pregunta no soportado aún</div>';
-    }
-    
-    return `
-        <div class="plantilla-pregunta" data-tipo="${tipoNombre}">
-            <div class="row mb-3">
-                <div class="col-md-8">
-                    <label class="form-label fw-bold">Enunciado de la pregunta</label>
-                    <textarea class="form-control" rows="3" 
-                              placeholder="Escribe el enunciado de tu pregunta aquí..."
-                              data-field="enunciado"
-                              onchange="actualizarPreguntaTemporal('${pregunta.id}', 'enunciado', this.value)">${pregunta.enunciado}</textarea>
-                </div>
-                <div class="col-md-4">
-                    <div class="row">
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Puntaje</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" value="${pregunta.puntaje}" 
-                                       min="1" step="1" data-field="puntaje"
-                                       onchange="actualizarPreguntaTemporal('${pregunta.id}', 'puntaje', this.value)">
-                                <span class="input-group-text">pts</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label fw-bold">Calificación</label>
-                            <div class="calificacion-manual">
-                                <input type="checkbox" id="calificacion-manual-${pregunta.id}" 
-                                       data-field="calificacion_manual"
-                                       ${pregunta.calificacion_manual ? 'checked' : ''}
-                                       onchange="actualizarPreguntaTemporal('${pregunta.id}', 'calificacion_manual', this.checked)">
-                                <label for="calificacion-manual-${pregunta.id}" class="small">
-                                    Manual
-                                </label>
-                            </div>
-                            <small class="text-muted d-block">Marcar si requiere revisión manual</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            ${contenidoEspecifico}
-            
-            <div class="pregunta-actions">
-                <button type="button" class="btn btn-danger btn-sm" 
-                        onclick="eliminarPreguntaTemporal('${pregunta.id}')">
-                    <i class="fas fa-trash me-1"></i>Eliminar pregunta
-                </button>
-                
-                <div class="ms-auto d-flex align-items-center">
-                    <span class="text-muted small">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Tipo: ${obtenerNombreTipo(tipoNombre)} | 
-                        Orden: ${pregunta.orden} |
-                        <span class="text-warning">Temporal (se guardará al crear el cuestionario)</span>
-                    </span>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// FUNCIÓN: Generar HTML para opciones (múltiple, única, verdadero/falso)
-function generarOpcionesTemporal(pregunta) {
-    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
-    const tipoInput = (tipoNombre === 'opcion_unica' || tipoNombre === 'falso_verdadero') ? 'radio' : 'checkbox';
-    
-    let tituloOpciones = '';
-    if (tipoNombre === 'opcion_unica') {
-        tituloOpciones = 'Opciones (selecciona la respuesta correcta)';
-    } else if (tipoNombre === 'opcion_multiple') {
-        tituloOpciones = 'Opciones (puedes seleccionar múltiples respuestas correctas)';
-    } else {
-        tituloOpciones = 'Opciones Verdadero/Falso';
-    }
-    
-    return `
-        <div class="opciones-container">
-            <label class="form-label fw-bold">${tituloOpciones}</label>
-            ${pregunta.opciones.map((opcion, index) => `
-                <div class="opcion-container ${opcion.es_correcta ? 'opcion-correcta' : ''}" 
-                     data-opcion="${index + 1}" data-opcion-id="${opcion.id}">
-                    <input type="${tipoInput}" 
-                           name="correcta-${pregunta.id}" 
-                           ${opcion.es_correcta ? 'checked' : ''}
-                           data-field="es_correcta"
-                           onchange="manejarCambioOpcionCorrectaTemporal(this, '${pregunta.id}')">
-                    <input type="text" class="form-control opcion-input" 
-                           value="${opcion.texto}" placeholder="Opción ${index + 1}"
-                           data-field="texto"
-                           onchange="actualizarOpcionTemporal('${pregunta.id}', '${opcion.id}', this.value, 'texto')">
-                    ${pregunta.opciones.length > 2 ? `
-                        <button type="button" class="btn btn-danger btn-sm btn-sm-custom" 
-                                onclick="eliminarOpcionTemporal('${pregunta.id}', '${opcion.id}')"
-                                title="Eliminar opción">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    ` : ''}
-                </div>
-            `).join('')}
-            
-            ${tipoNombre !== 'falso_verdadero' ? `
-                <div class="d-flex align-items-center mt-3">
-                    <button type="button" class="btn-agregar-opcion" 
-                            onclick="agregarOpcionTemporal('${pregunta.id}')"
-                            title="Agregar nueva opción">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    <span class="text-muted small ms-2">Agregar nueva opción</span>
-                </div>
-            ` : ''}
-        </div>
-    `;
-}
-
-// FUNCIÓN: Generar HTML para respuesta abierta temporal
-function generarRespuestaAbiertaTemporal(pregunta) {
-    const config = pregunta.configuracion_especifica || {};
-    
-    return `
-        <div class="respuesta-abierta-container">
-            <label class="form-label fw-bold">Configuración de respuesta abierta</label>
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                Esta pregunta será evaluada manualmente. Los estudiantes podrán escribir su respuesta en un campo de texto.
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">Respuesta modelo (opcional)</label>
-                <textarea class="form-control" rows="4" 
-                          placeholder="Escribe una respuesta modelo para guiar la evaluación..."
-                          data-field="respuesta_modelo"
-                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'respuesta_modelo', this.value)">${config.respuesta_modelo || ''}</textarea>
-                <small class="text-muted">Esta respuesta servirá como guía para la calificación manual</small>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">Criterios de evaluación (opcional)</label>
-                <textarea class="form-control" rows="3" 
-                          placeholder="Describe los criterios que se deben considerar al evaluar esta respuesta..."
-                          data-field="criterios_evaluacion"
-                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'criterios_evaluacion', this.value)">${config.criterios_evaluacion || ''}</textarea>
-                <small class="text-muted">Estos criterios ayudarán a mantener consistencia en la calificación</small>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <label class="form-label">Longitud mínima de respuesta</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" 
-                               value="${config.longitud_minima || 50}" 
-                               min="10" max="1000"
-                               data-field="longitud_minima"
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'longitud_minima', this.value)">
-                        <span class="input-group-text">caracteres</span>
-                    </div>
-                    <small class="text-muted">Número mínimo de caracteres requeridos</small>
-                </div>
-                <div class="col-md-6">
-                    <label class="form-label">Longitud máxima de respuesta</label>
-                    <div class="input-group">
-                        <input type="number" class="form-control" 
-                               value="${config.longitud_maxima || 1000}" 
-                               min="50" max="5000"
-                               data-field="longitud_maxima"
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'longitud_maxima', this.value)">
-                        <span class="input-group-text">caracteres</span>
-                    </div>
-                    <small class="text-muted">Número máximo de caracteres permitidos</small>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// FUNCIÓN: Generar HTML para simulador temporal
-function generarSimuladorTemporal(pregunta) {
-    const tipoNombre = pregunta.tipo.nombre || pregunta.tipo;
-    const config = pregunta.configuracion_especifica || {};
-    
-    return `
-        <div class="simulador-container">
-            <label class="form-label fw-bold">
-                Configuración de ${tipoNombre === 'simulador_2d' ? 'Simulador Molecular 2D' : 'Simulador Molecular 3D'}
-            </label>
-            
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Configuración de la Molécula</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label">Código SMILES de la molécula objetivo</label>
-                                <input type="text" class="form-control" 
-                                       placeholder="Ej: CCO (etanol)" 
-                                       data-field="smiles_objetivo"
-                                       value="${config.smiles_objetivo || ''}"
-                                       onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'smiles_objetivo', this.value)">
-                                <small class="text-muted">Estructura química en formato SMILES</small>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Descripción de la molécula</label>
-                                <textarea class="form-control" rows="2" 
-                                          placeholder="Ej: Etanol - alcohol etílico"
-                                          data-field="descripcion_molecula"
-                                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'descripcion_molecula', this.value)">${config.descripcion_molecula || ''}</textarea>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-6">
-                                    <label class="form-label">Tolerancia</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" 
-                                               value="${config.tolerancia_similitud || 95}" 
-                                               min="70" max="100" step="5"
-                                               data-field="tolerancia_similitud"
-                                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'tolerancia_similitud', this.value)">
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label">Permitir isómeros</label>
-                                    <div class="form-check mt-2">
-                                        <input type="checkbox" class="form-check-input" 
-                                               id="permitir-isomeros-${pregunta.id}"
-                                               data-field="permitir_isomeros"
-                                               ${config.permitir_isomeros ? 'checked' : ''}
-                                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'permitir_isomeros', this.checked)">
-                                        <label class="form-check-label" for="permitir-isomeros-${pregunta.id}">
-                                            Sí
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-success text-white">
-                            <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Vista Previa</h6>
-                        </div>
-                        <div class="card-body">
-                            <div id="viewer_3d_${pregunta.id}" style="width: 100%; height: 200px; border: 1px solid #dee2e6; background: #f8f9fa;">
-                                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
-                                    <div class="text-center">
-                                        <i class="fas fa-cube fa-2x mb-2"></i>
-                                        <p>Vista ${tipoNombre === 'simulador_3d' ? '3D' : '2D'}</p>
-                                        <small>Aparecerá al definir una molécula</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                Los estudiantes usarán un simulador molecular interactivo para construir la molécula objetivo.
-                ${tipoNombre === 'simulador_3d' ? 
-                    'En modo 3D, podrán rotar y manipular la molécula en el espacio tridimensional.' : 
-                    'En modo 2D, trabajarán con estructuras planas de Lewis.'}
-            </div>
-        </div>
-    `;
-}
-
-// FUNCIÓN: Generar HTML para unir líneas temporal
-function generarUnirLineasTemporal(pregunta) {
-    const config = pregunta.configuracion_especifica || {};
-    
-    return `
-        <div class="unir-lineas-container">
-            <label class="form-label fw-bold">Configuración - Unir con líneas</label>
-            
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                Los estudiantes conectarán elementos de dos columnas arrastrando líneas entre ellos.
-            </div>
-            
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0">Columna Izquierda</h6>
-                        </div>
-                        <div class="card-body">
-                            <textarea class="form-control" rows="6" 
-                                      placeholder="Elemento 1&#10;Elemento 2&#10;Elemento 3&#10;Elemento 4"
-                                      data-field="columna_izquierda"
-                                      onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'columna_izquierda', this.value)">${config.columna_izquierda || ''}</textarea>
-                            <small class="text-muted">Un elemento por línea</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-success text-white">
-                            <h6 class="mb-0">Columna Derecha</h6>
-                        </div>
-                        <div class="card-body">
-                            <textarea class="form-control" rows="6" 
-                                      placeholder="Definición A&#10;Definición B&#10;Definición C&#10;Definición D"
-                                      data-field="columna_derecha"
-                                      onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'columna_derecha', this.value)">${config.columna_derecha || ''}</textarea>
-                            <small class="text-muted">Un elemento por línea</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-3">
-                <label class="form-label">Conexiones correctas</label>
-                <div class="row">
-                    <div class="col-md-8">
-                        <input type="text" class="form-control" 
-                               placeholder="1-A, 2-B, 3-C, 4-D"
-                               data-field="conexiones_correctas"
-                               value="${config.conexiones_correctas || ''}"
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'conexiones_correctas', this.value)">
-                        <small class="text-muted">Define qué elementos de la izquierda van con cuáles de la derecha (formato: número-letra)</small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" 
-                               id="mezclar-opciones-${pregunta.id}"
-                               data-field="mezclar_opciones"
-                               ${config.mezclar_opciones ? 'checked' : ''}
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'mezclar_opciones', this.checked)">
-                        <label class="form-check-label" for="mezclar-opciones-${pregunta.id}">
-                            Mezclar orden aleatoriamente
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" 
-                               id="permitir-multiple-${pregunta.id}"
-                               data-field="permitir_conexiones_multiples"
-                               ${config.permitir_conexiones_multiples ? 'checked' : ''}
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'permitir_conexiones_multiples', this.checked)">
-                        <label class="form-check-label" for="permitir-multiple-${pregunta.id}">
-                            Permitir conexiones múltiples
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// FUNCIÓN: Generar HTML para completar texto temporal
-function generarCompletarTemporal(pregunta) {
-    const config = pregunta.configuracion_especifica || {};
-    
-    return `
-        <div class="completar-container">
-            <label class="form-label fw-bold">Configuración - Completar texto</label>
-            
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                Los estudiantes llenarán espacios en blanco en un texto. Use _____ (5 guiones bajos) para marcar cada espacio.
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">Texto con espacios en blanco</label>
-                <textarea class="form-control" rows="4" 
-                          placeholder="El agua tiene la fórmula química _____ y es fundamental para la _____."
-                          title="Use _____ para marcar los espacios en blanco"
-                          data-field="texto_completar"
-                          onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'texto_completar', this.value)">${config.texto_completar || ''}</textarea>
-                <small class="text-muted">Use _____ (5 guiones bajos) para marcar cada espacio en blanco</small>
-            </div>
-            
-            <div class="mb-3">
-                <div class="row">
-                    <div class="col-md-8">
-                        <label class="form-label">Respuestas correctas</label>
-                        <input type="text" class="form-control" 
-                               placeholder="H2O, vida, células"
-                               title="Escriba las respuestas en el orden que aparecen los espacios"
-                               data-field="respuestas_completar"
-                               value="${config.respuestas_completar || ''}"
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'respuestas_completar', this.value)">
-                        <small class="text-muted">Separar con comas, en el orden de aparición</small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" 
-                               id="sensible-mayusculas-${pregunta.id}"
-                               data-field="sensible_mayusculas"
-                               ${config.sensible_mayusculas ? 'checked' : ''}
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'sensible_mayusculas', this.checked)">
-                        <label class="form-check-label" for="sensible-mayusculas-${pregunta.id}">
-                            Sensible a mayúsculas
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" 
-                               id="ignorar-espacios-${pregunta.id}"
-                               data-field="ignorar_espacios"
-                               ${config.ignorar_espacios ? 'checked' : ''}
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'ignorar_espacios', this.checked)">
-                        <label class="form-check-label" for="ignorar-espacios-${pregunta.id}">
-                            Ignorar espacios extra
-                        </label>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input" 
-                               id="respuestas-alternativas-${pregunta.id}"
-                               data-field="permitir_alternativas"
-                               ${config.permitir_alternativas ? 'checked' : ''}
-                               onchange="actualizarConfiguracionTemporal('${pregunta.id}', 'permitir_alternativas', this.checked)">
-                        <label class="form-check-label" for="respuestas-alternativas-${pregunta.id}">
-                            Permitir sinónimos
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// FUNCIÓN: Inicializar funcionalidades específicas después de renderizar
-function inicializarFuncionalidadesTemporal(pregunta) {
-    console.log('Inicializando funcionalidades para:', pregunta.tipo.nombre || pregunta.tipo);
-}
-
-// FUNCIONES DE ACTUALIZACIÓN PARA PREGUNTAS TEMPORALES
-function actualizarPreguntaTemporal(preguntaId, campo, valor) {
-    const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
-    if (pregunta) {
-        pregunta[campo] = valor;
-        
-        if (campo === 'enunciado') {
-            const tituloBtn = document.querySelector(`[data-pregunta-id="${preguntaId}"] .accordion-button span.fw-bold`);
-            if (tituloBtn) {
-                const nuevoTexto = valor.length > 60 ? valor.substring(0, 60) + '...' : valor;
-                tituloBtn.textContent = nuevoTexto;
-            }
-        }
-    }
-}
-
-function actualizarOpcionTemporal(preguntaId, opcionId, valor, campo) {
-    const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
-    if (pregunta) {
-        const opcion = pregunta.opciones.find(o => o.id === opcionId);
-        if (opcion) {
-            opcion[campo] = valor;
-        }
-    }
-}
-
-function actualizarConfiguracionTemporal(preguntaId, campo, valor) {
-    const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
-    if (pregunta) {
-        if (!pregunta.configuracion_especifica) {
-            pregunta.configuracion_especifica = {};
-        }
-        pregunta.configuracion_especifica[campo] = valor;
-    }
-}
-
-function manejarCambioOpcionCorrectaTemporal(radio, preguntaId) {
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
-        container.classList.remove('opcion-correcta');
-    });
-    
-    if (radio.checked) {
-        radio.closest('.opcion-container').classList.add('opcion-correcta');
-    }
-    
-    const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
-    if (pregunta) {
-        const opcionId = radio.closest('.opcion-container').dataset.opcionId;
-        
-        if (radio.type === 'radio') {
-            pregunta.opciones.forEach(opt => opt.es_correcta = false);
-            const opcion = pregunta.opciones.find(o => o.id === opcionId);
-            if (opcion) opcion.es_correcta = radio.checked;
-        } else {
-            const opcion = pregunta.opciones.find(o => o.id === opcionId);
-            if (opcion) opcion.es_correcta = radio.checked;
-        }
-    }
-}
-
-function agregarOpcionTemporal(preguntaId) {
-    const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
-    if (!pregunta) return;
-    
-    const nuevaOpcion = {
-        id: `temp_opt_${Date.now()}`,
-        texto: `Nueva opción ${pregunta.opciones.length + 1}`,
-        es_correcta: false
-    };
-    
-    pregunta.opciones.push(nuevaOpcion);
-    
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    const acordeonBody = preguntaElement.querySelector('.accordion-body');
-    acordeonBody.innerHTML = generarHTMLPreguntaTemporal(pregunta);
-    
-    mostrarExito('Opción agregada');
-}
-
-function eliminarOpcionTemporal(preguntaId, opcionId) {
-    const pregunta = preguntasTemporales.find(p => p.id === preguntaId);
-    if (!pregunta) return;
-    
-    if (pregunta.opciones.length <= 2) {
-        mostrarError('No se puede eliminar. Mínimo 2 opciones requeridas.');
+    if (titulo.length < 3) {
+        mostrarErrorElegante('El título debe tener al menos 3 caracteres');
+        document.getElementById('titulo-cuestionario').focus();
         return;
     }
     
-    pregunta.opciones = pregunta.opciones.filter(o => o.id !== opcionId);
+    if (!descripcion) {
+        mostrarErrorElegante('La descripción del cuestionario es obligatoria');
+        document.getElementById('descripcion-cuestionario').focus();
+        return;
+    }
     
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    const acordeonBody = preguntaElement.querySelector('.accordion-body');
-    acordeonBody.innerHTML = generarHTMLPreguntaTemporal(pregunta);
+    if (descripcion.length < 10) {
+        mostrarErrorElegante('La descripción debe tener al menos 10 caracteres');
+        document.getElementById('descripcion-cuestionario').focus();
+        return;
+    }
     
-    mostrarExito('Opción eliminada');
-}
-
-function eliminarPreguntaTemporal(preguntaId) {
-    mostrarConfirmacion(
-        'Eliminar Pregunta',
-        '¿Estás seguro de que quieres eliminar esta pregunta? Se perderán todos los cambios.',
-        function() {
-            preguntasTemporales = preguntasTemporales.filter(p => p.id !== preguntaId);
+    const loadingToast = mostrarCargandoElegante('Creando cuestionario...');
+    
+    // Preparar datos
+    const formData = new FormData();
+    formData.append('titulo', titulo);
+    formData.append('descripcion', descripcion);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    // Agregar sección si existe
+    const seccionIdInput = document.getElementById('seccion_id');
+    if (seccionIdInput && seccionIdInput.value) {
+        formData.append('seccion_id', seccionIdInput.value);
+    }
+    
+    // Enviar petición
+    fetch('/docente/cuestionario/guardar-cuestionario/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingToast.hide();
+        
+        if (data.success) {
+            cuestionarioId = data.cuestionario_id;
+            mostrarExitoElegante('¡Cuestionario creado exitosamente!');
+            marcarComoGuardado();
             
-            const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-            preguntaElement.remove();
-            
-            if (preguntasTemporales.length === 0 && !cuestionarioId) {
-                const mensajeSinPreguntas = document.getElementById('mensajeSinPreguntas');
-                if (mensajeSinPreguntas) {
-                    mensajeSinPreguntas.style.display = 'block';
+            // Redirigir a la página de edición
+            setTimeout(() => {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    window.location.href = `/docente/editar_cuestionario/${cuestionarioId}/`;
                 }
-            }
-            
-            mostrarExito('Pregunta eliminada');
+            }, 1500);
+        } else {
+            mostrarErrorElegante('Error: ' + (data.error || 'Error desconocido al crear el cuestionario'));
         }
-    );
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('Error:', error);
+        mostrarErrorElegante('Error de conexión al crear el cuestionario');
+    });
 }
 
-// FUNCIONES PRINCIPALES DEL SISTEMA
-
-function crearNuevaPregunta(tipo) {
+/**
+ * Guarda la configuración avanzada del cuestionario
+ */
+function guardarConfiguracion() {
     if (!cuestionarioId) {
-        mostrarError('Error: No hay cuestionario válido');
+        mostrarErrorElegante('Error: No hay un cuestionario válido para configurar');
         return;
     }
     
-    const loadingToast = mostrarCargando('Creando pregunta...');
+    // Recopilar datos de configuración
+    const configuracion = {
+        tiempo_limite: parseInt(document.getElementById('config-tiempo').value),
+        fecha_inicio: document.getElementById('config-fecha-inicio').value,
+        fecha_fin: document.getElementById('config-fecha-fin').value,
+        intentos_permitidos: document.getElementById('config-intentos').value,
+        mostrar_resultados: document.getElementById('config-mostrar-resultados').checked,
+        mezclar_preguntas: document.getElementById('config-mezclar-preguntas').checked
+    };
+    
+    // Validaciones
+    if (configuracion.tiempo_limite < 1 || configuracion.tiempo_limite > 300) {
+        mostrarErrorElegante('El tiempo límite debe estar entre 1 y 300 minutos');
+        return;
+    }
+    
+    if (configuracion.fecha_inicio && configuracion.fecha_fin) {
+        const fechaInicio = new Date(configuracion.fecha_inicio);
+        const fechaFin = new Date(configuracion.fecha_fin);
+        
+        if (fechaInicio >= fechaFin) {
+            mostrarErrorElegante('La fecha de inicio debe ser anterior a la fecha de fin');
+            return;
+        }
+    }
+    
+    const loadingToast = mostrarCargandoElegante('Guardando configuración...');
+    
+    fetch('/docente/cuestionario/actualizar-configuracion/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            cuestionario_id: cuestionarioId,
+            configuracion: configuracion
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingToast.hide();
+        
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfiguracion'));
+            modal.hide();
+            mostrarExitoElegante('Configuración guardada exitosamente');
+            
+            // Actualizar información en la página
+            actualizarVistaConfiguracion(configuracion);
+        } else {
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al guardar la configuración'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('Error:', error);
+        mostrarErrorElegante('Error de conexión al guardar la configuración');
+    });
+}
+
+/**
+ * Actualiza la vista con la nueva configuración
+ */
+function actualizarVistaConfiguracion(config) {
+    const infoContainer = document.getElementById('info-cuestionario');
+    if (infoContainer) {
+        // Formatear fechas
+        let fechaTexto = '';
+        if (config.fecha_inicio && config.fecha_fin) {
+            const fechaInicio = new Date(config.fecha_inicio).toLocaleDateString('es-ES');
+            const fechaFin = new Date(config.fecha_fin).toLocaleDateString('es-ES');
+            fechaTexto = `
+                <span class="d-flex align-items-center">
+                    <i class="fas fa-calendar me-2 text-success"></i>
+                    <strong>${fechaInicio} - ${fechaFin}</strong>
+                </span>
+            `;
+        }
+        
+        infoContainer.innerHTML = `
+            <span class="d-flex align-items-center">
+                <i class="fas fa-clock me-2 text-primary"></i>
+                <strong>${config.tiempo_limite} min</strong>
+            </span>
+            <span class="d-flex align-items-center">
+                <i class="fas fa-star me-2 text-warning"></i>
+                <strong>${config.puntaje_total || 0} pts</strong>
+            </span>
+            <span class="d-flex align-items-center">
+                <i class="fas fa-list me-2 text-info"></i>
+                <strong>${document.querySelectorAll('.accordion-pregunta').length} pregunta(s)</strong>
+            </span>
+            ${fechaTexto}
+        `;
+    }
+}
+
+// =====================================================
+// FUNCIONES PARA GESTIÓN DE PREGUNTAS
+// =====================================================
+
+/**
+ * Selecciona un tipo de pregunta y la crea
+ */
+function seleccionarTipoPregunta(tipo) {
+    if (!cuestionarioId) {
+        mostrarErrorElegante('Error: Debes guardar el cuestionario primero antes de agregar preguntas');
+        return;
+    }
+    
+    console.log(`Seleccionando tipo de pregunta: ${tipo}`);
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalTiposPregunta'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Si estamos cambiando tipo de pregunta existente
+    if (preguntaParaCambiarTipo) {
+        cambiarTipoPregunta(preguntaParaCambiarTipo, tipo);
+        preguntaParaCambiarTipo = null;
+        return;
+    }
+    
+    // Crear nueva pregunta
+    crearNuevaPregunta(tipo);
+}
+
+/**
+ * Crea una nueva pregunta del tipo especificado
+ */
+function crearNuevaPregunta(tipo) {
+    const loadingToast = mostrarCargandoElegante('Creando pregunta...');
     
     fetch('/docente/cuestionario/agregar-pregunta/', {
         method: 'POST',
@@ -1841,250 +1494,314 @@ function crearNuevaPregunta(tipo) {
         loadingToast.hide();
         
         if (data.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalTiposPregunta'));
-            modal.hide();
-            setTimeout(() => {
-                window.location.reload();
-            }, 300);
-        } else {
-            mostrarError('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('Error:', error);
-        mostrarError('Error al crear la pregunta');
-    });
-}
-
-function cambiarImagen(input) {
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.querySelector('.imagen-cuestionario img');
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function guardarConfiguracion() {
-    const config = {
-        tiempo_limite: document.getElementById('config-tiempo').value,
-        puntos_totales: document.getElementById('config-puntos').value,
-        fecha_inicio: document.getElementById('config-fecha-inicio').value,
-        fecha_fin: document.getElementById('config-fecha-fin').value,
-        tipo_calificacion: document.getElementById('config-tipo-calificacion').value,
-        intentos_permitidos: document.getElementById('config-intentos').value,
-        mostrar_resultados: document.getElementById('config-mostrar-resultados').checked,
-        mezclar_preguntas: document.getElementById('config-mezclar-preguntas').checked
-    };
-    
-    if (!cuestionarioId) {
-        configuracionTemporal = config;
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfiguracion'));
-        modal.hide();
-        actualizarVistaConfiguracionTemporal();
-        mostrarExito('Configuración aplicada. Se guardará al crear el cuestionario.');
-        return;
-    }
-    
-    const loadingToast = mostrarCargando('Guardando configuración...');
-    
-    fetch('/docente/cuestionario/actualizar-configuracion/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            cuestionario_id: cuestionarioId,
-            configuracion: config
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        loadingToast.hide();
-        
-        if (data.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfiguracion'));
-            modal.hide();
-            mostrarExito('Configuración guardada exitosamente');
-            actualizarVistaConfiguracion(config);
-        } else {
-            mostrarError('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('Error:', error);
-        mostrarError('Error al guardar la configuración');
-    });
-}
-
-function actualizarVistaConfiguracionTemporal() {
-    const infoContainer = document.getElementById('info-cuestionario-temp');
-    if (infoContainer) {
-        const fechaInicioTexto = configuracionTemporal.fecha_inicio ? 
-            new Date(configuracionTemporal.fecha_inicio).toLocaleDateString('es-ES') : '';
-        const fechaFinTexto = configuracionTemporal.fecha_fin ? 
-            new Date(configuracionTemporal.fecha_fin).toLocaleDateString('es-ES') : '';
-        
-        let fechasTexto = 'Sin fechas configuradas';
-        if (fechaInicioTexto && fechaFinTexto) {
-            fechasTexto = `${fechaInicioTexto} - ${fechaFinTexto}`;
-        }
-        
-        infoContainer.innerHTML = `
-            <span><i class="fas fa-clock me-1"></i>${configuracionTemporal.tiempo_limite} min</span>
-            <span><i class="fas fa-star me-1"></i>${configuracionTemporal.puntos_totales} pts</span>
-            <span><i class="fas fa-calendar me-1"></i>${fechasTexto}</span>
-        `;
-    }
-}
-
-function actualizarVistaConfiguracion(config) {
-    const infoContainer = document.querySelector('.col-md-8 .d-flex.flex-wrap');
-    if (infoContainer) {
-        const fechaInicioFormatted = config.fecha_inicio ? new Date(config.fecha_inicio).toLocaleDateString('es-ES') : '';
-        const fechaFinFormatted = config.fecha_fin ? new Date(config.fecha_fin).toLocaleDateString('es-ES') : '';
-        
-        infoContainer.innerHTML = `
-            <span><i class="fas fa-clock me-1"></i>${config.tiempo_limite} min</span>
-            <span><i class="fas fa-star me-1"></i>${config.puntos_totales} pts</span>
-            ${fechaInicioFormatted && fechaFinFormatted ? 
-                `<span><i class="fas fa-calendar me-1"></i>${fechaInicioFormatted} - ${fechaFinFormatted}</span>` : 
-                ''
-            }
-        `;
-    }
-}
-
-function guardarCuestionario() {
-    const titulo = document.getElementById('titulo-cuestionario').value.trim();
-    const descripcion = document.getElementById('descripcion-cuestionario').value.trim();
-    
-    if (!titulo) {
-        mostrarError('El título del cuestionario es obligatorio');
-        return;
-    }
-    
-    const loadingToast = mostrarCargando('Guardando cuestionario...');
-    
-    const formData = new FormData();
-    formData.append('titulo', titulo);
-    formData.append('descripcion', descripcion);
-    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-    
-    if (!cuestionarioId) {
-        formData.append('configuracion_temporal', JSON.stringify(configuracionTemporal));
-        formData.append('preguntas_temporales', JSON.stringify(preguntasTemporales));
-    }
-    
-    const seccionIdInput = document.querySelector('[name="seccion_id"]');
-    if (seccionIdInput && seccionIdInput.value) {
-        formData.append('seccion_id', seccionIdInput.value);
-    }
-    
-    const inputImagen = document.getElementById('input-imagen');
-    if (inputImagen.files[0]) {
-        formData.append('imagen', inputImagen.files[0]);
-    }
-    
-    const url = cuestionarioId ? 
-        `/docente/cuestionario/actualizar/${cuestionarioId}/` : 
-        '/docente/cuestionario/guardar-cuestionario/';
-    
-    fetch(url, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else if (response.redirected) {
-            window.location.href = response.url;
-            return;
-        }
-        throw new Error('Error en la respuesta');
-    })
-    .then(data => {
-        loadingToast.hide();
-        
-        if (data && data.success) {
-            if (!cuestionarioId) {
-                cuestionarioId = data.cuestionario_id;
-                mostrarExito('Cuestionario creado exitosamente');
-                
-                preguntasTemporales = [];
-                
-                setTimeout(() => {
-                    if (data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                    } else {
-                        window.location.reload();
-                    }
-                }, 1000);
-            } else {
-                mostrarExito('Cuestionario actualizado exitosamente');
-            }
-        } else if (data && data.error) {
-            mostrarError('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('Error:', error);
-        mostrarError('Error al guardar el cuestionario');
-    });
-}
-
-function cambiarTipoPregunta(preguntaId, nuevoTipo) {
-    const loadingToast = mostrarCargando('Cambiando tipo de pregunta...');
-    
-    fetch('/docente/cuestionario/cambiar-tipo-pregunta/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            pregunta_id: preguntaId,
-            nuevo_tipo: nuevoTipo
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        loadingToast.hide();
-        
-        if (data.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalTiposPregunta'));
-            modal.hide();
+            mostrarExitoElegante('Pregunta creada exitosamente');
             
+            // Recargar la página para mostrar la nueva pregunta
             setTimeout(() => {
                 window.location.reload();
-            }, 300);
+            }, 1500);
         } else {
-            mostrarError('Error: ' + data.error);
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al crear la pregunta'));
         }
     })
     .catch(error => {
         loadingToast.hide();
         console.error('Error:', error);
-        mostrarError('Error al cambiar el tipo de pregunta');
+        mostrarErrorElegante('Error de conexión al crear la pregunta');
     });
 }
 
+/**
+ * Inicia el proceso de cambio de tipo de pregunta
+ */
 function iniciarCambioTipo(preguntaId) {
     preguntaParaCambiarTipo = preguntaId;
     const modal = new bootstrap.Modal(document.getElementById('modalTiposPregunta'));
     modal.show();
 }
 
-// FUNCIONES PARA PREGUNTAS EXISTENTES
+/**
+ * Cambia el tipo de una pregunta existente con confirmación elegante
+ */
+function cambiarTipoPregunta(preguntaId, nuevoTipo) {
+    mostrarConfirmacionElegante(
+        'Cambiar Tipo de Pregunta',
+        '¿Estás seguro de cambiar el tipo de pregunta? Se eliminarán las opciones actuales.',
+        function() {
+            const loadingToast = mostrarCargandoElegante('Cambiando tipo de pregunta...');
+            
+            fetch('/docente/cuestionario/cambiar-tipo-pregunta/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    pregunta_id: preguntaId,
+                    nuevo_tipo: nuevoTipo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                
+                if (data.success) {
+                    mostrarExitoElegante('Tipo de pregunta cambiado exitosamente');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    mostrarErrorElegante('Error: ' + (data.error || 'Error al cambiar el tipo de pregunta'));
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                console.error('Error:', error);
+                mostrarErrorElegante('Error de conexión al cambiar el tipo de pregunta');
+            });
+        }
+    );
+}
 
-function agregarOpcionExistente(preguntaId) {
-    const loadingToast = mostrarCargando('Agregando opción...');
+// =====================================================
+// FUNCIONES DE NOTIFICACIONES ELEGANTES
+// =====================================================
+
+/**
+ * Muestra un popup de confirmación elegante y acorde al estilo
+ */
+function mostrarConfirmacionElegante(titulo, mensaje, callback) {
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'confirmacion-overlay';
+    
+    // Crear popup
+    const popup = document.createElement('div');
+    popup.className = 'confirmacion-popup';
+    popup.innerHTML = `
+        <div class="icono">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="titulo">${titulo}</div>
+        <div class="mensaje">${mensaje}</div>
+        <div class="botones">
+            <button class="btn-cancelar" onclick="cerrarConfirmacion()">Cancelar</button>
+            <button class="btn-confirmar" onclick="confirmarAccion()">Confirmar</button>
+        </div>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+    
+    // Funciones globales temporales
+    window.cerrarConfirmacion = function() {
+        document.body.removeChild(overlay);
+        document.body.removeChild(popup);
+        delete window.cerrarConfirmacion;
+        delete window.confirmarAccion;
+    };
+    
+    window.confirmarAccion = function() {
+        cerrarConfirmacion();
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
+    };
+    
+    // Cerrar con click en overlay
+    overlay.addEventListener('click', cerrarConfirmacion);
+}
+
+/**
+ * Muestra mensaje para tipos de pregunta no disponibles
+ */
+function mostrarMensajeProximamente(tipoNombre) {
+    mostrarInfoElegante(`${tipoNombre} estará disponible próximamente`);
+}
+
+/**
+ * Crea tipos de pregunta automáticamente
+ */
+function crearTiposAutomaticamente() {
+    const loadingToast = mostrarCargandoElegante('Creando tipos de pregunta...');
+    
+    fetch('/docente/cuestionario/crear-tipos/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingToast.hide();
+        
+        if (data.success) {
+            mostrarExitoElegante('Tipos de pregunta creados exitosamente');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al crear los tipos de pregunta'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('Error:', error);
+        mostrarErrorElegante('Error de conexión al crear los tipos de pregunta');
+    });
+}
+
+/**
+ * Muestra un toast de carga elegante
+ */
+function mostrarCargandoElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-primary border-0 position-fixed';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm me-3" role="status"></div>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { autohide: false });
+    bsToast.show();
+    
+    return {
+        hide: function() {
+            bsToast.hide();
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 300);
+        }
+    };
+}
+
+/**
+ * Muestra un toast de error elegante
+ */
+function mostrarErrorElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-danger border-0 position-fixed';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-3"></i>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 6000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    });
+    
+    console.log(`❌ Error: ${mensaje}`);
+}
+
+/**
+ * Muestra un toast de éxito elegante
+ */
+function mostrarExitoElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-success border-0 position-fixed';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle me-3"></i>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    });
+    
+    console.log(`✅ Éxito: ${mensaje}`);
+}
+
+/**
+ * Muestra un toast informativo elegante
+ */
+function mostrarInfoElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-info border-0 position-fixed';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-3"></i>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    });
+}
+
+/**
+ * Obtiene el valor de una cookie
+ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// =====================================================
+// FUNCIONES PARA MANEJO DE OPCIONES (CORREGIDO)
+// =====================================================
+
+/**
+ * Agrega una nueva opción a una pregunta
+ */
+function agregarOpcion(preguntaId) {
+    console.log(`➕ Agregando nueva opción a pregunta ${preguntaId}`);
+    
+    const loadingToast = mostrarCargandoElegante('Agregando opción...');
     
     fetch('/docente/cuestionario/agregar-opcion/', {
         method: 'POST',
@@ -2101,31 +1818,38 @@ function agregarOpcionExistente(preguntaId) {
         loadingToast.hide();
         
         if (data.success) {
-            if (data.mantener_acordeon) {
-                const acordeonId = `collapse${preguntaId}`;
-                sessionStorage.setItem('acordeonAbierto', acordeonId);
-            }
+            console.log(`✅ Opción agregada exitosamente a pregunta ${preguntaId}`);
             
+            // Guardar estado del acordeón
+            sessionStorage.setItem('acordeonAbierto', `collapse${preguntaId}`);
+            
+            // Recargar página
             setTimeout(() => {
                 window.location.reload();
-            }, 200);
+            }, 500);
         } else {
-            mostrarError('Error: ' + data.error);
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al agregar la opción'));
+            console.error(`❌ Error al agregar opción:`, data.error);
         }
     })
     .catch(error => {
         loadingToast.hide();
-        console.error('Error:', error);
-        mostrarError('Error al agregar la opción');
+        console.error('❌ Error de conexión al agregar opción:', error);
+        mostrarErrorElegante('Error de conexión al agregar la opción');
     });
 }
 
-function eliminarOpcionExistente(opcionId) {
-    mostrarConfirmacion(
+/**
+ * Elimina una opción de pregunta
+ */
+function eliminarOpcion(opcionId) {
+    console.log(`🗑️ Eliminando opción ${opcionId}`);
+    
+    mostrarConfirmacionElegante(
         'Eliminar Opción',
         '¿Estás seguro de que quieres eliminar esta opción? Esta acción no se puede deshacer.',
         function() {
-            const loadingToast = mostrarCargando('Eliminando opción...');
+            const loadingToast = mostrarCargandoElegante('Eliminando opción...');
             
             fetch(`/docente/cuestionario/eliminar-opcion/${opcionId}/`, {
                 method: 'DELETE',
@@ -2138,332 +1862,189 @@ function eliminarOpcionExistente(opcionId) {
                 loadingToast.hide();
                 
                 if (data.success) {
-                    location.reload();
+                    mostrarExitoElegante('Opción eliminada exitosamente');
+                    console.log(`✅ Opción ${opcionId} eliminada exitosamente`);
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 } else {
-                    mostrarError('Error: ' + data.error);
+                    mostrarErrorElegante('Error: ' + (data.error || 'Error al eliminar la opción'));
+                    console.error(`❌ Error al eliminar opción ${opcionId}:`, data.error);
                 }
             })
             .catch(error => {
                 loadingToast.hide();
-                console.error('Error:', error);
-                mostrarError('Error al eliminar la opción');
+                console.error('❌ Error de conexión al eliminar opción:', error);
+                mostrarErrorElegante('Error de conexión al eliminar la opción');
             });
         }
     );
 }
 
-function eliminarPreguntaExistente(preguntaId) {
-    mostrarConfirmacion(
-        'Eliminar Pregunta',
-        '¿Estás seguro de que quieres eliminar esta pregunta completa? Se eliminarán todas sus opciones y configuraciones.',
-        function() {
-            const loadingToast = mostrarCargando('Eliminando pregunta...');
+// =====================================================
+// INICIALIZACIÓN Y EVENT LISTENERS
+// =====================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando sistema de cuestionarios mejorado...');
+    
+    // Configurar validación para campos numéricos
+    document.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const min = parseInt(this.getAttribute('min'));
+            const max = parseInt(this.getAttribute('max'));
+            const value = parseInt(this.value);
             
-            fetch(`/docente/cuestionario/eliminar-pregunta/${preguntaId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                loadingToast.hide();
-                
-                if (data.success) {
-                    location.reload();
-                } else {
-                    mostrarError('Error: ' + data.error);
-                }
-            })
-            .catch(error => {
-                loadingToast.hide();
-                console.error('Error:', error);
-                mostrarError('Error al eliminar la pregunta');
-            });
-        }
-    );
-}
-
-function guardarPregunta(preguntaId) {
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    const enunciado = preguntaElement.querySelector('[data-field="enunciado"]').value;
-    const puntaje = preguntaElement.querySelector('[data-field="puntaje"]').value;
-    
-    const calificacionManualCheckbox = preguntaElement.querySelector('[data-field="calificacion_manual"]');
-    const calificacionManual = calificacionManualCheckbox ? calificacionManualCheckbox.checked : false;
-    
-    const loadingToast = mostrarCargando('Guardando pregunta...');
-    
-    fetch('/docente/cuestionario/actualizar-pregunta/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            pregunta_id: preguntaId,
-            enunciado: enunciado,
-            puntaje: puntaje,
-            calificacion_manual: calificacionManual
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.success) {
-            loadingToast.hide();
-            mostrarError('Error al guardar pregunta: ' + data.error);
-            return;
-        }
-        
-        const promesasOpciones = [];
-        preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
-            const opcionId = container.dataset.opcionId;
-            if (opcionId) {
-                const texto = container.querySelector('[data-field="texto"]').value;
-                const esCorrecta = container.querySelector('[data-field="es_correcta"]').checked;
-                
-                const promesa = fetch('/docente/cuestionario/actualizar-opcion/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({
-                        opcion_id: opcionId,
-                        texto: texto,
-                        es_correcta: esCorrecta
-                    })
-                });
-                promesasOpciones.push(promesa);
+            if (min && value < min) {
+                this.value = min;
+                mostrarErrorElegante(`Valor mínimo permitido: ${min}`);
+            }
+            if (max && value > max) {
+                this.value = max;
+                mostrarErrorElegante(`Valor máximo permitido: ${max}`);
             }
         });
-        
-        return Promise.all(promesasOpciones);
-    })
-    .then(() => {
-        loadingToast.hide();
-        mostrarExito('Pregunta guardada exitosamente');
-        
-        const tituloBtn = preguntaElement.querySelector('.accordion-button span.fw-bold');
-        const nuevoTexto = enunciado.length > 60 ? enunciado.substring(0, 60) + '...' : enunciado;
-        tituloBtn.textContent = nuevoTexto;
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('Error:', error);
-        mostrarError('Error al guardar la pregunta');
-    });
-}
-
-function manejarCambioOpcionCorrecta(radio, preguntaId) {
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
-        container.classList.remove('opcion-correcta');
     });
     
-    if (radio.checked) {
-        radio.closest('.opcion-container').classList.add('opcion-correcta');
+    // Restaurar acordeón abierto después de reload
+    const acordeonAbierto = sessionStorage.getItem('acordeonAbierto');
+    if (acordeonAbierto) {
+        const elemento = document.getElementById(acordeonAbierto);
+        if (elemento) {
+            const collapse = new bootstrap.Collapse(elemento, { show: true });
+        }
+        sessionStorage.removeItem('acordeonAbierto');
     }
-}
+    
+    // Validación en tiempo real para títulos
+    const tituloInput = document.getElementById('titulo-cuestionario');
+    if (tituloInput) {
+        tituloInput.addEventListener('input', function() {
+            if (this.value.trim().length < 3) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+    
+    // Validación para descripción
+    const descripcionInput = document.getElementById('descripcion-cuestionario');
+    if (descripcionInput) {
+        descripcionInput.addEventListener('input', function() {
+            if (this.value.trim().length < 10) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+    
+    console.log('✅ Sistema de cuestionarios inicializado correctamente');
+});
 
-// FUNCIONES DE UTILIDAD
-
-function mostrarConfirmacion(titulo, mensaje, callback) {
-    document.getElementById('modalConfirmacionTitulo').textContent = titulo;
-    document.getElementById('modalConfirmacionMensaje').textContent = mensaje;
-    
-    const btnConfirmar = document.getElementById('btnConfirmarAccion');
-    btnConfirmar.onclick = function() {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacion'));
-        modal.hide();
-        callback();
-    };
-    
-    const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
-    modal.show();
-}
-
-function mostrarMensajeProximamente(tipoNombre) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-warning border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-clock me-2"></i>
-                <strong>${tipoNombre}</strong> estará disponible próximamente
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
-    bsToast.show();
-    
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
-}
-
-function mostrarCargando(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-primary border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                ${mensaje}
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { autohide: false });
-    bsToast.show();
-    
-    return bsToast;
-}
-
-function mostrarError(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                ${mensaje}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
-    bsToast.show();
-    
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
-}
-
-function mostrarExito(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-check-circle me-2"></i>
-                ${mensaje}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
-    bsToast.show();
-    
-    toast.addEventListener('hidden.bs.toast', () => {
-        toast.remove();
-    });
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+// Manejar teclas de acceso rápido
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + S para guardar
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        
+        if (!cuestionarioId) {
+            crearCuestionarioInicial();
+        } else {
+            // Guardar información básica si hay cuestionario
+            const titulo = document.getElementById('titulo-cuestionario').value.trim();
+            const descripcion = document.getElementById('descripcion-cuestionario').value.trim();
+            
+            if (titulo && descripcion) {
+                mostrarInfoElegante('Información guardada automáticamente');
             }
         }
     }
-    return cookieValue;
-}
-
-function crearTiposAutomaticamente() {
-    const loadingToast = mostrarCargando('Creando tipos de pregunta...');
     
-    fetch('/docente/cuestionario/crear-tipos-automatico/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
+    // Escape para cerrar confirmaciones y modales
+    if (e.key === 'Escape') {
+        // Cerrar confirmación personalizada si existe
+        if (window.cerrarConfirmacion) {
+            window.cerrarConfirmacion();
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        loadingToast.hide();
         
-        if (data.success) {
-            mostrarExito('Tipos de pregunta creados exitosamente');
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            mostrarError('Error: ' + data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('Error:', error);
-        mostrarError('Error al crear los tipos de pregunta');
-    });
-}
+        // Cerrar cualquier modal abierto
+        document.querySelectorAll('.modal.show').forEach(modal => {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+    }
+});
 
-// FUNCIONES ADICIONALES
+// =====================================================
+// PREVENCIÓN DE PÉRDIDA DE DATOS
+// =====================================================
 
 let cambiosSinGuardar = false;
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('input, textarea, select').forEach(element => {
-        element.addEventListener('change', function() {
-            cambiosSinGuardar = true;
-        });
-    });
-    
-    window.addEventListener('beforeunload', function(e) {
-        if (cambiosSinGuardar && (preguntasTemporales.length > 0 || cuestionarioId)) {
-            e.preventDefault();
-            e.returnValue = '¿Estás seguro de que deseas salir? Hay cambios sin guardar.';
-        }
-    });
-    
-    document.addEventListener('click', function(e) {
-        if (e.target.matches('.btn-guardar-cuestionario')) {
-            // Se marcará como guardado en el callback de éxito
-        }
-    });
+document.addEventListener('change', function(e) {
+    if (e.target.matches('#titulo-cuestionario, #descripcion-cuestionario')) {
+        cambiosSinGuardar = true;
+    }
 });
 
-function manejarErrorRed(error) {
-    console.error('Error de red:', error);
-    mostrarError('Error de conexión. Verifique su conexión a internet e intente nuevamente.');
+window.addEventListener('beforeunload', function(e) {
+    if (cambiosSinGuardar) {
+        e.preventDefault();
+        e.returnValue = '¿Estás seguro de que deseas salir? Hay cambios sin guardar.';
+    }
+});
+
+/**
+ * Función para marcar como guardado
+ */
+function marcarComoGuardado() {
+    cambiosSinGuardar = false;
 }
 
-function debugEstado() {
-    console.log('Estado actual del cuestionario:');
-    console.log('- ID:', cuestionarioId);
-    console.log('- Preguntas temporales:', preguntasTemporales.length);
-    console.log('- Configuración temporal:', configuracionTemporal);
-    console.log('- Cambios sin guardar:', cambiosSinGuardar);
-}
+// =====================================================
+// FUNCIONES GLOBALES PARA USO EXTERNO
+// =====================================================
 
-window.debugEstado = debugEstado;
+// Exponer funciones principales
+window.crearCuestionario = {
+    // Funciones principales
+    iniciarCambioTipo: iniciarCambioTipo,
+    agregarOpcion: agregarOpcion,
+    eliminarOpcion: eliminarOpcion,
+    
+    // Utilidades
+    mostrarCargando: mostrarCargandoElegante,
+    mostrarError: mostrarErrorElegante,
+    mostrarExito: mostrarExitoElegante,
+    mostrarInfo: mostrarInfoElegante,
+    mostrarConfirmacion: mostrarConfirmacionElegante,
+    getCookie: getCookie,
+    
+    // Variables
+    getCuestionarioId: () => cuestionarioId,
+    setPreguntaParaCambiarTipo: (id) => { preguntaParaCambiarTipo = id; },
+    getPreguntaParaCambiarTipo: () => preguntaParaCambiarTipo
+};
 
-console.log('Crear cuestionario - Sistema cargado completamente');
-console.log('Tipos de pregunta soportados:', [
-    'opcion_unica', 'opcion_multiple', 'falso_verdadero', 
-    'respuesta_abierta', 'simulador_2d', 'simulador_3d', 
-    'unir_lineas', 'completar'
-]);
+// =====================================================
+// LOGGING FINAL
+// =====================================================
+
+console.log('📚 Sistema de Cuestionarios - Versión Mejorada Completa');
+console.log('🎨 Interfaz elegante y profesional activada');
+console.log('✨ Notificaciones personalizadas habilitadas');
+console.log('🔧 Funcionalidad completa de opciones implementada');
+console.log('🎯 Variables globales: cuestionarioId =', cuestionarioId);
+console.log('⌨️  Teclas de acceso rápido: Ctrl+S (guardar), Escape (cerrar)');
 </script>
 
 </body>

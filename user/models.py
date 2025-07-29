@@ -168,10 +168,37 @@ class PreguntaCuestionario(models.Model):
     orden = models.PositiveIntegerField(default=1)
     puntaje = models.PositiveIntegerField(default=1)
     imagen = models.ImageField(upload_to='preguntas/', null=True, blank=True)
+    
+    # NUEVOS CAMPOS PARA RECURSOS MULTIMEDIA:
+    archivo_multimedia = models.FileField(
+        upload_to='preguntas/multimedia/', 
+        null=True, 
+        blank=True,
+        help_text='Archivo multimedia de apoyo (imagen, video, documento)'
+    )
+    url_youtube = models.CharField(
+        max_length=11, 
+        null=True, 
+        blank=True,
+        help_text='ID del video de YouTube (solo el ID, no la URL completa)'
+    )
+    calificacion_manual = models.BooleanField(
+        default=False,
+        help_text='Requiere calificación manual'
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.orden}. {self.enunciado[:50]}"
 
+    def get_url_youtube_embed(self):
+        """Retorna la URL completa para embed de YouTube"""
+        if self.url_youtube:
+            return f"https://www.youtube.com/embed/{self.url_youtube}"
+        return None
+    
+    
 class OpcionPregunta(models.Model):
     pregunta = models.ForeignKey('PreguntaCuestionario', on_delete=models.CASCADE, related_name='opciones')
     texto = models.CharField(max_length=255)
