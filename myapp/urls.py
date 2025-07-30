@@ -40,21 +40,22 @@ urlpatterns = [
     path('docente/cuestionario/guardar-cuestionario/', views.guardar_cuestionario, name='guardarCuestionario'),
     path('docente/cuestionario/actualizar-cuestionario/<int:cuestionario_id>/', views.actualizarCuestionarioExistente, name='actualizarCuestionarioExistente'),
     path('docente/cuestionario/actualizar-configuracion/', views.actualizarConfiguracion, name='actualizarConfiguracion'),
+    path('docente/cuestionario/finalizar/', views.finalizar_cuestionario, name='finalizarCuestionario'),
     
     path('docente/cuestionario/agregar-pregunta/', views.agregarPregunta, name='agregarPregunta'),
     path('docente/cuestionario/actualizar-pregunta/', views.actualizar_pregunta, name='actualizarPregunta'),
     path('docente/cuestionario/eliminar-pregunta/<int:pregunta_id>/', views.eliminarPregunta, name='eliminarPregunta'),
     path('docente/cuestionario/cambiar-tipo-pregunta/', views.cambiarTipoPregunta, name='cambiarTipoPregunta'),
-    path('docente/cuestionario/actualizar-configuracion-pregunta/', views.actualizar_configuracion_pregunta, name='actualizarConfiguracionPregunta'),
+    path('docente/cuestionario/duplicar-pregunta/', views.duplicar_pregunta, name='duplicarPregunta'),
     
     path('docente/cuestionario/agregar-opcion/', views.agregarOpcion, name='agregarOpcion'),
     path('docente/cuestionario/actualizar-opcion/', views.actualizarOpcion, name='actualizarOpcion'),
     path('docente/cuestionario/eliminar-opcion/<int:opcion_id>/', views.eliminarOpcion, name='eliminarOpcion'),
     
+    path('docente/cuestionario/subir-recurso/', views.subir_recurso, name='subirRecurso'),
     path('docente/cuestionario/eliminar-recurso-pregunta/', views.eliminar_recurso_pregunta, name='eliminarRecursoPregunta'),
     path('docente/cuestionario/crear-tipos/', views.crearTiposPregunta, name='crearTiposPregunta'),
     path('docente/cuestionario/inicializar-tipos/', views.inicializar_tipos_pregunta, name='inicializarTiposPregunta'),
-    
 
 
 ]

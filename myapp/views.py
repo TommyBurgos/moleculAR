@@ -1384,6 +1384,56 @@ def actualizar_pregunta(request):
                     })
             
             pregunta.save()
+            
+            # Actualizar campos específicos por tipo de pregunta
+            tipo_nombre = pregunta.tipo.nombre
+            
+            if tipo_nombre == 'respuesta_abierta':
+                if 'respuesta_modelo' in data:
+                    pregunta.respuesta_modelo = data.get('respuesta_modelo', '')
+                if 'criterios_evaluacion' in data:
+                    pregunta.criterios_evaluacion = data.get('criterios_evaluacion', '')
+                if 'longitud_minima' in data:
+                    pregunta.longitud_minima = int(data.get('longitud_minima', 50))
+                if 'longitud_maxima' in data:
+                    pregunta.longitud_maxima = int(data.get('longitud_maxima', 1000))
+                    
+            elif tipo_nombre == 'completar':
+                if 'texto_completar' in data:
+                    pregunta.texto_completar = data.get('texto_completar', '')
+                if 'respuestas_completar' in data:
+                    pregunta.respuestas_completar = data.get('respuestas_completar', '')
+                if 'sensible_mayusculas' in data:
+                    pregunta.sensible_mayusculas = data.get('sensible_mayusculas', False)
+                if 'ignorar_espacios' in data:
+                    pregunta.ignorar_espacios = data.get('ignorar_espacios', True)
+                if 'permitir_alternativas' in data:
+                    pregunta.permitir_alternativas = data.get('permitir_alternativas', False)
+                if 'respuestas_alternativas' in data:
+                    pregunta.respuestas_alternativas = data.get('respuestas_alternativas', '')
+                    
+            elif tipo_nombre == 'unir_lineas':
+                if 'columna_izquierda' in data:
+                    pregunta.columna_izquierda = data.get('columna_izquierda', '')
+                if 'columna_derecha' in data:
+                    pregunta.columna_derecha = data.get('columna_derecha', '')
+                if 'conexiones_correctas' in data:
+                    pregunta.conexiones_correctas = data.get('conexiones_correctas', '')
+                if 'mezclar_opciones' in data:
+                    pregunta.mezclar_opciones = data.get('mezclar_opciones', True)
+                if 'permitir_conexiones_multiples' in data:
+                    pregunta.permitir_conexiones_multiples = data.get('permitir_conexiones_multiples', False)
+                    
+            elif tipo_nombre in ['simulador_2d', 'simulador_3d']:
+                if 'smiles_objetivo' in data:
+                    pregunta.smiles_objetivo = data.get('smiles_objetivo', '')
+                if 'descripcion_molecula' in data:
+                    pregunta.descripcion_molecula = data.get('descripcion_molecula', '')
+                if 'tolerancia_similitud' in data:
+                    pregunta.tolerancia_similitud = int(data.get('tolerancia_similitud', 95))
+                if 'permitir_isomeros' in data:
+                    pregunta.permitir_isomeros = data.get('permitir_isomeros', False)
+            
             print("✅ Pregunta actualizada")
             
             # Recalcular puntaje total
@@ -1547,3 +1597,200 @@ def actualizarCuestionarioExistente(request, cuestionario_id):
             'success': False, 
             'error': str(e)
         }, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def finalizar_cuestionario(request):
+    """Finalizar y guardar cuestionario completo - FUNCIONAL"""
+    try:
+        print("🏁 Finalizando cuestionario...")
+        
+        data = json.loads(request.body)
+        cuestionario_id = data.get('cuestionario_id')
+        
+        cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
+        
+        # Verificar permisos
+        if (cuestionario.recurso.seccion and 
+            cuestionario.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        with transaction.atomic():
+            # Recalcular totales finales
+            puntaje_total = cuestionario.preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+            cuestionario.puntaje_total = puntaje_total
+            
+            tiene_preguntas_manuales = cuestionario.preguntas.filter(
+                tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
+            ).exists()
+            cuestionario.calificacion_automatica = not tiene_preguntas_manuales
+            
+            cuestionario.save()
+            
+            print(f"✅ Cuestionario {cuestionario_id} finalizado - Puntaje total: {puntaje_total}")
+        
+        # URL de redirección
+        redirect_url = f'/detalleCurso/{cuestionario.recurso.seccion.curso.id}/' if cuestionario.recurso.seccion else '/usAdmin/detalleCursos'
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Cuestionario finalizado exitosamente',
+            'puntaje_total': float(puntaje_total),
+            'redirect_url': redirect_url
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al finalizar cuestionario: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def duplicar_pregunta(request):
+    """Duplicar una pregunta existente - FUNCIONAL"""
+    try:
+        print("📋 Duplicando pregunta...")
+        
+        data = json.loads(request.body)
+        pregunta_id = data.get('pregunta_id')
+        
+        pregunta_original = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # Verificar permisos
+        if (pregunta_original.cuestionario.recurso.seccion and 
+            pregunta_original.cuestionario.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Calcular nuevo orden
+        ultima_pregunta = pregunta_original.cuestionario.preguntas.order_by('-orden').first()
+        nuevo_orden = ultima_pregunta.orden + 1 if ultima_pregunta else 1
+        
+        with transaction.atomic():
+            # Crear copia de la pregunta
+            nueva_pregunta = PreguntaCuestionario.objects.create(
+                cuestionario=pregunta_original.cuestionario,
+                enunciado=f"{pregunta_original.enunciado} (Copia)",
+                tipo=pregunta_original.tipo,
+                orden=nuevo_orden,
+                puntaje=pregunta_original.puntaje,
+                # Campos específicos por tipo
+                respuesta_modelo=getattr(pregunta_original, 'respuesta_modelo', None),
+                criterios_evaluacion=getattr(pregunta_original, 'criterios_evaluacion', None),
+                longitud_minima=getattr(pregunta_original, 'longitud_minima', None),
+                longitud_maxima=getattr(pregunta_original, 'longitud_maxima', None),
+                texto_completar=getattr(pregunta_original, 'texto_completar', None),
+                respuestas_completar=getattr(pregunta_original, 'respuestas_completar', None),
+                sensible_mayusculas=getattr(pregunta_original, 'sensible_mayusculas', False),
+                ignorar_espacios=getattr(pregunta_original, 'ignorar_espacios', True),
+                permitir_alternativas=getattr(pregunta_original, 'permitir_alternativas', False),
+                respuestas_alternativas=getattr(pregunta_original, 'respuestas_alternativas', None),
+                columna_izquierda=getattr(pregunta_original, 'columna_izquierda', None),
+                columna_derecha=getattr(pregunta_original, 'columna_derecha', None),
+                conexiones_correctas=getattr(pregunta_original, 'conexiones_correctas', None),
+                mezclar_opciones=getattr(pregunta_original, 'mezclar_opciones', True),
+                permitir_conexiones_multiples=getattr(pregunta_original, 'permitir_conexiones_multiples', False),
+                smiles_objetivo=getattr(pregunta_original, 'smiles_objetivo', None),
+                descripcion_molecula=getattr(pregunta_original, 'descripcion_molecula', None),
+                tolerancia_similitud=getattr(pregunta_original, 'tolerancia_similitud', None),
+                permitir_isomeros=getattr(pregunta_original, 'permitir_isomeros', False)
+            )
+            
+            # Duplicar opciones si existen
+            for opcion in pregunta_original.opciones.all():
+                OpcionPregunta.objects.create(
+                    pregunta=nueva_pregunta,
+                    texto=opcion.texto,
+                    es_correcta=opcion.es_correcta
+                )
+        
+        return JsonResponse({
+            'success': True,
+            'pregunta_id': nueva_pregunta.id,
+            'mensaje': 'Pregunta duplicada exitosamente'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al duplicar pregunta: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def subir_recurso(request):
+    """Subir recurso multimedia a una pregunta - FUNCIONAL"""
+    try:
+        print("📤 Subiendo recurso multimedia...")
+        
+        pregunta_id = request.POST.get('pregunta_id')
+        tipo_recurso = request.POST.get('tipo_recurso')
+        
+        print(f"📝 Pregunta ID: {pregunta_id}, Tipo: {tipo_recurso}")
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # Verificar permisos
+        if (pregunta.cuestionario.recurso.seccion and 
+            pregunta.cuestionario.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        if tipo_recurso == 'imagen' and 'archivo' in request.FILES:
+            pregunta.archivo_multimedia = request.FILES['archivo']
+            pregunta.save()
+            print("✅ Imagen guardada")
+            
+        elif tipo_recurso == 'video' and 'archivo' in request.FILES:
+            pregunta.archivo_multimedia = request.FILES['archivo']
+            pregunta.save()
+            print("✅ Video guardado")
+            
+        elif tipo_recurso == 'youtube':
+            youtube_id = request.POST.get('youtube_id')
+            if youtube_id:
+                pregunta.url_youtube = youtube_id
+                pregunta.save()
+                print(f"✅ YouTube guardado: {youtube_id}")
+                
+        elif tipo_recurso == 'documento' and 'archivo' in request.FILES:
+            pregunta.archivo_multimedia = request.FILES['archivo']
+            pregunta.save()
+            print("✅ Documento guardado")
+            
+        elif tipo_recurso == 'audio' and 'archivo' in request.FILES:
+            pregunta.archivo_multimedia = request.FILES['archivo']
+            pregunta.save()
+            print("✅ Audio guardado")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Recurso cargado exitosamente'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al subir recurso: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+

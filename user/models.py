@@ -188,6 +188,33 @@ class PreguntaCuestionario(models.Model):
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
+    
+    # Campos para respuesta abierta
+    respuesta_modelo = models.TextField(null=True, blank=True, help_text='Respuesta modelo para guiar evaluación')
+    criterios_evaluacion = models.TextField(null=True, blank=True, help_text='Criterios de evaluación')
+    longitud_minima = models.PositiveIntegerField(null=True, blank=True, default=50, help_text='Longitud mínima de respuesta')
+    longitud_maxima = models.PositiveIntegerField(null=True, blank=True, default=1000, help_text='Longitud máxima de respuesta')
+    
+    # Campos para completar texto
+    texto_completar = models.TextField(null=True, blank=True, help_text='Texto con espacios en blanco marcados con _____')
+    respuestas_completar = models.TextField(null=True, blank=True, help_text='Respuestas correctas separadas por comas')
+    sensible_mayusculas = models.BooleanField(default=False, help_text='Sensible a mayúsculas y minúsculas')
+    ignorar_espacios = models.BooleanField(default=True, help_text='Ignorar espacios adicionales')
+    permitir_alternativas = models.BooleanField(default=False, help_text='Permitir respuestas alternativas')
+    respuestas_alternativas = models.TextField(null=True, blank=True, help_text='Respuestas alternativas por línea')
+    
+    # Campos para unir líneas
+    columna_izquierda = models.TextField(null=True, blank=True, help_text='Elementos de la columna izquierda, uno por línea')
+    columna_derecha = models.TextField(null=True, blank=True, help_text='Elementos de la columna derecha, uno por línea')
+    conexiones_correctas = models.TextField(null=True, blank=True, help_text='Conexiones correctas formato: 1-A, 2-B')
+    mezclar_opciones = models.BooleanField(default=True, help_text='Mezclar orden de las opciones')
+    permitir_conexiones_multiples = models.BooleanField(default=False, help_text='Permitir múltiples conexiones')
+    
+    # Campos para simuladores
+    smiles_objetivo = models.TextField(null=True, blank=True, help_text='SMILES de la molécula objetivo')
+    descripcion_molecula = models.TextField(null=True, blank=True, help_text='Descripción de la molécula')
+    tolerancia_similitud = models.PositiveIntegerField(null=True, blank=True, default=95, help_text='Porcentaje de similitud requerido')
+    permitir_isomeros = models.BooleanField(default=False, help_text='Permitir isómeros estructurales')
 
     def __str__(self):
         return f"{self.orden}. {self.enunciado[:50]}"
@@ -198,7 +225,7 @@ class PreguntaCuestionario(models.Model):
             return f"https://www.youtube.com/embed/{self.url_youtube}"
         return None
     
-    
+
 class OpcionPregunta(models.Model):
     pregunta = models.ForeignKey('PreguntaCuestionario', on_delete=models.CASCADE, related_name='opciones')
     texto = models.CharField(max_length=255)

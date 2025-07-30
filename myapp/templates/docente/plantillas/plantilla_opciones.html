@@ -1,60 +1,135 @@
-<!-- plantillas/plantilla_opciones.html - COMPLETAMENTE FUNCIONAL -->
+<!-- plantillas/plantilla_opciones.html - COMPLETA CON BOTONES ELIMINAR -->
 <div class="opciones-container">
     <label class="form-label fw-bold">
-        {% if pregunta.tipo.nombre == 'opcion_unica' %}
-            Opciones (selecciona la respuesta correcta)
-        {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
-            Opciones (puedes seleccionar múltiples respuestas correctas)
-        {% else %}
-            Opciones Verdadero/Falso
-        {% endif %}
+        <i class="fas fa-list me-2 text-success"></i>
+        Opciones de respuesta
     </label>
     
-    {% for opcion in pregunta.opciones.all %}
-    <div class="opcion-container {% if opcion.es_correcta %}opcion-correcta{% endif %}" 
-         data-opcion="{{ forloop.counter }}" data-opcion-id="{{ opcion.id }}">
-        
-        <input type="{% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'falso_verdadero' %}radio{% else %}checkbox{% endif %}" 
-               name="correcta-{{ pregunta.id }}" 
-               {% if opcion.es_correcta %}checked{% endif %}
-               data-field="es_correcta"
-               data-pregunta-id="{{ pregunta.id }}"
-               onchange="manejarCambioOpcionCorrecta(this)">
-        
-        <input type="text" class="form-control opcion-input" 
-               value="{{ opcion.texto|default:"" }}" 
-               placeholder="Opción {{ forloop.counter }}"
-               data-field="texto"
-               data-opcion-id="{{ opcion.id }}"
-               onchange="actualizarOpcionTexto(this)">
-        
-        {% if pregunta.opciones.all|length > 2 %}
-        <button type="button" class="btn btn-danger btn-sm btn-eliminar-opcion" 
-                data-opcion-id="{{ opcion.id }}"
-                onclick="eliminarOpcionExistente(this)"
-                title="Eliminar opción">
-            <i class="fas fa-trash"></i>
-        </button>
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        {% if pregunta.tipo.nombre == 'opcion_unica' %}
+        Los estudiantes podrán seleccionar <strong>una sola</strong> opción como respuesta correcta.
+        {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+        Los estudiantes podrán seleccionar <strong>múltiples</strong> opciones como respuestas correctas.
+        {% elif pregunta.tipo.nombre == 'falso_verdadero' %}
+        Los estudiantes elegirán entre <strong>Verdadero</strong> o <strong>Falso</strong>.
         {% endif %}
     </div>
-    {% endfor %}
     
-    <!-- Botón agregar opción mejorado (solo para opción única y múltiple) -->
+    <!-- Lista de opciones existentes -->
+    <div class="opciones-lista" id="opciones-lista-{{ pregunta.id }}">
+        {% for opcion in pregunta.opciones.all %}
+        <div class="opcion-container {% if opcion.es_correcta %}opcion-correcta{% endif %}" 
+             data-opcion-id="{{ opcion.id }}">
+            
+            <!-- Radio button o checkbox según el tipo -->
+            {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'falso_verdadero' %}
+            <input type="radio" 
+                   class="form-check-input opcion-radio" 
+                   name="correcta_{{ pregunta.id }}" 
+                   id="opcion_{{ opcion.id }}"
+                   {% if opcion.es_correcta %}checked{% endif %}
+                   onchange="manejarCambioOpcionCorrecta(this)"
+                   data-opcion-id="{{ opcion.id }}"
+                   data-pregunta-id="{{ pregunta.id }}">
+            {% else %}
+            <input type="checkbox" 
+                   class="form-check-input opcion-checkbox" 
+                   id="opcion_{{ opcion.id }}"
+                   {% if opcion.es_correcta %}checked{% endif %}
+                   onchange="manejarCambioOpcionCorrecta(this)"
+                   data-opcion-id="{{ opcion.id }}"
+                   data-pregunta-id="{{ pregunta.id }}">
+            {% endif %}
+            
+            <!-- Input para el texto de la opción -->
+            <input type="text" 
+                   class="form-control opcion-input" 
+                   value="{{ opcion.texto }}"
+                   placeholder="Escriba el texto de la opción..."
+                   data-opcion-id="{{ opcion.id }}"
+                   data-field="texto_opcion"
+                   onchange="actualizarTextoOpcion(this)">
+            
+            <!-- Botón eliminar opción -->
+            {% if pregunta.opciones.count > 2 %}
+            <button type="button" 
+                    class="btn btn-eliminar-opcion" 
+                    title="Eliminar esta opción"
+                    data-opcion-id="{{ opcion.id }}"
+                    onclick="eliminarOpcionExistente(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+        </div>
+        {% empty %}
+        <!-- Si no hay opciones, mostrar mensaje -->
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No hay opciones definidas para esta pregunta. 
+            <button type="button" class="btn btn-sm btn-primary ms-2" onclick="agregarOpcionExistente(this)">
+                <i class="fas fa-plus me-1"></i>Agregar primera opción
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Botón agregar nueva opción -->
     {% if pregunta.tipo.nombre != 'falso_verdadero' %}
-    <div class="d-flex align-items-center mt-3">
-        <button type="button" class="btn-agregar-opcion" 
+    <div class="agregar-opcion-container mt-3">
+        <button type="button" 
+                class="btn-agregar-opcion" 
+                title="Agregar nueva opción"
                 data-pregunta-id="{{ pregunta.id }}"
-                onclick="agregarOpcionExistente(this)"
-                title="Agregar nueva opción">
+                onclick="agregarOpcionExistente(this)">
             <i class="fas fa-plus"></i>
         </button>
-        <span class="text-muted small ms-2">Agregar nueva opción</span>
+        <span class="ms-2 text-muted">Agregar nueva opción</span>
     </div>
     {% endif %}
+    
+    <!-- Información sobre la respuesta correcta -->
+    <div class="respuesta-info mt-3">
+        <small class="text-muted">
+            <i class="fas fa-lightbulb me-1"></i>
+            {% if pregunta.tipo.nombre == 'opcion_unica' %}
+            Marque la opción que será la respuesta correcta.
+            {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+            Marque todas las opciones que serán correctas (puede ser más de una).
+            {% elif pregunta.tipo.nombre == 'falso_verdadero' %}
+            Marque si la afirmación es verdadera o falsa.
+            {% endif %}
+        </small>
+    </div>
 </div>
 
+<!-- Estilos específicos para opciones -->
 <style>
-/* Estilos específicos para opciones */
+.opciones-container {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.opciones-lista {
+    margin: 15px 0;
+}
+
+.opcion-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 15px;
+    padding: 18px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: 2px solid #f8f9fa;
+    background-color: #ffffff;
+    position: relative;
+}
+
 .opcion-container.opcion-correcta {
     background: linear-gradient(135deg, #d5f4e6 0%, #e8f5e8 100%);
     border: 2px solid #27ae60;
@@ -66,66 +141,36 @@
     border: 2px solid #e9ecef;
 }
 
-.opcion-container {
-    transition: all 0.3s ease;
-    padding: 18px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
 .opcion-container:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     border-color: #3498db;
 }
 
-.opcion-container input[type="radio"],
-.opcion-container input[type="checkbox"] {
-    transform: scale(1.4);
-    margin-right: 8px;
-    accent-color: #27ae60;
-    flex-shrink: 0;
-}
-
-.opcion-container .opcion-input {
+.opcion-input {
     flex: 1;
+    font-size: 1.05rem;
     border: 2px solid #e9ecef;
     border-radius: 8px;
     padding: 12px 15px;
-    font-size: 1.05rem;
     transition: all 0.3s ease;
 }
 
-.opcion-container .opcion-input:focus {
+.opcion-input:focus {
     border-color: #3498db;
     box-shadow: 0 0 0 0.15rem rgba(52,152,219,0.15);
     outline: none;
 }
 
-.btn-eliminar-opcion {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-    color: white;
-    border: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
+/* Radio buttons y checkboxes más grandes */
+.opcion-container input[type="radio"],
+.opcion-container input[type="checkbox"] {
+    transform: scale(1.4);
+    margin-right: 8px;
+    accent-color: #27ae60;
 }
 
-.btn-eliminar-opcion:hover {
-    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
-    transform: scale(1.1);
-    color: white;
-}
-
+/* Botón agregar opción */
 .btn-agregar-opcion {
     width: 36px;
     height: 36px;
@@ -149,102 +194,262 @@
     border-style: solid;
 }
 
+.agregar-opcion-container {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.agregar-opcion-container:hover {
+    border-color: #3498db;
+    background-color: #e3f2fd;
+}
+
+/* Botón eliminar opción */
+.btn-eliminar-opcion {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-eliminar-opcion:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.btn-eliminar-opcion:active {
+    transform: scale(0.95);
+}
+
+/* Información de respuesta */
+.respuesta-info {
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+    border-left: 4px solid #3498db;
+    padding: 12px 15px;
+    border-radius: 6px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .opcion-container {
         flex-direction: column;
         align-items: stretch;
         gap: 12px;
+        padding: 15px;
     }
     
-    .opcion-container > * {
-        width: 100%;
+    .opcion-container input[type="radio"],
+    .opcion-container input[type="checkbox"] {
+        transform: scale(1.2);
+        margin-bottom: 8px;
+    }
+    
+    .btn-eliminar-opcion {
+        align-self: flex-end;
+        margin-top: 8px;
+    }
+    
+    .agregar-opcion-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
     }
 }
 </style>
 
+<!-- JavaScript para funcionalidad de opciones -->
 <script>
-// Scripts específicos para opciones
+// Función para manejar cambio de opción correcta
 function manejarCambioOpcionCorrecta(element) {
-    const preguntaId = obtenerPreguntaId(element);
-    if (!preguntaId) {
-        console.error('No se pudo obtener el ID de pregunta');
-        return;
-    }
+    const opcionId = element.dataset.opcionId;
+    const preguntaId = element.dataset.preguntaId;
+    const esCorrecta = element.checked;
     
-    console.log(`🔘 Cambiando opción correcta para pregunta ${preguntaId}`);
+    console.log(`🔘 Cambiando opción ${opcionId} a ${esCorrecta ? 'correcta' : 'incorrecta'}`);
     
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    if (!preguntaElement) {
-        console.error('No se encontró el elemento de pregunta');
-        return;
-    }
-    
-    // Si es radio button, quitar la clase de todas las opciones
-    if (element.type === 'radio') {
-        preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
-            container.classList.remove('opcion-correcta');
-        });
-    }
-    
-    // Agregar o quitar la clase según el estado
+    // Actualizar estilos visuales inmediatamente
     const container = element.closest('.opcion-container');
     if (container) {
-        if (element.checked) {
+        if (esCorrecta) {
             container.classList.add('opcion-correcta');
         } else {
             container.classList.remove('opcion-correcta');
         }
     }
     
-    console.log(`✅ Opción correcta actualizada para pregunta ${preguntaId}`);
+    // Para radio buttons, quitar la clase de otros contenedores
+    if (element.type === 'radio') {
+        const preguntaElement = element.closest('[data-pregunta-id]');
+        if (preguntaElement) {
+            preguntaElement.querySelectorAll('.opcion-container').forEach(cont => {
+                if (cont !== container) {
+                    cont.classList.remove('opcion-correcta');
+                }
+            });
+        }
+    }
+    
+    // Enviar actualización al servidor
+    actualizarOpcionEnServidor(opcionId, element.closest('.opcion-input').value, esCorrecta);
 }
 
-function actualizarOpcionTexto(element) {
+// Función para actualizar texto de opción
+function actualizarTextoOpcion(element) {
     const opcionId = element.dataset.opcionId;
-    const texto = element.value.trim();
+    const nuevoTexto = element.value.trim();
     
-    console.log(`✏️ Actualizando texto de opción ${opcionId}: ${texto}`);
-    
-    // Aquí se puede agregar lógica para guardar automáticamente
-    // Por ahora solo logueamos el cambio
-}
-
-function agregarOpcionExistente(element) {
-    const preguntaId = obtenerPreguntaId(element);
-    if (!preguntaId) {
-        console.error('No se pudo obtener el ID de pregunta');
+    if (!nuevoTexto) {
+        mostrarAdvertencia('El texto de la opción no puede estar vacío');
         return;
     }
     
-    console.log(`➕ Agregando opción a pregunta existente: ${preguntaId}`);
+    console.log(`✏️ Actualizando texto de opción ${opcionId}: ${nuevoTexto}`);
     
-    // Llamar a la función global
-    if (typeof agregarOpcion === 'function') {
-        agregarOpcion(preguntaId);
-    } else {
-        console.error('Función agregarOpcion no encontrada');
-    }
+    // Verificar si la opción está marcada como correcta
+    const container = element.closest('.opcion-container');
+    const checkbox = container.querySelector('input[type="checkbox"], input[type="radio"]');
+    const esCorrecta = checkbox ? checkbox.checked : false;
+    
+    // Enviar actualización al servidor
+    actualizarOpcionEnServidor(opcionId, nuevoTexto, esCorrecta);
 }
 
+// Función para enviar actualización al servidor
+function actualizarOpcionEnServidor(opcionId, texto, esCorrecta) {
+    fetch('/docente/cuestionario/actualizar-opcion/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            opcion_id: opcionId,
+            texto: texto,
+            es_correcta: esCorrecta
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`✅ Opción ${opcionId} actualizada correctamente`);
+        } else {
+            console.error(`❌ Error al actualizar opción ${opcionId}:`, data.error);
+            mostrarError('Error: ' + (data.error || 'Error al actualizar la opción'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error de conexión al actualizar opción:', error);
+        mostrarError('Error de conexión al actualizar la opción');
+    });
+}
+
+// Función para agregar opción
+function agregarOpcionExistente(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`➕ Agregando opción a pregunta ${preguntaId}`);
+    
+    const loadingToast = mostrarCargando('Agregando opción...');
+    
+    fetch('/docente/cuestionario/agregar-opcion/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            pregunta_id: preguntaId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingToast.hide();
+        if (data.success) {
+            console.log(`✅ Opción agregada exitosamente a pregunta ${preguntaId}`);
+            // Guardar estado del acordeón
+            sessionStorage.setItem('acordeonAbierto', `collapse${preguntaId}`);
+            // Recargar página
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } else {
+            console.error("❌ Error agregar opción:", data.error);
+            mostrarError('Error: ' + (data.error || 'Error al agregar la opción'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('❌ Error de conexión agregar opción:', error);
+        mostrarError('Error de conexión al agregar la opción');
+    });
+}
+
+// Función para eliminar opción
 function eliminarOpcionExistente(element) {
     const opcionId = element.dataset.opcionId;
     
     if (!opcionId) {
-        console.error('No se pudo obtener el ID de opción');
+        mostrarError('No se pudo obtener el ID de opción');
         return;
     }
     
-    console.log(`🗑️ Eliminando opción existente: ${opcionId}`);
+    console.log(`🗑️ Eliminando opción ${opcionId}`);
     
-    // Llamar a la función global
-    if (typeof eliminarOpcion === 'function') {
-        eliminarOpcion(opcionId);
-    } else {
-        console.error('Función eliminarOpcion no encontrada');
-    }
+    mostrarConfirmacionElegante(
+        'Eliminar Opción',
+        '¿Estás seguro de que quieres eliminar esta opción? Esta acción no se puede deshacer.',
+        function() {
+            const loadingToast = mostrarCargando('Eliminando opción...');
+            
+            fetch(`/docente/cuestionario/eliminar-opcion/${opcionId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                if (data.success) {
+                    mostrarExito('Opción eliminada exitosamente');
+                    console.log(`✅ Opción ${opcionId} eliminada exitosamente`);
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    console.error(`❌ Error al eliminar opción ${opcionId}:`, data.error);
+                    mostrarError('Error: ' + (data.error || 'Error al eliminar la opción'));
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                console.error('❌ Error de conexión al eliminar opción:', error);
+                mostrarError('Error de conexión al eliminar la opción');
+            });
+        }
+    );
 }
 
+// Funciones de utilidad (fallbacks si no están definidas globalmente)
 function obtenerPreguntaId(element) {
     let current = element;
     while (current && current !== document) {
@@ -273,6 +478,83 @@ function obtenerPreguntaId(element) {
     
     console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
     return null;
+}
+
+function getCookie(name) {
+    // Usar función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.getCookie === 'function') {
+        return window.crearCuestionario.getCookie(name);
+    }
+    
+    // Fallback local
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function mostrarError(mensaje) {
+    // Usar función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarError === 'function') {
+        window.crearCuestionario.mostrarError(mensaje);
+    } else {
+        console.error('❌ ' + mensaje);
+        alert('Error: ' + mensaje);
+    }
+}
+
+function mostrarExito(mensaje) {
+    // Usar función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarExito === 'function') {
+        window.crearCuestionario.mostrarExito(mensaje);
+    } else {
+        console.log('✅ ' + mensaje);
+    }
+}
+
+function mostrarAdvertencia(mensaje) {
+    // Usar función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarInfo === 'function') {
+        window.crearCuestionario.mostrarInfo(mensaje);
+    } else {
+        console.warn('⚠️ ' + mensaje);
+        alert('Advertencia: ' + mensaje);
+    }
+}
+
+function mostrarCargando(mensaje) {
+    // Usar función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarCargando === 'function') {
+        return window.crearCuestionario.mostrarCargando(mensaje);
+    } else {
+        console.log('⏳ ' + mensaje);
+        return { hide: () => {} };
+    }
+}
+
+function mostrarConfirmacionElegante(titulo, mensaje, callback) {
+    // Usar función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarConfirmacion === 'function') {
+        window.crearCuestionario.mostrarConfirmacion(titulo, mensaje, callback);
+    } else {
+        if (confirm(mensaje)) {
+            callback();
+        }
+    }
 }
 
 // Inicializar al cargar

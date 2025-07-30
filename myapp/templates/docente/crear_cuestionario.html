@@ -985,6 +985,31 @@
                                     {% endif %}
                                     
                                 </div>
+
+                                <!-- Botón guardar cuestionario final -->
+                                {% if cuestionario %}
+                                <div class="guardar-cuestionario-final mt-4 p-4 border-top">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h6 class="mb-2">
+                                                <i class="fas fa-save me-2 text-success"></i>
+                                                Finalizar Cuestionario
+                                            </h6>
+                                            <p class="text-muted mb-0">
+                                                Guarda todos los cambios y finaliza la edición del cuestionario
+                                            </p>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <button type="button" class="btn btn-success btn-lg" 
+                                                    onclick="finalizarCuestionario({{ cuestionario.id }})">
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                Finalizar y Guardar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
                                 <!-- Card body END -->
                             </div>
                             <!-- Card END -->
@@ -1249,10 +1274,389 @@
 
 let cuestionarioId = {% if cuestionario %}{{ cuestionario.id }}{% else %}null{% endif %};
 let preguntaParaCambiarTipo = null;
+// Variables globales para recursos
+let preguntaActual = null;
+let tipoRecursoActual = null;
 
 // =====================================================
 // FUNCIONES PRINCIPALES DEL CUESTIONARIO - CORREGIDAS
 // =====================================================
+
+// Función para abrir modal de recurso
+function abrirModalRecurso(tipo, preguntaId) {
+    preguntaActual = preguntaId;
+    tipoRecursoActual = tipo;
+    
+    console.log(`📂 Abriendo modal para ${tipo} en pregunta ${preguntaId}`);
+    
+    // Limpiar formularios previos
+    limpiarModalRecurso(tipo);
+    
+    // Abrir modal correspondiente
+    const modalId = `modalRecurso${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
+    const modal = new bootstrap.Modal(document.getElementById(modalId));
+    modal.show();
+}
+
+function limpiarModalRecurso(tipo) {
+    // Limpiar campos según el tipo
+    switch (tipo) {
+        case 'imagen':
+            const imgInput = document.getElementById('archivo-imagen');
+            const imgDesc = document.getElementById('descripcion-imagen');
+            if (imgInput) imgInput.value = '';
+            if (imgDesc) imgDesc.value = '';
+            resetPreview('preview-imagen');
+            break;
+        case 'video':
+            const vidInput = document.getElementById('archivo-video');
+            const vidDesc = document.getElementById('descripcion-video');
+            if (vidInput) vidInput.value = '';
+            if (vidDesc) vidDesc.value = '';
+            resetPreview('preview-video');
+            break;
+        case 'youtube':
+            const ytUrl = document.getElementById('url-youtube');
+            const ytDesc = document.getElementById('descripcion-youtube');
+            if (ytUrl) ytUrl.value = '';
+            if (ytDesc) ytDesc.value = '';
+            resetPreview('preview-youtube');
+            break;
+        case 'documento':
+            const docInput = document.getElementById('archivo-documento');
+            const docTitulo = document.getElementById('titulo-documento');
+            const docDesc = document.getElementById('descripcion-documento');
+            if (docInput) docInput.value = '';
+            if (docTitulo) docTitulo.value = '';
+            if (docDesc) docDesc.value = '';
+            resetPreview('preview-documento');
+            break;
+        case 'audio':
+            const audInput = document.getElementById('archivo-audio');
+            const audDesc = document.getElementById('descripcion-audio');
+            if (audInput) audInput.value = '';
+            if (audDesc) audDesc.value = '';
+            resetPreview('preview-audio');
+            break;
+    }
+}
+
+function resetPreview(previewId) {
+    const preview = document.getElementById(previewId);
+    if (preview) {
+        preview.className = 'preview-area';
+        
+        const iconMap = {
+            'preview-imagen': 'fas fa-image',
+            'preview-video': 'fas fa-video',
+            'preview-youtube': 'fab fa-youtube',
+            'preview-documento': 'fas fa-file-alt',
+            'preview-audio': 'fas fa-volume-up'
+        };
+        
+        const textMap = {
+            'preview-imagen': 'Vista previa aparecerá aquí',
+            'preview-video': 'Vista previa del video aparecerá aquí',
+            'preview-youtube': 'Vista previa del video aparecerá aquí',
+            'preview-documento': 'Información del documento aparecerá aquí',
+            'preview-audio': 'Reproductor de audio aparecerá aquí'
+        };
+        
+        preview.innerHTML = `
+            <i class="${iconMap[previewId]} fa-3x text-muted"></i>
+            <p class="text-muted mt-2">${textMap[previewId]}</p>
+        `;
+    }
+}
+
+// Función para extraer ID de YouTube
+function extraerYouTubeId(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+
+// Función para previsualizar YouTube
+function previsualizarYoutube() {
+    const url = document.getElementById('url-youtube').value;
+    const preview = document.getElementById('preview-youtube');
+    
+    if (!url) {
+        resetPreview('preview-youtube');
+        return;
+    }
+    
+    const videoId = extraerYouTubeId(url);
+    
+    if (videoId) {
+        preview.className = 'preview-area has-content';
+        preview.innerHTML = `
+            <iframe src="https://www.youtube.com/embed/${videoId}" 
+                    width="100%" height="150"
+                    frameborder="0" 
+                    allowfullscreen>
+            </iframe>
+        `;
+        console.log(`🎥 Vista previa de YouTube cargada: ${videoId}`);
+    } else {
+        preview.innerHTML = `
+            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+            <p class="text-warning mt-2">URL de YouTube no válida</p>
+        `;
+    }
+}
+
+// Función para subir recursos
+function subirRecurso(tipo) {
+    if (!preguntaActual) {
+        mostrarErrorElegante('Error: No se pudo identificar la pregunta');
+        return;
+    }
+    
+    console.log(`📤 Subiendo recurso ${tipo} para pregunta ${preguntaActual}`);
+    
+    // Validar según tipo
+    let formData = new FormData();
+    formData.append('pregunta_id', preguntaActual);
+    formData.append('tipo_recurso', tipo);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    let valido = false;
+    
+    switch(tipo) {
+        case 'imagen':
+            const archivoImagen = document.getElementById('archivo-imagen').files[0];
+            if (archivoImagen) {
+                if (archivoImagen.size > 10 * 1024 * 1024) {
+                    mostrarErrorElegante('La imagen no puede superar 10MB');
+                    return;
+                }
+                formData.append('archivo', archivoImagen);
+                formData.append('descripcion', document.getElementById('descripcion-imagen').value);
+                valido = true;
+            } else {
+                mostrarErrorElegante('Seleccione una imagen');
+                return;
+            }
+            break;
+            
+        case 'video':
+            const archivoVideo = document.getElementById('archivo-video').files[0];
+            if (archivoVideo) {
+                if (archivoVideo.size > 50 * 1024 * 1024) {
+                    mostrarErrorElegante('El video no puede superar 50MB');
+                    return;
+                }
+                formData.append('archivo', archivoVideo);
+                formData.append('descripcion', document.getElementById('descripcion-video').value);
+                valido = true;
+            } else {
+                mostrarErrorElegante('Seleccione un video');
+                return;
+            }
+            break;
+            
+        case 'youtube':
+            const urlYoutube = document.getElementById('url-youtube').value;
+            const videoId = extraerYouTubeId(urlYoutube);
+            if (videoId) {
+                formData.append('youtube_id', videoId);
+                formData.append('descripcion', document.getElementById('descripcion-youtube').value);
+                valido = true;
+            } else {
+                mostrarErrorElegante('URL de YouTube no válida');
+                return;
+            }
+            break;
+            
+        case 'documento':
+            const archivoDoc = document.getElementById('archivo-documento').files[0];
+            const tituloDoc = document.getElementById('titulo-documento').value;
+            if (archivoDoc && tituloDoc.trim()) {
+                if (archivoDoc.size > 25 * 1024 * 1024) {
+                    mostrarErrorElegante('El documento no puede superar 25MB');
+                    return;
+                }
+                formData.append('archivo', archivoDoc);
+                formData.append('titulo', tituloDoc);
+                formData.append('descripcion', document.getElementById('descripcion-documento').value);
+                valido = true;
+            } else {
+                mostrarErrorElegante('Seleccione un documento y agregue un título');
+                return;
+            }
+            break;
+            
+        case 'audio':
+            const archivoAudio = document.getElementById('archivo-audio').files[0];
+            if (archivoAudio) {
+                if (archivoAudio.size > 10 * 1024 * 1024) {
+                    mostrarErrorElegante('El audio no puede superar 10MB');
+                    return;
+                }
+                formData.append('archivo', archivoAudio);
+                formData.append('descripcion', document.getElementById('descripcion-audio').value);
+                valido = true;
+            } else {
+                mostrarErrorElegante('Seleccione un archivo de audio');
+                return;
+            }
+            break;
+    }
+    
+    if (!valido) {
+        mostrarErrorElegante('Por favor complete los campos requeridos');
+        return;
+    }
+    
+    const loadingToast = mostrarCargandoElegante(`Cargando ${tipo}...`);
+    
+    fetch('/docente/cuestionario/subir-recurso/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingToast.hide();
+        if (data.success) {
+            mostrarExitoElegante(`${tipo} cargado exitosamente`);
+            
+            // Cerrar modal
+            const modalId = `modalRecurso${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
+            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+            if (modal) modal.hide();
+            
+            // Actualizar vista
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            mostrarErrorElegante(data.error || 'Error al cargar recurso');
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('Error:', error);
+        mostrarErrorElegante('Error de conexión');
+    });
+}
+
+// Event listeners para vista previa automática
+document.addEventListener('DOMContentLoaded', function() {
+    // Vista previa automática para imágenes
+    document.addEventListener('change', function(e) {
+        if (e.target.id === 'archivo-imagen') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-imagen');
+            
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.className = 'preview-area has-content';
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 150px; border-radius: 8px;">
+                        <p class="text-success mt-2">
+                            <i class="fas fa-check me-1"></i>
+                            ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // Vista previa automática para videos
+        if (e.target.id === 'archivo-video') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-video');
+            
+            if (file && file.type.startsWith('video/')) {
+                const url = URL.createObjectURL(file);
+                preview.className = 'preview-area has-content';
+                preview.innerHTML = `
+                    <video controls style="max-width: 100%; max-height: 150px;">
+                        <source src="${url}" type="${file.type}">
+                    </video>
+                    <p class="text-success mt-2">
+                        <i class="fas fa-check me-1"></i>
+                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                `;
+            }
+        }
+        
+        // Vista previa automática para documentos
+        if (e.target.id === 'archivo-documento') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-documento');
+            
+            if (file) {
+                preview.className = 'preview-area has-content';
+                
+                const iconMap = {
+                    'application/pdf': 'fas fa-file-pdf text-danger',
+                    'application/msword': 'fas fa-file-word text-primary',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fas fa-file-word text-primary',
+                    'text/plain': 'fas fa-file-alt text-secondary'
+                };
+                
+                const icon = iconMap[file.type] || 'fas fa-file text-muted';
+                
+                preview.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <i class="${icon} fa-2x me-3"></i>
+                        <div>
+                            <h6 class="mb-1">${file.name}</h6>
+                            <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                        </div>
+                    </div>
+                    <div class="text-success mt-2">
+                        <i class="fas fa-check me-1"></i>
+                        Documento listo para cargar
+                    </div>
+                `;
+                
+                // Auto-llenar título si está vacío
+                const tituloInput = document.getElementById('titulo-documento');
+                if (tituloInput && !tituloInput.value) {
+                    const nombreSinExtension = file.name.split('.').slice(0, -1).join('.');
+                    tituloInput.value = nombreSinExtension;
+                }
+            }
+        }
+        
+        // Vista previa automática para audio
+        if (e.target.id === 'archivo-audio') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-audio');
+            
+            if (file && file.type.startsWith('audio/')) {
+                const url = URL.createObjectURL(file);
+                preview.className = 'preview-area has-content';
+                preview.innerHTML = `
+                    <audio controls style="width: 100%;">
+                        <source src="${url}" type="${file.type}">
+                    </audio>
+                    <p class="text-success mt-2">
+                        <i class="fas fa-check me-1"></i>
+                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                `;
+            }
+        }
+    });
+    
+    // Vista previa automática para YouTube al escribir
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'url-youtube') {
+            clearTimeout(e.target.debounceTimer);
+            e.target.debounceTimer = setTimeout(() => {
+                previsualizarYoutube();
+            }, 500);
+        }
+    });
+    
+    console.log('✅ Sistema de recursos multimedia inicializado');
+});
+
 
 /**
  * Crea un cuestionario inicial con información básica - FUNCIONAL
@@ -1777,6 +2181,66 @@ function guardarPregunta(element) {
     
     const enunciado = enunciadoTextarea.value.trim();
     const puntaje = parseInt(puntajeInput.value) || 1;
+
+    // Recopilar datos específicos del tipo de pregunta
+    const tipoElement = preguntaElement.querySelector('[data-tipo]');
+    const tipoPregunta = tipoElement ? tipoElement.dataset.tipo : null;
+    
+    const datosEspecificos = {};
+    
+    if (tipoPregunta === 'respuesta_abierta') {
+        const respuestaModelo = preguntaElement.querySelector('[data-field="respuesta_modelo"]');
+        const criterios = preguntaElement.querySelector('[data-field="criterios_evaluacion"]');
+        const longitudMin = preguntaElement.querySelector('[data-field="longitud_minima"]');
+        const longitudMax = preguntaElement.querySelector('[data-field="longitud_maxima"]');
+        
+        if (respuestaModelo) datosEspecificos.respuesta_modelo = respuestaModelo.value;
+        if (criterios) datosEspecificos.criterios_evaluacion = criterios.value;
+        if (longitudMin) datosEspecificos.longitud_minima = longitudMin.value;
+        if (longitudMax) datosEspecificos.longitud_maxima = longitudMax.value;
+        
+    } else if (tipoPregunta === 'completar') {
+        const textoCompletar = preguntaElement.querySelector('[data-field="texto_completar"]');
+        const respuestasCompletar = preguntaElement.querySelector('[data-field="respuestas_completar"]');
+        const sensibleMayus = preguntaElement.querySelector('[data-field="sensible_mayusculas"]');
+        const ignorarEspacios = preguntaElement.querySelector('[data-field="ignorar_espacios"]');
+        const permitirAlternativas = preguntaElement.querySelector('[data-field="permitir_alternativas"]');
+        const respuestasAlt = preguntaElement.querySelector('[data-field="respuestas_alternativas"]');
+        
+        if (textoCompletar) datosEspecificos.texto_completar = textoCompletar.value;
+        if (respuestasCompletar) datosEspecificos.respuestas_completar = respuestasCompletar.value;
+        if (sensibleMayus) datosEspecificos.sensible_mayusculas = sensibleMayus.checked;
+        if (ignorarEspacios) datosEspecificos.ignorar_espacios = ignorarEspacios.checked;
+        if (permitirAlternativas) datosEspecificos.permitir_alternativas = permitirAlternativas.checked;
+        if (respuestasAlt) datosEspecificos.respuestas_alternativas = respuestasAlt.value;
+        
+    } else if (tipoPregunta === 'unir_lineas') {
+        const columnaIzq = preguntaElement.querySelector('[data-field="columna_izquierda"]');
+        const columnaDer = preguntaElement.querySelector('[data-field="columna_derecha"]');
+        const conexiones = preguntaElement.querySelector('[data-field="conexiones_correctas"]');
+        const mezclar = preguntaElement.querySelector('[data-field="mezclar_opciones"]');
+        const multiple = preguntaElement.querySelector('[data-field="permitir_conexiones_multiples"]');
+        
+        if (columnaIzq) datosEspecificos.columna_izquierda = columnaIzq.value;
+        if (columnaDer) datosEspecificos.columna_derecha = columnaDer.value;
+        if (conexiones) datosEspecificos.conexiones_correctas = conexiones.value;
+        if (mezclar) datosEspecificos.mezclar_opciones = mezclar.checked;
+        if (multiple) datosEspecificos.permitir_conexiones_multiples = multiple.checked;
+        
+    } else if (tipoPregunta === 'simulador_2d' || tipoPregunta === 'simulador_3d') {
+        const smilesObj = preguntaElement.querySelector('[data-field="smiles_objetivo"]');
+        const descMol = preguntaElement.querySelector('[data-field="descripcion_molecula"]');
+        const tolerancia = preguntaElement.querySelector('[data-field="tolerancia_similitud"]');
+        const isomeros = preguntaElement.querySelector('[data-field="permitir_isomeros"]');
+        
+        if (smilesObj) datosEspecificos.smiles_objetivo = smilesObj.value;
+        if (descMol) datosEspecificos.descripcion_molecula = descMol.value;
+        if (tolerancia) datosEspecificos.tolerancia_similitud = tolerancia.value;
+        if (isomeros) datosEspecificos.permitir_isomeros = isomeros.checked;
+    }
+    
+    console.log(`📋 Datos específicos recopilados para ${tipoPregunta}:`, datosEspecificos);
+
     
     if (!enunciado) {
         mostrarErrorElegante('El enunciado de la pregunta es obligatorio');
@@ -1796,7 +2260,8 @@ function guardarPregunta(element) {
         body: JSON.stringify({
             pregunta_id: preguntaId,
             enunciado: enunciado,
-            puntaje: puntaje
+            puntaje: puntaje,
+            ...datosEspecificos 
         })
     })
     .then(response => {
@@ -2181,6 +2646,89 @@ function marcarComoGuardado() {
     cambiosSinGuardar = false;
 }
 
+
+// Función para finalizar cuestionario
+function finalizarCuestionario(cuestionarioId) {
+    mostrarConfirmacionElegante(
+        'Finalizar Cuestionario',
+        '¿Estás seguro de que quieres finalizar este cuestionario? Se guardarán todos los cambios.',
+        function() {
+            const loadingToast = mostrarCargandoElegante('Finalizando cuestionario...');
+            
+            fetch('/docente/cuestionario/finalizar/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    cuestionario_id: cuestionarioId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                if (data.success) {
+                    mostrarExitoElegante('Cuestionario finalizado exitosamente');
+                    setTimeout(() => {
+                        // Por ahora redirige al detalle del curso
+                        const url = data.redirect_url || '/usAdmin/detalleCursos';
+                        window.location.href = url;
+                    }, 2000);
+                } else {
+                    mostrarErrorElegante(data.error || 'Error al finalizar cuestionario');
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                mostrarErrorElegante('Error de conexión');
+            });
+        }
+    );
+}
+
+// Función para duplicar pregunta
+function duplicarPregunta(preguntaId) {
+    console.log(`📋 Duplicando pregunta ${preguntaId}...`);
+    
+    mostrarConfirmacionElegante(
+        'Duplicar Pregunta',
+        '¿Deseas crear una copia de esta pregunta?',
+        function() {
+            const loadingToast = mostrarCargandoElegante('Duplicando pregunta...');
+            
+            fetch('/docente/cuestionario/duplicar-pregunta/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    pregunta_id: preguntaId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                
+                if (data.success) {
+                    mostrarExitoElegante('Pregunta duplicada exitosamente');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    mostrarErrorElegante('Error: ' + (data.error || 'Error al duplicar pregunta'));
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                console.error('Error:', error);
+                mostrarErrorElegante('Error de conexión al duplicar pregunta');
+            });
+        }
+    );
+}
+
 // =====================================================
 // INICIALIZACIÓN Y EVENT LISTENERS - MEJORADOS
 // =====================================================
@@ -2349,6 +2897,8 @@ console.log('🎯 Variables globales: cuestionarioId =', cuestionarioId);
 console.log('⌨️  Teclas de acceso rápido: Ctrl+S (guardar), Escape (cerrar)');
 console.log('🔗 URLs corregidas y funcionales');
 console.log('✅ Sistema listo para producción');
+
+
 
 </script>
 

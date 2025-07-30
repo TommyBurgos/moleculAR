@@ -1,4 +1,4 @@
-<!-- plantilla_pregunta_adaptada.html - PARTE 1: ENCABEZADO Y RECURSOS MULTIMEDIA -->
+<!-- plantilla_pregunta_adaptada.html - VERSIÓN COMPLETA Y CORREGIDA -->
 <div class="plantilla-pregunta" data-tipo="{{ pregunta.tipo.nombre }}" data-pregunta-id="{{ pregunta.id }}">
     
     <!-- Encabezado común de la pregunta -->
@@ -51,9 +51,9 @@
         </div>
     </div>
 
-    <!-- SECCIÓN DE RECURSOS MULTIMEDIA (MEJORADA Y PROFESIONAL) -->
+    <!-- SECCIÓN DE RECURSOS MULTIMEDIA -->
     <div class="recursos-multimedia-section">
-        <!-- Toggle button con diseño profesional -->
+        <!-- Toggle button -->
         <button type="button" class="recursos-apoyo-toggle" 
                 data-bs-toggle="collapse" 
                 data-bs-target="#recursos-{{ pregunta.id }}" 
@@ -74,10 +74,10 @@
                     </h6>
                 </div>
                 
-                <!-- Tipos de recursos con diseño profesional -->
+                <!-- Botones de recursos -->
                 <div class="row g-3 mb-4">
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="recurso-card" data-tipo="imagen" onclick="abrirModalRecurso('imagen', {{ pregunta.id }})">
+                        <div class="recurso-card" onclick="mostrarModalSimple('imagen', {{ pregunta.id }})">
                             <div class="recurso-icon">
                                 <i class="fas fa-image"></i>
                             </div>
@@ -87,7 +87,7 @@
                     </div>
                     
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="recurso-card" data-tipo="video" onclick="abrirModalRecurso('video', {{ pregunta.id }})">
+                        <div class="recurso-card" onclick="mostrarModalSimple('video', {{ pregunta.id }})">
                             <div class="recurso-icon">
                                 <i class="fas fa-video"></i>
                             </div>
@@ -97,7 +97,7 @@
                     </div>
                     
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="recurso-card" data-tipo="youtube" onclick="abrirModalRecurso('youtube', {{ pregunta.id }})">
+                        <div class="recurso-card" onclick="mostrarModalSimple('youtube', {{ pregunta.id }})">
                             <div class="recurso-icon">
                                 <i class="fab fa-youtube"></i>
                             </div>
@@ -107,7 +107,7 @@
                     </div>
                     
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="recurso-card" data-tipo="documento" onclick="abrirModalRecurso('documento', {{ pregunta.id }})">
+                        <div class="recurso-card" onclick="mostrarModalSimple('documento', {{ pregunta.id }})">
                             <div class="recurso-icon">
                                 <i class="fas fa-file-alt"></i>
                             </div>
@@ -117,17 +117,7 @@
                     </div>
                     
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="recurso-card" data-tipo="simulador" onclick="abrirModalRecurso('simulador', {{ pregunta.id }})">
-                            <div class="recurso-icon">
-                                <i class="fas fa-atom"></i>
-                            </div>
-                            <div class="recurso-title">Simulador</div>
-                            <div class="recurso-subtitle">Molecular</div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
-                        <div class="recurso-card" data-tipo="audio" onclick="abrirModalRecurso('audio', {{ pregunta.id }})">
+                        <div class="recurso-card" onclick="mostrarModalSimple('audio', {{ pregunta.id }})">
                             <div class="recurso-icon">
                                 <i class="fas fa-volume-up"></i>
                             </div>
@@ -137,7 +127,7 @@
                     </div>
                 </div>
                 
-                <!-- Consejos para recursos efectivos -->
+                <!-- Consejos -->
                 <div class="recursos-tips">
                     <div class="alert alert-info border-0">
                         <i class="fas fa-info-circle me-2"></i>
@@ -150,7 +140,7 @@
                     </div>
                 </div>
                 
-                <!-- Recursos actualmente cargados -->
+                <!-- Recursos cargados -->
                 <div class="recursos-actuales" id="recursos-actuales-{{ pregunta.id }}">
                     {% if pregunta.archivo_multimedia or pregunta.url_youtube %}
                     <h6 class="mb-3">
@@ -197,30 +187,20 @@
             </div>
         </div>
     </div>
-    <!-- CONTENIDO ESPECÍFICO POR TIPO DE PREGUNTA (INCLUDES) -->
+
+    <!-- CONTENIDO ESPECÍFICO POR TIPO DE PREGUNTA -->
     <div class="tipo-pregunta-content">
         {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' or pregunta.tipo.nombre == 'falso_verdadero' %}
-            <!-- Incluir plantilla de opciones -->
             {% include 'docente/plantillas/plantilla_opciones.html' %}
-            
         {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
-            <!-- Incluir plantilla de respuesta abierta -->
             {% include 'docente/plantillas/plantilla_respuesta_abierta.html' %}
-            
         {% elif pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}
-            <!-- Incluir plantilla de simuladores -->
             {% include 'docente/plantillas/plantilla_simuladores.html' %}
-            
         {% elif pregunta.tipo.nombre == 'unir_lineas' %}
-            <!-- Incluir plantilla de unir líneas -->
             {% include 'docente/plantillas/plantilla_unir_lineas.html' %}
-            
         {% elif pregunta.tipo.nombre == 'completar' %}
-            <!-- Incluir plantilla de completar -->
             {% include 'docente/plantillas/plantilla_completar.html' %}
-            
         {% else %}
-            <!-- Tipo de pregunta no reconocido -->
             <div class="tipo-desconocido-container">
                 <div class="alert alert-warning border-0">
                     <i class="fas fa-exclamation-triangle me-2"></i>
@@ -231,7 +211,7 @@
         {% endif %}
     </div>
     
-    <!-- Acciones de la pregunta (común para todos los tipos) -->
+    <!-- Acciones de la pregunta -->
     <div class="pregunta-actions">
         <button type="button" class="btn btn-success btn-sm action-btn" 
                 data-pregunta-id="{{ pregunta.id }}"
@@ -276,7 +256,7 @@
     </div>
 </div>
 
-<!-- ESTILOS PROFESIONALES Y ELEGANTES -->
+<!-- ESTILOS CSS PROFESIONALES -->
 <style>
 /* ===== ESTILOS BASE PARA LA PLANTILLA ===== */
 .plantilla-pregunta {
@@ -626,386 +606,10 @@
 }
 </style>
 
-<!-- MODALES PARA CARGAR RECURSOS -->
-
-<!-- Modal para Imagen -->
-<div class="modal fade" id="modalRecursoImagen" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-image me-2"></i>
-                    Cargar Imagen
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Seleccionar archivo</label>
-                        <input type="file" class="form-control" id="archivo-imagen" accept="image/*">
-                        <small class="text-muted">Formatos: JPG, PNG, GIF (máx. 10MB)</small>
-                        
-                        <div class="mt-3">
-                            <label class="form-label">Descripción (opcional)</label>
-                            <input type="text" class="form-control" id="descripcion-imagen" 
-                                   placeholder="Describe brevemente la imagen">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="preview-container">
-                            <div id="preview-imagen" class="preview-area">
-                                <i class="fas fa-image fa-3x text-muted"></i>
-                                <p class="text-muted mt-2">Vista previa aparecerá aquí</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="subirRecurso('imagen')">
-                    <i class="fas fa-upload me-1"></i>Cargar Imagen
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para Video -->
-<div class="modal fade" id="modalRecursoVideo" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-video me-2"></i>
-                    Cargar Video
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label fw-bold">Seleccionar archivo de video</label>
-                <input type="file" class="form-control" id="archivo-video" accept="video/*">
-                <small class="text-muted">Formatos: MP4, WebM, AVI (máx. 50MB)</small>
-                
-                <div class="mt-3">
-                    <label class="form-label">Descripción (opcional)</label>
-                    <input type="text" class="form-control" id="descripcion-video" 
-                           placeholder="Describe brevemente el video">
-                </div>
-                
-                <div class="mt-3">
-                    <div id="preview-video" class="preview-area">
-                        <i class="fas fa-video fa-3x text-muted"></i>
-                        <p class="text-muted mt-2">Vista previa del video aparecerá aquí</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" onclick="subirRecurso('video')">
-                    <i class="fas fa-upload me-1"></i>Cargar Video
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para YouTube -->
-<div class="modal fade" id="modalRecursoYoutube" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="fab fa-youtube me-2"></i>
-                    Video de YouTube
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">URL del video de YouTube</label>
-                        <input type="url" class="form-control" id="url-youtube" 
-                               placeholder="https://www.youtube.com/watch?v=..."
-                               onchange="previsualizarYoutube()">
-                        <small class="text-muted">Pega la URL completa del video de YouTube</small>
-                        
-                        <div class="mt-3">
-                            <label class="form-label">Descripción (opcional)</label>
-                            <input type="text" class="form-control" id="descripcion-youtube" 
-                                   placeholder="Describe brevemente el video">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="preview-container">
-                            <div id="preview-youtube" class="preview-area">
-                                <i class="fab fa-youtube fa-3x text-muted"></i>
-                                <p class="text-muted mt-2">Vista previa del video aparecerá aquí</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" onclick="subirRecurso('youtube')">
-                    <i class="fab fa-youtube me-1"></i>Agregar Video
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para Documento -->
-<div class="modal fade" id="modalRecursoDocumento" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title">
-                    <i class="fas fa-file-alt me-2"></i>
-                    Cargar Documento
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label fw-bold">Seleccionar documento</label>
-                <input type="file" class="form-control" id="archivo-documento" 
-                       accept=".pdf,.doc,.docx,.ppt,.pptx,.txt">
-                <small class="text-muted">Formatos: PDF, DOC, DOCX, PPT, PPTX, TXT (máx. 25MB)</small>
-                
-                <div class="mt-3">
-                    <label class="form-label">Título del documento</label>
-                    <input type="text" class="form-control" id="titulo-documento" 
-                           placeholder="Nombre descriptivo del documento">
-                </div>
-                
-                <div class="mt-3">
-                    <label class="form-label">Descripción (opcional)</label>
-                    <textarea class="form-control" rows="3" id="descripcion-documento" 
-                              placeholder="Describe el contenido del documento"></textarea>
-                </div>
-                
-                <div class="mt-3">
-                    <div id="preview-documento" class="preview-area">
-                        <i class="fas fa-file-alt fa-3x text-muted"></i>
-                        <p class="text-muted mt-2">Información del documento aparecerá aquí</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-warning" onclick="subirRecurso('documento')">
-                    <i class="fas fa-upload me-1"></i>Cargar Documento
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para Simulador -->
-<div class="modal fade" id="modalRecursoSimulador" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">
-                    <i class="fas fa-atom me-2"></i>
-                    Simulador Molecular
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Configurar Molécula</h6>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Nombre de la molécula</label>
-                            <input type="text" class="form-control" id="nombre-molecula" 
-                                   placeholder="Ej: Etanol, Benceno, Cafeína">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">SMILES (opcional)</label>
-                            <input type="text" class="form-control" id="smiles-molecula" 
-                                   placeholder="Ej: CCO para etanol">
-                            <small class="text-muted">Si conoces el código SMILES, ingrésalo aquí</small>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control" rows="3" id="descripcion-simulador" 
-                                      placeholder="Describe qué deben hacer los estudiantes con esta molécula"></textarea>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Tipo de simulador</label>
-                            <select class="form-select" id="tipo-simulador">
-                                <option value="2d">Simulador 2D (estructuras planas)</option>
-                                <option value="3d">Simulador 3D (modelo tridimensional)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Vista Previa</h6>
-                        <div id="preview-simulador" class="preview-area" style="height: 300px;">
-                            <i class="fas fa-atom fa-3x text-muted"></i>
-                            <p class="text-muted mt-2">Simulador aparecerá aquí</p>
-                        </div>
-                        
-                        <div class="mt-3">
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="previsualizarSimulador()">
-                                <i class="fas fa-eye me-1"></i>Vista Previa
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-info" onclick="buscarMoleculaPubChem()">
-                                <i class="fas fa-search me-1"></i>Buscar en PubChem
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-info" onclick="subirRecurso('simulador')">
-                    <i class="fas fa-atom me-1"></i>Agregar Simulador
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para Audio -->
-<div class="modal fade" id="modalRecursoAudio" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header text-white" style="background: #6f42c1;">
-                <h5 class="modal-title">
-                    <i class="fas fa-volume-up me-2"></i>
-                    Cargar Audio
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <label class="form-label fw-bold">Seleccionar archivo de audio</label>
-                <input type="file" class="form-control" id="archivo-audio" accept="audio/*">
-                <small class="text-muted">Formatos: MP3, WAV, OGG (máx. 10MB)</small>
-                
-                <div class="mt-3">
-                    <label class="form-label">Descripción (opcional)</label>
-                    <input type="text" class="form-control" id="descripcion-audio" 
-                           placeholder="Describe brevemente el audio">
-                </div>
-                
-                <div class="mt-3">
-                    <div id="preview-audio" class="preview-area">
-                        <i class="fas fa-volume-up fa-3x text-muted"></i>
-                        <p class="text-muted mt-2">Reproductor de audio aparecerá aquí</p>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn" onclick="subirRecurso('audio')" 
-                        style="background: #6f42c1; border-color: #6f42c1; color: white;">
-                    <i class="fas fa-upload me-1"></i>Cargar Audio
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ESTILOS PARA LOS MODALES -->
-<style>
-.preview-area {
-    border: 2px dashed #dee2e6;
-    border-radius: 8px;
-    padding: 40px 20px;
-    text-align: center;
-    background: #f8f9fa;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-}
-
-.preview-area.has-content {
-    border-style: solid;
-    border-color: #28a745;
-    background: #f8fff9;
-}
-
-.preview-container {
-    height: 100%;
-}
-
-.modal-content {
-    border: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    border-radius: 12px;
-}
-
-.modal-header {
-    border-radius: 12px 12px 0 0;
-    padding: 20px 24px;
-}
-
-.modal-body {
-    padding: 24px;
-}
-
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #e9ecef;
-}
-
-/* Vista previa específica para cada tipo */
-.preview-imagen img {
-    max-width: 100%;
-    max-height: 150px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.preview-video video {
-    max-width: 100%;
-    max-height: 150px;
-    border-radius: 8px;
-}
-
-.preview-youtube iframe {
-    width: 100%;
-    height: 150px;
-    border-radius: 8px;
-}
-
-.preview-audio audio {
-    width: 100%;
-    margin-top: 20px;
-}
-
-.preview-documento .doc-info {
-    background: #ffffff;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 16px;
-    text-align: left;
-}
-
-.preview-simulador .simulador-preview {
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-    overflow: hidden;
-}
-</style>
-
-<!-- JAVASCRIPT PARA FUNCIONALIDAD DE RECURSOS -->
+<!-- JAVASCRIPT PARA FUNCIONALIDAD -->
 <script>
-// Variables globales para recursos
+// ===== VARIABLES GLOBALES =====
 let preguntaActual = null;
-let tipoRecursoActual = null;
 
 // ===== FUNCIONES PRINCIPALES =====
 
@@ -1022,99 +626,312 @@ function toggleRecursosApoyo(element) {
     console.log(`📎 Recursos de apoyo ${isExpanded ? 'expandidos' : 'colapsados'}`);
 }
 
-function abrirModalRecurso(tipo, preguntaId) {
+function mostrarModalSimple(tipo, preguntaId) {
+    console.log(`🎯 Abriendo modal: ${tipo} para pregunta ${preguntaId}`);
+    
     preguntaActual = preguntaId;
-    tipoRecursoActual = tipo;
     
-    console.log(`📂 Abriendo modal para ${tipo} en pregunta ${preguntaId}`);
+    // Crear modal dinámicamente
+    const modalHtml = `
+        <div class="modal fade" id="modalTemporal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-${getIconoTipo(tipo)} me-2"></i>
+                            Cargar ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        ${getModalContent(tipo)}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" onclick="subirRecursoSimple('${tipo}', ${preguntaId})">
+                            <i class="fas fa-upload me-1"></i>Cargar ${tipo}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     
-    // Limpiar formularios previos
-    limpiarModalRecurso(tipo);
+    // Remover modal anterior si existe
+    const modalAnterior = document.getElementById('modalTemporal');
+    if (modalAnterior) {
+        modalAnterior.remove();
+    }
     
-    // Abrir modal correspondiente
-    const modalId = `modalRecurso${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
-    const modal = new bootstrap.Modal(document.getElementById(modalId));
+    // Agregar nuevo modal
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('modalTemporal'));
     modal.show();
 }
 
-function limpiarModalRecurso(tipo) {
-    // Limpiar campos según el tipo
-    switch (tipo) {
-        case 'imagen':
-            document.getElementById('archivo-imagen').value = '';
-            document.getElementById('descripcion-imagen').value = '';
-            resetPreview('preview-imagen');
-            break;
-        case 'video':
-            document.getElementById('archivo-video').value = '';
-            document.getElementById('descripcion-video').value = '';
-            resetPreview('preview-video');
-            break;
-        case 'youtube':
-            document.getElementById('url-youtube').value = '';
-            document.getElementById('descripcion-youtube').value = '';
-            resetPreview('preview-youtube');
-            break;
-        case 'documento':
-            document.getElementById('archivo-documento').value = '';
-            document.getElementById('titulo-documento').value = '';
-            document.getElementById('descripcion-documento').value = '';
-            resetPreview('preview-documento');
-            break;
-        case 'simulador':
-            document.getElementById('nombre-molecula').value = '';
-            document.getElementById('smiles-molecula').value = '';
-            document.getElementById('descripcion-simulador').value = '';
-            document.getElementById('tipo-simulador').value = '2d';
-            resetPreview('preview-simulador');
-            break;
-        case 'audio':
-            document.getElementById('archivo-audio').value = '';
-            document.getElementById('descripcion-audio').value = '';
-            resetPreview('preview-audio');
-            break;
-    }
+function getIconoTipo(tipo) {
+    const iconos = {
+        'imagen': 'image',
+        'video': 'video',
+        'youtube': 'youtube',
+        'documento': 'file-alt',
+        'audio': 'volume-up'
+    };
+    return iconos[tipo] || 'file';
 }
 
-function resetPreview(previewId) {
-    const preview = document.getElementById(previewId);
-    if (preview) {
-        preview.className = 'preview-area';
-        
-        // Contenido por defecto según el tipo
-        const iconMap = {
-            'preview-imagen': 'fas fa-image',
-            'preview-video': 'fas fa-video',
-            'preview-youtube': 'fab fa-youtube',
-            'preview-documento': 'fas fa-file-alt',
-            'preview-simulador': 'fas fa-atom',
-            'preview-audio': 'fas fa-volume-up'
-        };
-        
-        const textMap = {
-            'preview-imagen': 'Vista previa aparecerá aquí',
-            'preview-video': 'Vista previa del video aparecerá aquí',
-            'preview-youtube': 'Vista previa del video aparecerá aquí',
-            'preview-documento': 'Información del documento aparecerá aquí',
-            'preview-simulador': 'Simulador aparecerá aquí',
-            'preview-audio': 'Reproductor de audio aparecerá aquí'
-        };
-        
-        preview.innerHTML = `
-            <i class="${iconMap[previewId]} fa-3x text-muted"></i>
-            <p class="text-muted mt-2">${textMap[previewId]}</p>
-        `;
+function getModalContent(tipo) {
+    switch(tipo) {
+        case 'imagen':
+            return `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Seleccionar imagen</label>
+                            <input type="file" class="form-control" id="temp-archivo-${tipo}" accept="image/*" onchange="previsualizarArchivo(this, 'imagen')">
+                            <small class="text-muted">Formatos: JPG, PNG, GIF (máx. 10MB)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            <input type="text" class="form-control" id="temp-descripcion-${tipo}" placeholder="Descripción de la imagen">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="preview-container">
+                            <div id="preview-temp" class="preview-area">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                                <p class="text-muted mt-2">Vista previa aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        case 'video':
+            return `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Seleccionar video</label>
+                            <input type="file" class="form-control" id="temp-archivo-${tipo}" accept="video/*" onchange="previsualizarArchivo(this, 'video')">
+                            <small class="text-muted">Formatos: MP4, WebM, AVI (máx. 50MB)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            <input type="text" class="form-control" id="temp-descripcion-${tipo}" placeholder="Descripción del video">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="preview-container">
+                            <div id="preview-temp" class="preview-area">
+                                <i class="fas fa-video fa-3x text-muted"></i>
+                                <p class="text-muted mt-2">Vista previa aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        case 'youtube':
+            return `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">URL de YouTube</label>
+                            <input type="url" class="form-control" id="temp-url-${tipo}" placeholder="https://www.youtube.com/watch?v=..." onchange="previsualizarYoutube()">
+                            <small class="text-muted">Pega la URL completa del video de YouTube</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            <input type="text" class="form-control" id="temp-descripcion-${tipo}" placeholder="Descripción del video">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="preview-container">
+                            <div id="preview-temp" class="preview-area">
+                                <i class="fab fa-youtube fa-3x text-muted"></i>
+                                <p class="text-muted mt-2">Vista previa aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        case 'documento':
+            return `
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Seleccionar documento</label>
+                    <input type="file" class="form-control" id="temp-archivo-${tipo}" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt" onchange="previsualizarArchivo(this, 'documento')">
+                    <small class="text-muted">Formatos: PDF, DOC, DOCX, PPT, PPTX, TXT (máx. 25MB)</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Título del documento</label>
+                    <input type="text" class="form-control" id="temp-titulo-${tipo}" placeholder="Nombre descriptivo del documento">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <textarea class="form-control" rows="3" id="temp-descripcion-${tipo}" placeholder="Describe el contenido del documento"></textarea>
+                </div>
+                <div id="preview-temp" class="preview-area">
+                    <i class="fas fa-file-alt fa-3x text-muted"></i>
+                    <p class="text-muted mt-2">Información del documento aparecerá aquí</p>
+                </div>
+            `;
+        case 'audio':
+            return `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Seleccionar audio</label>
+                            <input type="file" class="form-control" id="temp-archivo-${tipo}" accept="audio/*" onchange="previsualizarArchivo(this, 'audio')">
+                            <small class="text-muted">Formatos: MP3, WAV, OGG (máx. 10MB)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            <input type="text" class="form-control" id="temp-descripcion-${tipo}" placeholder="Descripción del audio">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="preview-container">
+                            <div id="preview-temp" class="preview-area">
+                                <i class="fas fa-volume-up fa-3x text-muted"></i>
+                                <p class="text-muted mt-2">Reproductor aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        default:
+            return `<p>Formulario para ${tipo}</p>`;
     }
 }
 
 // ===== FUNCIONES DE VISTA PREVIA =====
 
+function previsualizarArchivo(input, tipo) {
+    const file = input.files[0];
+    const preview = document.getElementById('preview-temp');
+    
+    if (!file || !preview) return;
+    
+    console.log(`👁️ Previsualizando ${tipo}:`, file.name);
+    
+    // Validar tamaño
+    const limites = {
+        'imagen': 10 * 1024 * 1024,    // 10MB
+        'video': 50 * 1024 * 1024,     // 50MB
+        'documento': 25 * 1024 * 1024, // 25MB
+        'audio': 10 * 1024 * 1024      // 10MB
+    };
+    
+    if (file.size > limites[tipo]) {
+        const limiteMB = (limites[tipo] / 1024 / 1024).toFixed(0);
+        preview.innerHTML = `
+            <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+            <p class="text-danger mt-2">Archivo muy grande. Máximo ${limiteMB}MB</p>
+        `;
+        input.value = '';
+        return;
+    }
+    
+    preview.className = 'preview-area has-content';
+    
+    switch(tipo) {
+        case 'imagen':
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Vista previa" style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                        <p class="text-success mt-2">
+                            <i class="fas fa-check me-1"></i>
+                            ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+            break;
+            
+        case 'video':
+            if (file.type.startsWith('video/')) {
+                const url = URL.createObjectURL(file);
+                preview.innerHTML = `
+                    <video controls style="max-width: 100%; max-height: 200px; border-radius: 8px;">
+                        <source src="${url}" type="${file.type}">
+                    </video>
+                    <p class="text-success mt-2">
+                        <i class="fas fa-check me-1"></i>
+                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                `;
+            }
+            break;
+            
+        case 'documento':
+            const iconMap = {
+                'application/pdf': 'fas fa-file-pdf text-danger',
+                'application/msword': 'fas fa-file-word text-primary',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fas fa-file-word text-primary',
+                'application/vnd.ms-powerpoint': 'fas fa-file-powerpoint text-warning',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'fas fa-file-powerpoint text-warning',
+                'text/plain': 'fas fa-file-alt text-secondary'
+            };
+            
+            const icon = iconMap[file.type] || 'fas fa-file text-muted';
+            
+            preview.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <i class="${icon} fa-3x me-3"></i>
+                    <div>
+                        <h6 class="mb-1">${file.name}</h6>
+                        <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                        <div class="text-success mt-1">
+                            <i class="fas fa-check me-1"></i>
+                            Documento listo para cargar
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Auto-llenar título si está vacío
+            const tituloInput = document.getElementById(`temp-titulo-documento`);
+            if (tituloInput && !tituloInput.value) {
+                const nombreSinExtension = file.name.split('.').slice(0, -1).join('.');
+                tituloInput.value = nombreSinExtension;
+            }
+            break;
+            
+        case 'audio':
+            if (file.type.startsWith('audio/')) {
+                const url = URL.createObjectURL(file);
+                preview.innerHTML = `
+                    <audio controls style="width: 100%;">
+                        <source src="${url}" type="${file.type}">
+                    </audio>
+                    <p class="text-success mt-2">
+                        <i class="fas fa-check me-1"></i>
+                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                `;
+            }
+            break;
+    }
+}
+
 function previsualizarYoutube() {
-    const url = document.getElementById('url-youtube').value;
-    const preview = document.getElementById('preview-youtube');
+    const urlInput = document.getElementById('temp-url-youtube');
+    const preview = document.getElementById('preview-temp');
+    
+    if (!urlInput || !preview) return;
+    
+    const url = urlInput.value.trim();
     
     if (!url) {
-        resetPreview('preview-youtube');
+        preview.className = 'preview-area';
+        preview.innerHTML = `
+            <i class="fab fa-youtube fa-3x text-muted"></i>
+            <p class="text-muted mt-2">Vista previa aparecerá aquí</p>
+        `;
         return;
     }
     
@@ -1125,12 +942,19 @@ function previsualizarYoutube() {
         preview.className = 'preview-area has-content';
         preview.innerHTML = `
             <iframe src="https://www.youtube.com/embed/${videoId}" 
+                    width="100%" height="200"
                     frameborder="0" 
-                    allowfullscreen>
+                    allowfullscreen
+                    style="border-radius: 8px;">
             </iframe>
+            <p class="text-success mt-2">
+                <i class="fas fa-check me-1"></i>
+                Video de YouTube válido
+            </p>
         `;
         console.log(`🎥 Vista previa de YouTube cargada: ${videoId}`);
     } else {
+        preview.className = 'preview-area';
         preview.innerHTML = `
             <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
             <p class="text-warning mt-2">URL de YouTube no válida</p>
@@ -1144,90 +968,26 @@ function extraerYouTubeId(url) {
     return match ? match[1] : null;
 }
 
-function previsualizarSimulador() {
-    const nombre = document.getElementById('nombre-molecula').value;
-    const smiles = document.getElementById('smiles-molecula').value;
-    const tipo = document.getElementById('tipo-simulador').value;
-    const preview = document.getElementById('preview-simulador');
-    
-    if (!nombre && !smiles) {
-        resetPreview('preview-simulador');
-        return;
-    }
-    
-    preview.className = 'preview-area has-content';
-    preview.innerHTML = `
-        <div class="simulador-preview">
-            <div class="text-center p-4">
-                <i class="fas fa-atom fa-4x text-info mb-3"></i>
-                <h6>${nombre || 'Molécula'}</h6>
-                <p class="text-muted">Simulador ${tipo.toUpperCase()}</p>
-                ${smiles ? `<small class="text-info">SMILES: ${smiles}</small>` : ''}
-            </div>
-        </div>
-    `;
-    
-    console.log(`🧪 Vista previa de simulador: ${nombre} (${tipo})`);
-}
+// ===== FUNCIÓN DE SUBIR RECURSOS =====
 
-function buscarMoleculaPubChem() {
-    const nombre = document.getElementById('nombre-molecula').value;
+function subirRecursoSimple(tipo, preguntaId) {
+    console.log(`📤 Subiendo ${tipo} para pregunta ${preguntaId}`);
     
-    if (!nombre) {
-        mostrarAdvertencia('Ingrese el nombre de la molécula');
+    // Validar datos antes de enviar
+    if (!validarDatosRecurso(tipo)) {
         return;
     }
     
-    console.log(`🔍 Buscando en PubChem: ${nombre}`);
-    
-    const loadingToast = mostrarCargando('Buscando en PubChem...');
-    
-    // Simular búsqueda en PubChem
-    setTimeout(() => {
-        loadingToast.hide();
-        
-        // Datos de ejemplo
-        const ejemplosSMILES = {
-            'etanol': 'CCO',
-            'benceno': 'c1ccccc1',
-            'cafeina': 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',
-            'agua': 'O',
-            'metano': 'C'
-        };
-        
-        const smiles = ejemplosSMILES[nombre.toLowerCase()] || 'CCO';
-        document.getElementById('smiles-molecula').value = smiles;
-        
-        mostrarExito(`SMILES encontrado: ${smiles}`);
-        previsualizarSimulador();
-    }, 2000);
-}
-
-// ===== FUNCIÓN PRINCIPAL DE SUBIDA =====
-
-function subirRecurso(tipo) {
-    if (!preguntaActual) {
-        mostrarError('Error: No se pudo identificar la pregunta');
-        return;
-    }
-    
-    console.log(`📤 Subiendo recurso ${tipo} para pregunta ${preguntaActual}`);
-    
-    // Validar campos según el tipo
-    if (!validarRecurso(tipo)) {
-        return;
-    }
-    
-    const loadingToast = mostrarCargando(`Cargando ${tipo}...`);
-    
-    // Preparar datos para envío
     const formData = new FormData();
-    formData.append('pregunta_id', preguntaActual);
+    formData.append('pregunta_id', preguntaId);
     formData.append('tipo_recurso', tipo);
     formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
     
-    // Agregar datos específicos según el tipo
-    agregarDatosRecurso(formData, tipo);
+    // Recopilar datos según tipo
+    agregarDatosAlFormData(formData, tipo);
+    
+    // Mostrar loading
+    const loadingToast = mostrarCargando(`Cargando ${tipo}...`);
     
     // Enviar al servidor
     fetch('/docente/cuestionario/subir-recurso/', {
@@ -1242,13 +1002,11 @@ function subirRecurso(tipo) {
             mostrarExito(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)} cargado exitosamente`);
             
             // Cerrar modal
-            const modalId = `modalRecurso${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
-            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
-            modal.hide();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalTemporal'));
+            if (modal) modal.hide();
             
-            // Actualizar vista de recursos cargados
-            actualizarRecursosCargados(preguntaActual);
-            
+            // Recargar página para mostrar el recurso
+            setTimeout(() => window.location.reload(), 1000);
         } else {
             mostrarError('Error: ' + (data.error || `Error al cargar ${tipo}`));
         }
@@ -1256,179 +1014,81 @@ function subirRecurso(tipo) {
     .catch(error => {
         loadingToast.hide();
         console.error('Error:', error);
-        mostrarError(`Error de conexión al cargar ${tipo}`);
+        mostrarError('Error de conexión al cargar recurso');
     });
 }
 
-function validarRecurso(tipo) {
-    switch (tipo) {
+function validarDatosRecurso(tipo) {
+    switch(tipo) {
         case 'imagen':
-            const archivoImagen = document.getElementById('archivo-imagen').files[0];
-            if (!archivoImagen) {
-                mostrarError('Seleccione una imagen');
-                return false;
-            }
-            if (archivoImagen.size > 10 * 1024 * 1024) {
-                mostrarError('La imagen no puede superar 10MB');
-                return false;
-            }
-            break;
-            
         case 'video':
-            const archivoVideo = document.getElementById('archivo-video').files[0];
-            if (!archivoVideo) {
-                mostrarError('Seleccione un video');
-                return false;
-            }
-            if (archivoVideo.size > 50 * 1024 * 1024) {
-                mostrarError('El video no puede superar 50MB');
+        case 'audio':
+            const archivo = document.getElementById(`temp-archivo-${tipo}`);
+            if (!archivo || !archivo.files[0]) {
+                mostrarError(`Seleccione un archivo de ${tipo}`);
                 return false;
             }
             break;
             
         case 'youtube':
-            const urlYoutube = document.getElementById('url-youtube').value;
-            if (!urlYoutube) {
+            const urlYoutube = document.getElementById('temp-url-youtube');
+            if (!urlYoutube || !urlYoutube.value.trim()) {
                 mostrarError('Ingrese la URL del video de YouTube');
                 return false;
             }
-            if (!extraerYouTubeId(urlYoutube)) {
+            if (!extraerYouTubeId(urlYoutube.value)) {
                 mostrarError('URL de YouTube no válida');
                 return false;
             }
             break;
             
         case 'documento':
-            const archivoDoc = document.getElementById('archivo-documento').files[0];
-            const tituloDoc = document.getElementById('titulo-documento').value;
-            if (!archivoDoc) {
+            const archivoDoc = document.getElementById('temp-archivo-documento');
+            const tituloDoc = document.getElementById('temp-titulo-documento');
+            if (!archivoDoc || !archivoDoc.files[0]) {
                 mostrarError('Seleccione un documento');
                 return false;
             }
-            if (!tituloDoc.trim()) {
+            if (!tituloDoc || !tituloDoc.value.trim()) {
                 mostrarError('Ingrese un título para el documento');
                 return false;
             }
-            if (archivoDoc.size > 25 * 1024 * 1024) {
-                mostrarError('El documento no puede superar 25MB');
-                return false;
-            }
-            break;
-            
-        case 'simulador':
-            const nombreMol = document.getElementById('nombre-molecula').value;
-            if (!nombreMol.trim()) {
-                mostrarError('Ingrese el nombre de la molécula');
-                return false;
-            }
-            break;
-            
-        case 'audio':
-            const archivoAudio = document.getElementById('archivo-audio').files[0];
-            if (!archivoAudio) {
-                mostrarError('Seleccione un archivo de audio');
-                return false;
-            }
-            if (archivoAudio.size > 10 * 1024 * 1024) {
-                mostrarError('El audio no puede superar 10MB');
-                return false;
-            }
             break;
     }
-    
     return true;
 }
 
-function agregarDatosRecurso(formData, tipo) {
-    switch (tipo) {
-        case 'imagen':
-            formData.append('archivo', document.getElementById('archivo-imagen').files[0]);
-            formData.append('descripcion', document.getElementById('descripcion-imagen').value);
-            break;
-            
-        case 'video':
-            formData.append('archivo', document.getElementById('archivo-video').files[0]);
-            formData.append('descripcion', document.getElementById('descripcion-video').value);
-            break;
-            
-        case 'youtube':
-            const urlYoutube = document.getElementById('url-youtube').value;
-            const videoId = extraerYouTubeId(urlYoutube);
-            formData.append('youtube_id', videoId);
-            formData.append('descripcion', document.getElementById('descripcion-youtube').value);
-            break;
-            
-        case 'documento':
-            formData.append('archivo', document.getElementById('archivo-documento').files[0]);
-            formData.append('titulo', document.getElementById('titulo-documento').value);
-            formData.append('descripcion', document.getElementById('descripcion-documento').value);
-            break;
-            
-        case 'simulador':
-            formData.append('nombre_molecula', document.getElementById('nombre-molecula').value);
-            formData.append('smiles', document.getElementById('smiles-molecula').value);
-            formData.append('descripcion', document.getElementById('descripcion-simulador').value);
-            formData.append('tipo_simulador', document.getElementById('tipo-simulador').value);
-            break;
-            
-        case 'audio':
-            formData.append('archivo', document.getElementById('archivo-audio').files[0]);
-            formData.append('descripcion', document.getElementById('descripcion-audio').value);
-            break;
-    }
-}
-
-function eliminarRecurso(tipo, preguntaId) {
-    console.log(`🗑️ Eliminando recurso ${tipo} de pregunta ${preguntaId}`);
+function agregarDatosAlFormData(formData, tipo) {
+    const archivo = document.getElementById(`temp-archivo-${tipo}`);
+    const descripcion = document.getElementById(`temp-descripcion-${tipo}`);
+    const url = document.getElementById(`temp-url-${tipo}`);
+    const titulo = document.getElementById(`temp-titulo-${tipo}`);
     
-    mostrarConfirmacionElegante(
-        'Eliminar Recurso',
-        `¿Estás seguro de que quieres eliminar este ${tipo}?`,
-        function() {
-            const loadingToast = mostrarCargando('Eliminando recurso...');
-            
-            fetch('/docente/cuestionario/eliminar-recurso-pregunta/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    pregunta_id: preguntaId,
-                    tipo: tipo
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                loadingToast.hide();
-                
-                if (data.success) {
-                    mostrarExito('Recurso eliminado exitosamente');
-                    actualizarRecursosCargados(preguntaId);
-                } else {
-                    mostrarError('Error: ' + (data.error || 'Error al eliminar recurso'));
-                }
-            })
-            .catch(error => {
-                loadingToast.hide();
-                console.error('Error:', error);
-                mostrarError('Error de conexión al eliminar recurso');
-            });
+    // Agregar archivo si existe
+    if (archivo && archivo.files[0]) {
+        formData.append('archivo', archivo.files[0]);
+    }
+    
+    // Agregar descripción si existe
+    if (descripcion && descripcion.value.trim()) {
+        formData.append('descripcion', descripcion.value.trim());
+    }
+    
+    // Agregar URL para YouTube
+    if (url && url.value.trim()) {
+        const videoId = extraerYouTubeId(url.value);
+        if (videoId) {
+            formData.append('youtube_id', videoId);
         }
-    );
-}
-
-function actualizarRecursosCargados(preguntaId) {
-    const container = document.getElementById(`recursos-actuales-${preguntaId}`);
-    if (container) {
-        // Recargar la sección de recursos cargados
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+    }
+    
+    // Agregar título para documentos
+    if (titulo && titulo.value.trim()) {
+        formData.append('titulo', titulo.value.trim());
     }
 }
 
-// ===== FUNCIONES DE UTILIDAD =====
+// ===== FUNCIONES DE GESTIÓN DE PREGUNTAS =====
 
 function duplicarPregunta(preguntaId) {
     console.log(`📋 Duplicando pregunta ${preguntaId}...`);
@@ -1471,209 +1131,49 @@ function duplicarPregunta(preguntaId) {
     );
 }
 
-// Funciones de notificación (deben estar definidas en el archivo principal)
-function mostrarCargando(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarCargando === 'function') {
-        return window.crearCuestionario.mostrarCargando(mensaje);
-    }
-    console.log('⏳ ' + mensaje);
-    return { hide: () => {} };
-}
-
-function mostrarExito(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarExito === 'function') {
-        window.crearCuestionario.mostrarExito(mensaje);
-    } else {
-        console.log('✅ ' + mensaje);
-    }
-}
-
-function mostrarError(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarError === 'function') {
-        window.crearCuestionario.mostrarError(mensaje);
-    } else {
-        console.error('❌ ' + mensaje);
-    }
-}
-
-function mostrarAdvertencia(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarInfo === 'function') {
-        window.crearCuestionario.mostrarInfo(mensaje);
-    } else {
-        console.warn('⚠️ ' + mensaje);
-    }
-}
-
-function mostrarConfirmacionElegante(titulo, mensaje, callback) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarConfirmacion === 'function') {
-        window.crearCuestionario.mostrarConfirmacion(titulo, mensaje, callback);
-    } else {
-        if (confirm(mensaje)) {
-            callback();
-        }
-    }
-}
-
-function getCookie(name) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.getCookie === 'function') {
-        return window.crearCuestionario.getCookie(name);
-    }
+function eliminarRecurso(tipo, preguntaId) {
+    console.log(`🗑️ Eliminando recurso ${tipo} de pregunta ${preguntaId}`);
     
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// ===== EVENT LISTENERS PARA VISTA PREVIA AUTOMÁTICA =====
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Vista previa automática para imágenes
-    document.addEventListener('change', function(e) {
-        if (e.target.id === 'archivo-imagen') {
-            const file = e.target.files[0];
-            const preview = document.getElementById('preview-imagen');
+    mostrarConfirmacionElegante(
+        'Eliminar Recurso',
+        `¿Estás seguro de que quieres eliminar este ${tipo}?`,
+        function() {
+            const loadingToast = mostrarCargando('Eliminando recurso...');
             
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.className = 'preview-area has-content';
-                    preview.innerHTML = `
-                        <img src="${e.target.result}" alt="Vista previa">
-                        <p class="text-success mt-2">
-                            <i class="fas fa-check me-1"></i>
-                            ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                        </p>
-                    `;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-        
-        // Vista previa automática para videos
-        if (e.target.id === 'archivo-video') {
-            const file = e.target.files[0];
-            const preview = document.getElementById('preview-video');
-            
-            if (file && file.type.startsWith('video/')) {
-                const url = URL.createObjectURL(file);
-                preview.className = 'preview-area has-content';
-                preview.innerHTML = `
-                    <video controls style="max-width: 100%; max-height: 150px;">
-                        <source src="${url}" type="${file.type}">
-                    </video>
-                    <p class="text-success mt-2">
-                        <i class="fas fa-check me-1"></i>
-                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                    </p>
-                `;
-            }
-        }
-        
-        // Vista previa automática para documentos
-        if (e.target.id === 'archivo-documento') {
-            const file = e.target.files[0];
-            const preview = document.getElementById('preview-documento');
-            
-            if (file) {
-                preview.className = 'preview-area has-content';
+            fetch('/docente/cuestionario/eliminar-recurso-pregunta/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    pregunta_id: preguntaId,
+                    tipo: tipo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
                 
-                const iconMap = {
-                    'application/pdf': 'fas fa-file-pdf text-danger',
-                    'application/msword': 'fas fa-file-word text-primary',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fas fa-file-word text-primary',
-                    'application/vnd.ms-powerpoint': 'fas fa-file-powerpoint text-warning',
-                    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'fas fa-file-powerpoint text-warning',
-                    'text/plain': 'fas fa-file-alt text-secondary'
-                };
-                
-                const icon = iconMap[file.type] || 'fas fa-file text-muted';
-                
-                preview.innerHTML = `
-                    <div class="doc-info">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="${icon} fa-2x me-3"></i>
-                            <div>
-                                <h6 class="mb-1">${file.name}</h6>
-                                <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
-                            </div>
-                        </div>
-                        <div class="text-success">
-                            <i class="fas fa-check me-1"></i>
-                            Documento listo para cargar
-                        </div>
-                    </div>
-                `;
-                
-                // Auto-llenar título si está vacío
-                const tituloInput = document.getElementById('titulo-documento');
-                if (!tituloInput.value) {
-                    const nombreSinExtension = file.name.split('.').slice(0, -1).join('.');
-                    tituloInput.value = nombreSinExtension;
+                if (data.success) {
+                    mostrarExito('Recurso eliminado exitosamente');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    mostrarError('Error: ' + (data.error || 'Error al eliminar recurso'));
                 }
-            }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                console.error('Error:', error);
+                mostrarError('Error de conexión al eliminar recurso');
+            });
         }
-        
-        // Vista previa automática para audio
-        if (e.target.id === 'archivo-audio') {
-            const file = e.target.files[0];
-            const preview = document.getElementById('preview-audio');
-            
-            if (file && file.type.startsWith('audio/')) {
-                const url = URL.createObjectURL(file);
-                preview.className = 'preview-area has-content';
-                preview.innerHTML = `
-                    <audio controls style="width: 100%;">
-                        <source src="${url}" type="${file.type}">
-                    </audio>
-                    <p class="text-success mt-2">
-                        <i class="fas fa-check me-1"></i>
-                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                    </p>
-                `;
-            }
-        }
-    });
-    
-    // Vista previa automática para YouTube al escribir
-    document.addEventListener('input', function(e) {
-        if (e.target.id === 'url-youtube') {
-            // Debounce para evitar muchas llamadas
-            clearTimeout(e.target.debounceTimer);
-            e.target.debounceTimer = setTimeout(() => {
-                previsualizarYoutube();
-            }, 500);
-        }
-    });
-    
-    // Auto-preview para simulador al cambiar campos
-    document.addEventListener('input', function(e) {
-        if (['nombre-molecula', 'smiles-molecula', 'tipo-simulador'].includes(e.target.id)) {
-            clearTimeout(e.target.debounceTimer);
-            e.target.debounceTimer = setTimeout(() => {
-                previsualizarSimulador();
-            }, 1000);
-        }
-    });
-    
-    console.log('✅ Sistema de recursos multimedia inicializado');
-});
+    );
+}
 
-// ===== FUNCIONES PRINCIPALES COMPARTIDAS =====
+// ===== FUNCIONES DE INTERFAZ CON EL SISTEMA PRINCIPAL =====
 
 function guardarPregunta(element) {
     const preguntaId = obtenerPreguntaId(element);
@@ -1723,7 +1223,8 @@ function eliminarPreguntaExistente(element) {
     }
 }
 
-// Función de utilidad compartida
+// ===== FUNCIONES DE UTILIDAD =====
+
 function obtenerPreguntaId(element) {
     let current = element;
     while (current && current !== document) {
@@ -1754,9 +1255,319 @@ function obtenerPreguntaId(element) {
     return null;
 }
 
-console.log('📋 Plantilla pregunta adaptada - Sistema completo con recursos multimedia cargado');
+function getCookie(name) {
+    // Intentar usar la función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.getCookie === 'function') {
+        return window.crearCuestionario.getCookie(name);
+    }
+    
+    // Implementación local como fallback
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// ===== FUNCIONES DE NOTIFICACIÓN =====
+
+function mostrarCargando(mensaje) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarCargando === 'function') {
+        return window.crearCuestionario.mostrarCargando(mensaje);
+    }
+    
+    console.log('⏳ ' + mensaje);
+    
+    // Fallback simple
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loading-fallback';
+    loadingDiv.innerHTML = `
+        <div class="toast show position-fixed top-0 end-0 m-3" style="z-index: 9999;">
+            <div class="toast-body bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    ${mensaje}
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(loadingDiv);
+    
+    return {
+        hide: function() {
+            const element = document.getElementById('loading-fallback');
+            if (element) {
+                element.remove();
+            }
+        }
+    };
+}
+
+function mostrarExito(mensaje) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarExito === 'function') {
+        window.crearCuestionario.mostrarExito(mensaje);
+    } else {
+        console.log('✅ ' + mensaje);
+        // Fallback simple
+        mostrarToastFallback(mensaje, 'success');
+    }
+}
+
+function mostrarError(mensaje) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarError === 'function') {
+        window.crearCuestionario.mostrarError(mensaje);
+    } else {
+        console.error('❌ ' + mensaje);
+        // Fallback simple
+        mostrarToastFallback(mensaje, 'danger');
+    }
+}
+
+function mostrarAdvertencia(mensaje) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarInfo === 'function') {
+        window.crearCuestionario.mostrarInfo(mensaje);
+    } else {
+        console.warn('⚠️ ' + mensaje);
+        // Fallback simple
+        mostrarToastFallback(mensaje, 'warning');
+    }
+}
+
+function mostrarConfirmacionElegante(titulo, mensaje, callback) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarConfirmacion === 'function') {
+        window.crearCuestionario.mostrarConfirmacion(titulo, mensaje, callback);
+    } else {
+        // Fallback simple
+        if (confirm(mensaje)) {
+            callback();
+        }
+    }
+}
+
+function mostrarToastFallback(mensaje, tipo) {
+    const colorMap = {
+        'success': 'bg-success',
+        'danger': 'bg-danger',
+        'warning': 'bg-warning text-dark',
+        'info': 'bg-info'
+    };
+    
+    const iconMap = {
+        'success': 'fas fa-check-circle',
+        'danger': 'fas fa-exclamation-triangle',
+        'warning': 'fas fa-exclamation-triangle',
+        'info': 'fas fa-info-circle'
+    };
+    
+    const toastHtml = `
+        <div class="toast show position-fixed top-0 end-0 m-3" style="z-index: 9999;">
+            <div class="toast-body ${colorMap[tipo]} text-white">
+                <div class="d-flex align-items-center">
+                    <i class="${iconMap[tipo]} me-2"></i>
+                    ${mensaje}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const toastElement = document.createElement('div');
+    toastElement.innerHTML = toastHtml;
+    document.body.appendChild(toastElement);
+    
+    // Auto-remover después de 4 segundos
+    setTimeout(() => {
+        toastElement.remove();
+    }, 4000);
+}
+
+// ===== ESTILOS ADICIONALES PARA MODALES =====
+
+const estilosAdicionales = `
+<style>
+.preview-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.preview-area.has-content {
+    border-style: solid;
+    border-color: #28a745;
+    background: #f8fff9;
+}
+
+.preview-container {
+    height: 100%;
+}
+
+.modal-content {
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+    padding: 20px 24px;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Estilos para toast fallback */
+.toast {
+    min-width: 300px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.toast-body {
+    padding: 16px 20px;
+    font-weight: 500;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+</style>
+`;
+
+// Agregar estilos al documento
+document.head.insertAdjacentHTML('beforeend', estilosAdicionales);
+
+// ===== EVENT LISTENERS =====
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Sistema de recursos multimedia de plantilla inicializado');
+    
+    // Event listener para preview automático de YouTube en tiempo real
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'temp-url-youtube') {
+            clearTimeout(e.target.debounceTimer);
+            e.target.debounceTimer = setTimeout(() => {
+                previsualizarYoutube();
+            }, 500);
+        }
+    });
+    
+    // Limpiar URLs de objeto cuando se cierre el modal
+    document.addEventListener('hidden.bs.modal', function(e) {
+        if (e.target.id === 'modalTemporal') {
+            // Limpiar URLs de objeto para liberar memoria
+            const videos = e.target.querySelectorAll('video source');
+            const audios = e.target.querySelectorAll('audio source');
+            
+            videos.forEach(source => {
+                if (source.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(source.src);
+                }
+            });
+            
+            audios.forEach(source => {
+                if (source.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(source.src);
+                }
+            });
+        }
+    });
+    
+    // Validación de formularios en tiempo real
+    document.addEventListener('change', function(e) {
+        if (e.target.type === 'file') {
+            const maxSizes = {
+                'temp-archivo-imagen': 10 * 1024 * 1024,    // 10MB
+                'temp-archivo-video': 50 * 1024 * 1024,     // 50MB
+                'temp-archivo-documento': 25 * 1024 * 1024, // 25MB
+                'temp-archivo-audio': 10 * 1024 * 1024      // 10MB
+            };
+            
+            const maxSize = maxSizes[e.target.id];
+            if (maxSize && e.target.files[0] && e.target.files[0].size > maxSize) {
+                const maxMB = (maxSize / 1024 / 1024).toFixed(0);
+                mostrarError(`El archivo es muy grande. Máximo ${maxMB}MB permitido.`);
+                e.target.value = '';
+                
+                // Limpiar preview
+                const preview = document.getElementById('preview-temp');
+                if (preview) {
+                    preview.className = 'preview-area';
+                    preview.innerHTML = `
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                        <p class="text-danger mt-2">Archivo muy grande</p>
+                    `;
+                }
+            }
+        }
+    });
+    
+    // Validación de URLs de YouTube en tiempo real
+    document.addEventListener('blur', function(e) {
+        if (e.target.id === 'temp-url-youtube') {
+            const url = e.target.value.trim();
+            if (url && !extraerYouTubeId(url)) {
+                mostrarAdvertencia('La URL de YouTube no parece ser válida');
+                e.target.classList.add('is-invalid');
+            } else {
+                e.target.classList.remove('is-invalid');
+            }
+        }
+    });
+    
+    // Prevenir envío accidental de formularios
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.matches('#modalTemporal input')) {
+            e.preventDefault();
+        }
+    });
+});
+
+// ===== LOGGING Y DEBUG =====
+
+console.log('📋 Plantilla pregunta adaptada - Sistema completo cargado');
 console.log('📎 Funcionalidad de recursos: ✅');
 console.log('🎨 Interfaz profesional: ✅');
 console.log('📱 Diseño responsive: ✅');
 console.log('🔧 Modales funcionales: ✅');
+console.log('🚀 Event listeners activos: ✅');
+
+// ===== VARIABLES GLOBALES EXPUESTAS =====
+
+// Exponer funciones principales para uso externo
+window.plantillaPregunta = {
+    mostrarModalSimple: mostrarModalSimple,
+    duplicarPregunta: duplicarPregunta,
+    eliminarRecurso: eliminarRecurso,
+    obtenerPreguntaId: obtenerPreguntaId,
+    preguntaActual: () => preguntaActual
+};
+
 </script>
