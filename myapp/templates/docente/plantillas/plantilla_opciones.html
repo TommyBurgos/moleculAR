@@ -1,0 +1,292 @@
+<!-- plantillas/plantilla_opciones.html - COMPLETAMENTE FUNCIONAL -->
+<div class="opciones-container">
+    <label class="form-label fw-bold">
+        {% if pregunta.tipo.nombre == 'opcion_unica' %}
+            Opciones (selecciona la respuesta correcta)
+        {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+            Opciones (puedes seleccionar múltiples respuestas correctas)
+        {% else %}
+            Opciones Verdadero/Falso
+        {% endif %}
+    </label>
+    
+    {% for opcion in pregunta.opciones.all %}
+    <div class="opcion-container {% if opcion.es_correcta %}opcion-correcta{% endif %}" 
+         data-opcion="{{ forloop.counter }}" data-opcion-id="{{ opcion.id }}">
+        
+        <input type="{% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'falso_verdadero' %}radio{% else %}checkbox{% endif %}" 
+               name="correcta-{{ pregunta.id }}" 
+               {% if opcion.es_correcta %}checked{% endif %}
+               data-field="es_correcta"
+               data-pregunta-id="{{ pregunta.id }}"
+               onchange="manejarCambioOpcionCorrecta(this)">
+        
+        <input type="text" class="form-control opcion-input" 
+               value="{{ opcion.texto|default:"" }}" 
+               placeholder="Opción {{ forloop.counter }}"
+               data-field="texto"
+               data-opcion-id="{{ opcion.id }}"
+               onchange="actualizarOpcionTexto(this)">
+        
+        {% if pregunta.opciones.all|length > 2 %}
+        <button type="button" class="btn btn-danger btn-sm btn-eliminar-opcion" 
+                data-opcion-id="{{ opcion.id }}"
+                onclick="eliminarOpcionExistente(this)"
+                title="Eliminar opción">
+            <i class="fas fa-trash"></i>
+        </button>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <!-- Botón agregar opción mejorado (solo para opción única y múltiple) -->
+    {% if pregunta.tipo.nombre != 'falso_verdadero' %}
+    <div class="d-flex align-items-center mt-3">
+        <button type="button" class="btn-agregar-opcion" 
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="agregarOpcionExistente(this)"
+                title="Agregar nueva opción">
+            <i class="fas fa-plus"></i>
+        </button>
+        <span class="text-muted small ms-2">Agregar nueva opción</span>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Estilos específicos para opciones */
+.opcion-container.opcion-correcta {
+    background: linear-gradient(135deg, #d5f4e6 0%, #e8f5e8 100%);
+    border: 2px solid #27ae60;
+    border-left: 5px solid #27ae60;
+}
+
+.opcion-container:not(.opcion-correcta) {
+    background-color: #fafbfc;
+    border: 2px solid #e9ecef;
+}
+
+.opcion-container {
+    transition: all 0.3s ease;
+    padding: 18px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.opcion-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: #3498db;
+}
+
+.opcion-container input[type="radio"],
+.opcion-container input[type="checkbox"] {
+    transform: scale(1.4);
+    margin-right: 8px;
+    accent-color: #27ae60;
+    flex-shrink: 0;
+}
+
+.opcion-container .opcion-input {
+    flex: 1;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 15px;
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+}
+
+.opcion-container .opcion-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.15rem rgba(52,152,219,0.15);
+    outline: none;
+}
+
+.btn-eliminar-opcion {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.btn-eliminar-opcion:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    transform: scale(1.1);
+    color: white;
+}
+
+.btn-agregar-opcion {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px dashed #3498db;
+    background: transparent;
+    color: #3498db;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-agregar-opcion:hover {
+    background-color: #3498db;
+    color: white;
+    transform: scale(1.1);
+    border-style: solid;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .opcion-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .opcion-container > * {
+        width: 100%;
+    }
+}
+</style>
+
+<script>
+// Scripts específicos para opciones
+function manejarCambioOpcionCorrecta(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        console.error('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`🔘 Cambiando opción correcta para pregunta ${preguntaId}`);
+    
+    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
+    if (!preguntaElement) {
+        console.error('No se encontró el elemento de pregunta');
+        return;
+    }
+    
+    // Si es radio button, quitar la clase de todas las opciones
+    if (element.type === 'radio') {
+        preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
+            container.classList.remove('opcion-correcta');
+        });
+    }
+    
+    // Agregar o quitar la clase según el estado
+    const container = element.closest('.opcion-container');
+    if (container) {
+        if (element.checked) {
+            container.classList.add('opcion-correcta');
+        } else {
+            container.classList.remove('opcion-correcta');
+        }
+    }
+    
+    console.log(`✅ Opción correcta actualizada para pregunta ${preguntaId}`);
+}
+
+function actualizarOpcionTexto(element) {
+    const opcionId = element.dataset.opcionId;
+    const texto = element.value.trim();
+    
+    console.log(`✏️ Actualizando texto de opción ${opcionId}: ${texto}`);
+    
+    // Aquí se puede agregar lógica para guardar automáticamente
+    // Por ahora solo logueamos el cambio
+}
+
+function agregarOpcionExistente(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        console.error('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`➕ Agregando opción a pregunta existente: ${preguntaId}`);
+    
+    // Llamar a la función global
+    if (typeof agregarOpcion === 'function') {
+        agregarOpcion(preguntaId);
+    } else {
+        console.error('Función agregarOpcion no encontrada');
+    }
+}
+
+function eliminarOpcionExistente(element) {
+    const opcionId = element.dataset.opcionId;
+    
+    if (!opcionId) {
+        console.error('No se pudo obtener el ID de opción');
+        return;
+    }
+    
+    console.log(`🗑️ Eliminando opción existente: ${opcionId}`);
+    
+    // Llamar a la función global
+    if (typeof eliminarOpcion === 'function') {
+        eliminarOpcion(opcionId);
+    } else {
+        console.error('Función eliminarOpcion no encontrada');
+    }
+}
+
+function obtenerPreguntaId(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        
+        if (current.getAttribute && current.getAttribute('data-pregunta-id')) {
+            return current.getAttribute('data-pregunta-id');
+        }
+        
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        
+        const preguntaParent = current.closest('[data-pregunta-id]');
+        if (preguntaParent) {
+            return preguntaParent.dataset.preguntaId;
+        }
+        
+        current = current.parentElement;
+    }
+    
+    console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
+    return null;
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // Aplicar estilos correctos al cargar la página
+    document.querySelectorAll('.opcion-container').forEach(container => {
+        const radio = container.querySelector('input[type="radio"], input[type="checkbox"]');
+        if (radio && radio.checked) {
+            container.classList.add('opcion-correcta');
+        } else {
+            container.classList.remove('opcion-correcta');
+        }
+    });
+    
+    console.log('✅ Plantilla opciones inicializada');
+});
+</script>

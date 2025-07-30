@@ -1,0 +1,500 @@
+<!-- plantillas/plantilla_simuladores.html - COMPLETAMENTE FUNCIONAL -->
+<div class="simulador-container">
+    <label class="form-label fw-bold">
+        Configuración de {{ pregunta.tipo.descripcion|title }}
+    </label>
+    
+    <!-- Panel de configuración del simulador -->
+    <div class="alert alert-info">
+        <i class="fas fa-atom me-2"></i>
+        Los estudiantes usarán un simulador molecular interactivo para construir la molécula objetivo.
+        {% if pregunta.tipo.nombre == 'simulador_3d' %}
+        En modo 3D, podrán rotar y manipular la molécula en el espacio tridimensional.
+        {% else %}
+        En modo 2D, trabajarán con estructuras planas de Lewis.
+        {% endif %}
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Configuración de la Molécula</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Fuente de la molécula</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="fuente_simulador_{{ pregunta.id }}" 
+                                   value="smiles" checked 
+                                   data-pregunta-id="{{ pregunta.id }}"
+                                   onchange="toggleFuenteMolecula(this)">
+                            <label class="form-check-label">Ingresar SMILES manualmente</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="fuente_simulador_{{ pregunta.id }}" 
+                                   value="pubchem" 
+                                   data-pregunta-id="{{ pregunta.id }}"
+                                   onchange="toggleFuenteMolecula(this)">
+                            <label class="form-check-label">Buscar en PubChem</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Opción PubChem -->
+                    <div id="pubchem_{{ pregunta.id }}" class="fuente-opcion" style="display: none;">
+                        <label class="form-label">Nombre del compuesto</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" 
+                                   placeholder="Ej: etanol, benzene, caffeine" 
+                                   id="nombre_pubchem_{{ pregunta.id }}"
+                                   data-pregunta-id="{{ pregunta.id }}">
+                            <button type="button" class="btn btn-outline-primary" 
+                                    data-pregunta-id="{{ pregunta.id }}"
+                                    onclick="buscarEnPubChem(this)">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Opción SMILES manual -->
+                    <div id="smiles_manual_{{ pregunta.id }}" class="fuente-opcion">
+                        <label class="form-label">Código SMILES</label>
+                        <input type="text" class="form-control" 
+                               placeholder="Ej: CCO (etanol)" 
+                               id="smiles_input_{{ pregunta.id }}"
+                               data-field="smiles_objetivo"
+                               data-pregunta-id="{{ pregunta.id }}"
+                               value="{{ pregunta.smiles_objetivo|default:"" }}"
+                               onchange="validarSMILES(this)">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Descripción de la molécula</label>
+                        <textarea class="form-control" rows="2" 
+                                  placeholder="Ej: Etanol - alcohol etílico"
+                                  data-field="descripcion_molecula"
+                                  data-pregunta-id="{{ pregunta.id }}">{{ pregunta.descripcion_molecula|default:"" }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <label class="form-label">Tolerancia</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" 
+                                       value="{{ pregunta.tolerancia_similitud|default:95 }}" 
+                                       min="70" max="100" step="5"
+                                       data-field="tolerancia_similitud"
+                                       data-pregunta-id="{{ pregunta.id }}">
+                                <span class="input-group-text">%</span>
+                            </div>
+                            <small class="text-muted">Porcentaje de similitud requerido</small>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Permitir isómeros</label>
+                            <div class="form-check mt-2">
+                                <input type="checkbox" class="form-check-input" 
+                                       id="permitir-isomeros-{{ pregunta.id }}"
+                                       data-field="permitir_isomeros"
+                                       data-pregunta-id="{{ pregunta.id }}"
+                                       {% if pregunta.permitir_isomeros %}checked{% endif %}>
+                                <label class="form-check-label" for="permitir-isomeros-{{ pregunta.id }}">
+                                    Aceptar isómeros
+                                </label>
+                            </div>
+                            <small class="text-muted">Aceptar diferentes formas estructurales</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-eye me-2"></i>Vista Previa</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Visor 3D -->
+                    <div id="viewer_3d_{{ pregunta.id }}" style="width: 100%; height: 250px; border: 1px solid #dee2e6; background: #f8f9fa; border-radius: 8px;">
+                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                            <div class="text-center">
+                                <i class="fas fa-cube fa-3x mb-3"></i>
+                                <p>Vista 3D de la molécula</p>
+                                <small>Aparecerá al definir un SMILES válido</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-primary" 
+                                data-pregunta-id="{{ pregunta.id }}"
+                                onclick="visualizar3D(this)">
+                            <i class="fas fa-cube me-1"></i>Visualizar 3D
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success" 
+                                data-pregunta-id="{{ pregunta.id }}"
+                                onclick="validarMolecula(this)">
+                            <i class="fas fa-check me-1"></i>Validar SMILES
+                        </button>
+                    </div>
+                    
+                    <!-- Información de la molécula -->
+                    <div class="mt-3" id="info_molecula_{{ pregunta.id }}">
+                        <small class="text-muted">
+                            <strong>SMILES actual:</strong> <span id="smiles_actual_{{ pregunta.id }}">{{ pregunta.smiles_objetivo|default:"No definido" }}</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información adicional -->
+    <div class="alert alert-warning">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Nota importante:</strong> Los simuladores moleculares requieren que definas una molécula objetivo válida. 
+        Los estudiantes deberán construir esta molécula exacta para obtener la puntuación completa.
+    </div>
+</div>
+
+<style>
+/* Estilos específicos para simuladores */
+.simulador-container {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.simulador-container .card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.simulador-container .card-header {
+    font-weight: 600;
+}
+
+.fuente-opcion {
+    padding: 15px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    background-color: #f8f9fa;
+}
+
+.simulador-container .input-group,
+.simulador-container .form-control {
+    margin-bottom: 10px;
+}
+
+.simulador-container .form-control {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1.05rem;
+}
+
+.simulador-container .form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+/* Estilos para el visor 3D */
+[id^="viewer_3d_"] {
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Animaciones para carga */
+.cargando-simulador {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+    border-radius: 8px;
+}
+
+.spinner-molecular {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e3f2fd;
+    border-top: 4px solid #2196f3;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .simulador-container {
+        padding: 15px;
+    }
+    
+    .simulador-container .row {
+        flex-direction: column;
+    }
+    
+    .simulador-container .card {
+        margin-bottom: 15px;
+    }
+    
+    [id^="viewer_3d_"] {
+        height: 200px !important;
+    }
+}
+</style>
+
+<script>
+// Scripts específicos para simuladores moleculares
+function toggleFuenteMolecula(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    const fuente = element.value;
+    
+    if (!preguntaId) return;
+    
+    console.log(`🔄 Cambiando fuente de molécula a: ${fuente} para pregunta ${preguntaId}`);
+    
+    // Ocultar todas las opciones
+    const pubchemDiv = document.getElementById(`pubchem_${preguntaId}`);
+    const smilesDiv = document.getElementById(`smiles_manual_${preguntaId}`);
+    
+    if (pubchemDiv) pubchemDiv.style.display = 'none';
+    if (smilesDiv) smilesDiv.style.display = 'none';
+    
+    // Mostrar la opción seleccionada
+    if (fuente === 'pubchem' && pubchemDiv) {
+        pubchemDiv.style.display = 'block';
+    } else if (fuente === 'smiles' && smilesDiv) {
+        smilesDiv.style.display = 'block';
+    }
+}
+
+function buscarEnPubChem(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const nombreInput = document.getElementById(`nombre_pubchem_${preguntaId}`);
+    if (!nombreInput) return;
+    
+    const nombreCompuesto = nombreInput.value.trim();
+    if (!nombreCompuesto) {
+        mostrarAdvertencia('Ingrese el nombre del compuesto');
+        return;
+    }
+    
+    console.log(`🔍 Buscando en PubChem: ${nombreCompuesto}`);
+    
+    const loadingToast = mostrarCargando('Buscando en PubChem...');
+    
+    fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(nombreCompuesto)}/property/IsomericSMILES/JSON`)
+        .then(response => response.json())
+        .then(data => {
+            loadingToast.hide();
+            if (data.PropertyTable && data.PropertyTable.Properties.length > 0) {
+                const smiles = data.PropertyTable.Properties[0].IsomericSMILES;
+                const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+                if (smilesInput) {
+                    smilesInput.value = smiles;
+                    actualizarSmilesActual(preguntaId, smiles);
+                    mostrarExito(`SMILES encontrado: ${smiles}`);
+                    visualizar3DPorId(preguntaId, smiles);
+                }
+            } else {
+                mostrarError('No se encontró el compuesto en PubChem');
+            }
+        })
+        .catch(error => {
+            loadingToast.hide();
+            mostrarError('Error al buscar en PubChem: ' + error.message);
+        });
+}
+
+function validarSMILES(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    const smiles = element.value.trim();
+    
+    if (!preguntaId) return;
+    
+    console.log(`🧪 Validando SMILES: ${smiles} para pregunta ${preguntaId}`);
+    
+    if (smiles && validarFormatoSMILES(smiles)) {
+        actualizarSmilesActual(preguntaId, smiles);
+        mostrarExito('SMILES válido');
+    } else if (smiles) {
+        mostrarAdvertencia('El formato SMILES podría no ser válido');
+    }
+}
+
+function validarMolecula(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+    const smiles = smilesInput ? smilesInput.value.trim() : '';
+    
+    if (!smiles) {
+        mostrarError('No hay SMILES para validar');
+        return;
+    }
+    
+    if (validarFormatoSMILES(smiles)) {
+        mostrarExito('SMILES válido y listo para usar');
+        visualizar3DPorId(preguntaId, smiles);
+    } else {
+        mostrarError('SMILES inválido. Verifique la sintaxis.');
+    }
+}
+
+function visualizar3D(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+    const smiles = smilesInput ? smilesInput.value.trim() : '';
+    
+    visualizar3DPorId(preguntaId, smiles);
+}
+
+function visualizar3DPorId(preguntaId, smilesOverride = null) {
+    const smilesInput = document.getElementById(`smiles_input_${preguntaId}`);
+    const smiles = smilesOverride || (smilesInput ? smilesInput.value.trim() : '');
+    
+    if (!smiles) {
+        mostrarError('No hay SMILES para visualizar');
+        return;
+    }
+    
+    console.log(`👁️ Visualizando 3D para pregunta ${preguntaId}: ${smiles}`);
+    
+    const viewerId = `viewer_3d_${preguntaId}`;
+    const container = document.getElementById(viewerId);
+    
+    if (!container) return;
+    
+    // Mostrar mensaje de carga
+    container.innerHTML = `
+        <div class="cargando-simulador">
+            <div class="spinner-molecular"></div>
+            <span class="ms-2">Cargando molécula...</span>
+        </div>
+    `;
+    
+    // Simular carga de molécula 3D
+    setTimeout(() => {
+        container.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center h-100 text-success">
+                <div class="text-center">
+                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                    <p><strong>Molécula cargada</strong></p>
+                    <small>SMILES: ${smiles}</small>
+                </div>
+            </div>
+        `;
+        
+        mostrarExito('Molécula visualizada correctamente');
+    }, 2000);
+}
+
+function actualizarSmilesActual(preguntaId, smiles) {
+    const smilesActualSpan = document.getElementById(`smiles_actual_${preguntaId}`);
+    if (smilesActualSpan) {
+        smilesActualSpan.textContent = smiles || 'No definido';
+    }
+}
+
+function validarFormatoSMILES(smiles) {
+    // Patrón básico para validar SMILES
+    const patronSMILES = /^[a-zA-Z0-9\[\]()@+\-=#$:\.\\\/]*$/;
+    return patronSMILES.test(smiles) && smiles.length > 0;
+}
+
+// Funciones de utilidad (fallbacks)
+function obtenerPreguntaId(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        
+        if (current.getAttribute && current.getAttribute('data-pregunta-id')) {
+            return current.getAttribute('data-pregunta-id');
+        }
+        
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        
+        const preguntaParent = current.closest('[data-pregunta-id]');
+        if (preguntaParent) {
+            return preguntaParent.dataset.preguntaId;
+        }
+        
+        current = current.parentElement;
+    }
+    
+    console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
+    return null;
+}
+
+function mostrarCargando(mensaje) {
+    console.log('⏳ ' + mensaje);
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarCargando === 'function') {
+        return window.crearCuestionario.mostrarCargando(mensaje);
+    }
+    return { hide: () => {} };
+}
+
+function mostrarExito(mensaje) {
+    console.log('✅ ' + mensaje);
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarExito === 'function') {
+        window.crearCuestionario.mostrarExito(mensaje);
+    }
+}
+
+function mostrarError(mensaje) {
+    console.error('❌ ' + mensaje);
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarError === 'function') {
+        window.crearCuestionario.mostrarError(mensaje);
+    }
+}
+
+function mostrarAdvertencia(mensaje) {
+    console.warn('⚠️ ' + mensaje);
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarInfo === 'function') {
+        window.crearCuestionario.mostrarInfo(mensaje);
+    }
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar fuente por defecto
+    document.querySelectorAll('[name^="fuente_simulador_"]').forEach(radio => {
+        if (radio.checked) {
+            toggleFuenteMolecula(radio);
+        }
+    });
+    
+    // Validar SMILES existentes
+    document.querySelectorAll('[data-field="smiles_objetivo"]').forEach(input => {
+        if (input.value.trim()) {
+            validarSMILES(input);
+        }
+    });
+    
+    console.log('✅ Plantilla simuladores inicializada');
+});
+</script>

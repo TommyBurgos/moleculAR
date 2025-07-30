@@ -1,0 +1,418 @@
+<!-- plantillas/plantilla_unir_lineas.html - COMPLETAMENTE FUNCIONAL -->
+<div class="unir-lineas-container">
+    <label class="form-label fw-bold">Configuración - Unir con líneas</label>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-arrows-alt-h me-2"></i>
+        Los estudiantes conectarán elementos de dos columnas arrastrando líneas entre ellos.
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">Columna Izquierda</h6>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" rows="6" 
+                              placeholder="Elemento 1&#10;Elemento 2&#10;Elemento 3&#10;Elemento 4"
+                              data-field="columna_izquierda"
+                              data-pregunta-id="{{ pregunta.id }}"
+                              id="columna_izq_{{ pregunta.id }}"
+                              onchange="actualizarVistaPrevia(this)">{{ pregunta.columna_izquierda|default:"" }}</textarea>
+                    <small class="text-muted">Un elemento por línea</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">Columna Derecha</h6>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" rows="6" 
+                              placeholder="Definición A&#10;Definición B&#10;Definición C&#10;Definición D"
+                              data-field="columna_derecha"
+                              data-pregunta-id="{{ pregunta.id }}"
+                              id="columna_der_{{ pregunta.id }}"
+                              onchange="actualizarVistaPrevia(this)">{{ pregunta.columna_derecha|default:"" }}</textarea>
+                    <small class="text-muted">Un elemento por línea</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-3">
+        <label class="form-label">Conexiones correctas</label>
+        <div class="row">
+            <div class="col-md-8">
+                <input type="text" class="form-control" 
+                       placeholder="1-A, 2-B, 3-C, 4-D"
+                       data-field="conexiones_correctas"
+                       value="{{ pregunta.conexiones_correctas|default:"" }}"
+                       data-pregunta-id="{{ pregunta.id }}"
+                       id="conexiones_{{ pregunta.id }}"
+                       onchange="validarConexiones(this)">
+                <small class="text-muted">Define qué elementos de la izquierda van con cuáles de la derecha (formato: número-letra)</small>
+            </div>
+            <div class="col-md-4">
+                <button type="button" class="btn btn-outline-primary btn-sm" 
+                        data-pregunta-id="{{ pregunta.id }}"
+                        onclick="generarConexionesAutomaticas(this)">
+                    <i class="fas fa-magic me-1"></i>Auto-generar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" 
+                       id="mezclar-opciones-{{ pregunta.id }}"
+                       data-field="mezclar_opciones"
+                       data-pregunta-id="{{ pregunta.id }}"
+                       {% if pregunta.mezclar_opciones %}checked{% endif %}>
+                <label class="form-check-label" for="mezclar-opciones-{{ pregunta.id }}">
+                    Mezclar orden aleatoriamente
+                </label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" 
+                       id="permitir-multiple-{{ pregunta.id }}"
+                       data-field="permitir_conexiones_multiples"
+                       data-pregunta-id="{{ pregunta.id }}"
+                       {% if pregunta.permitir_conexiones_multiples %}checked{% endif %}>
+                <label class="form-check-label" for="permitir-multiple-{{ pregunta.id }}">
+                    Permitir conexiones múltiples
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vista previa interactiva -->
+    <div class="mt-4">
+        <h6>Vista Previa:</h6>
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="row" id="vista_previa_{{ pregunta.id }}">
+                    <div class="col-6">
+                        <h6 class="text-primary">Columna Izquierda</h6>
+                        <div class="list-group" id="preview_izq_{{ pregunta.id }}">
+                            <div class="list-group-item text-muted">Agregar elementos...</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-success">Columna Derecha</h6>
+                        <div class="list-group" id="preview_der_{{ pregunta.id }}">
+                            <div class="list-group-item text-muted">Agregar elementos...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mostrar conexiones -->
+                <div class="mt-3" id="conexiones_preview_{{ pregunta.id }}">
+                    <small class="text-muted">
+                        <strong>Conexiones correctas:</strong> <span id="conexiones_texto_{{ pregunta.id }}">No definidas</span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información adicional -->
+    <div class="mt-3">
+        <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Consejos:</strong>
+            <ul class="mb-0 mt-2">
+                <li>Asegúrate de que cada elemento de la izquierda tenga una correspondencia en la derecha</li>
+                <li>Las conexiones se definen como: número de la izquierda - letra de la derecha</li>
+                <li>Ejemplo: "1-A, 2-B, 3-C" significa que el primer elemento va con el primero de la derecha, etc.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos específicos para unir líneas */
+.unir-lineas-container {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.unir-lineas-container .alert {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+}
+
+.unir-lineas-container .col-md-6 {
+    padding: 0 10px;
+}
+
+.unir-lineas-container .card {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 15px;
+}
+
+.unir-lineas-container .card-header {
+    font-weight: 600;
+}
+
+.unir-lineas-container .form-control {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1.05rem;
+}
+
+.unir-lineas-container .form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+.unir-lineas-container .list-group-item {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid #dee2e6;
+    margin-bottom: 5px;
+    border-radius: 6px;
+}
+
+.unir-lineas-container .list-group-item:hover {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.unir-lineas-container .list-group-item.preview-item {
+    background-color: #f8f9fa;
+    font-weight: 500;
+}
+
+/* Vista previa mejorada */
+.vista-previa-conexion {
+    background: linear-gradient(90deg, #e3f2fd 0%, #f3e5f5 100%);
+    border: 1px solid #2196f3;
+    border-radius: 6px;
+    padding: 10px;
+    margin: 5px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .unir-lineas-container {
+        padding: 15px;
+    }
+    
+    .unir-lineas-container .row {
+        flex-direction: column;
+    }
+    
+    .unir-lineas-container .col-md-6 {
+        margin-bottom: 15px;
+        padding: 0;
+    }
+}
+</style>
+
+<script>
+// Scripts específicos para unir con líneas
+function actualizarVistaPrevia(element) {
+    actualizarVistaPreviaElement(element);
+}
+
+function actualizarVistaPreviaElement(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const izqTextarea = document.getElementById(`columna_izq_${preguntaId}`);
+    const derTextarea = document.getElementById(`columna_der_${preguntaId}`);
+    
+    if (!izqTextarea || !derTextarea) return;
+    
+    const izquierda = izqTextarea.value.split('\n').filter(x => x.trim());
+    const derecha = derTextarea.value.split('\n').filter(x => x.trim());
+    
+    const prevIzq = document.getElementById(`preview_izq_${preguntaId}`);
+    const prevDer = document.getElementById(`preview_der_${preguntaId}`);
+    
+    if (!prevIzq || !prevDer) return;
+    
+    console.log(`🔄 Actualizando vista previa para pregunta ${preguntaId}`);
+    console.log(`📋 Izquierda: ${izquierda.length} elementos, Derecha: ${derecha.length} elementos`);
+    
+    // Actualizar columna izquierda
+    if (izquierda.length > 0) {
+        prevIzq.innerHTML = izquierda.map((item, index) => 
+            `<div class="list-group-item preview-item">
+                <strong>${index + 1}.</strong> ${item}
+            </div>`
+        ).join('');
+    } else {
+        prevIzq.innerHTML = '<div class="list-group-item text-muted">Agregar elementos...</div>';
+    }
+    
+    // Actualizar columna derecha
+    if (derecha.length > 0) {
+        prevDer.innerHTML = derecha.map((item, index) => 
+            `<div class="list-group-item preview-item">
+                <strong>${String.fromCharCode(65 + index)}.</strong> ${item}
+            </div>`
+        ).join('');
+    } else {
+        prevDer.innerHTML = '<div class="list-group-item text-muted">Agregar elementos...</div>';
+    }
+    
+    // Verificar balance
+    if (izquierda.length !== derecha.length && izquierda.length > 0 && derecha.length > 0) {
+        mostrarAdvertencia(`Desequilibrio: ${izquierda.length} elementos izquierda vs ${derecha.length} elementos derecha`);
+    }
+}
+
+function generarConexionesAutomaticas(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const izqTextarea = document.getElementById(`columna_izq_${preguntaId}`);
+    const derTextarea = document.getElementById(`columna_der_${preguntaId}`);
+    const conexionesInput = document.getElementById(`conexiones_${preguntaId}`);
+    
+    if (!izqTextarea || !derTextarea || !conexionesInput) return;
+    
+    const izquierda = izqTextarea.value.split('\n').filter(x => x.trim());
+    const derecha = derTextarea.value.split('\n').filter(x => x.trim());
+    
+    if (izquierda.length === 0 || derecha.length === 0) {
+        mostrarAdvertencia('Primero agregue elementos a ambas columnas');
+        return;
+    }
+    
+    const minLength = Math.min(izquierda.length, derecha.length);
+    const conexiones = [];
+    
+    for (let i = 0; i < minLength; i++) {
+        conexiones.push(`${i + 1}-${String.fromCharCode(65 + i)}`);
+    }
+    
+    conexionesInput.value = conexiones.join(', ');
+    mostrarExito('Conexiones generadas automáticamente');
+    
+    console.log(`🎯 Conexiones generadas para pregunta ${preguntaId}: ${conexiones.join(', ')}`);
+    
+    // Actualizar vista previa de conexiones
+    actualizarVistaConexiones(preguntaId);
+}
+
+function validarConexiones(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const conexiones = element.value.trim();
+    
+    if (!conexiones) {
+        actualizarVistaConexiones(preguntaId, 'No definidas');
+        return;
+    }
+    
+    // Validar formato
+    const patronConexion = /^\d+-[A-Z](,\s*\d+-[A-Z])*$/;
+    
+    if (patronConexion.test(conexiones)) {
+        mostrarExito('Formato de conexiones válido');
+        actualizarVistaConexiones(preguntaId, conexiones);
+    } else {
+        mostrarAdvertencia('Formato incorrecto. Use: 1-A, 2-B, 3-C');
+        actualizarVistaConexiones(preguntaId, 'Formato incorrecto');
+    }
+    
+    console.log(`✅ Conexiones validadas para pregunta ${preguntaId}: ${conexiones}`);
+}
+
+function actualizarVistaConexiones(preguntaId, texto = null) {
+    const conexionesTexto = document.getElementById(`conexiones_texto_${preguntaId}`);
+    
+    if (conexionesTexto) {
+        if (texto) {
+            conexionesTexto.textContent = texto;
+        } else {
+            const conexionesInput = document.getElementById(`conexiones_${preguntaId}`);
+            if (conexionesInput) {
+                conexionesTexto.textContent = conexionesInput.value || 'No definidas';
+            }
+        }
+    }
+}
+
+// Funciones de utilidad
+function obtenerPreguntaId(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        
+        if (current.getAttribute && current.getAttribute('data-pregunta-id')) {
+            return current.getAttribute('data-pregunta-id');
+        }
+        
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        
+        const preguntaParent = current.closest('[data-pregunta-id]');
+        if (preguntaParent) {
+            return preguntaParent.dataset.preguntaId;
+        }
+        
+        current = current.parentElement;
+    }
+    
+    console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
+    return null;
+}
+
+function mostrarExito(mensaje) {
+    console.log('✅ ' + mensaje);
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarExito === 'function') {
+        window.crearCuestionario.mostrarExito(mensaje);
+    }
+}
+
+function mostrarAdvertencia(mensaje) {
+    console.warn('⚠️ ' + mensaje);
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarInfo === 'function') {
+        window.crearCuestionario.mostrarInfo(mensaje);
+    }
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar vista previa para unir líneas
+    document.querySelectorAll('[id^="columna_izq_"]').forEach(textarea => {
+        const preguntaId = textarea.dataset.preguntaId;
+        if (preguntaId) {
+            actualizarVistaPreviaElement(textarea);
+            actualizarVistaConexiones(preguntaId);
+        }
+    });
+    
+    // Validar conexiones existentes
+    document.querySelectorAll('[id^="conexiones_"]').forEach(input => {
+        if (input.value.trim()) {
+            validarConexiones(input);
+        }
+    });
+    
+    console.log('✅ Plantilla unir líneas inicializada');
+});
+</script>
