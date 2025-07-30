@@ -1,24 +1,19 @@
-<!-- plantilla_pregunta_adaptada.html - ARCHIVO PRINCIPAL COMPLETO Y ADAPTADO -->
-<!-- Este archivo coordina todas las subplantillas de tipos de pregunta -->
-
+<!-- plantilla_pregunta_adaptada.html - PARTE 1: ENCABEZADO Y RECURSOS MULTIMEDIA -->
 <div class="plantilla-pregunta" data-tipo="{{ pregunta.tipo.nombre }}" data-pregunta-id="{{ pregunta.id }}">
     
-    <!-- =====================================================
-         SECCIÓN 1: ENCABEZADO DE LA PREGUNTA
-         ===================================================== -->
+    <!-- Encabezado común de la pregunta -->
     <div class="row mb-3">
         <div class="col-md-8">
             <label class="form-label fw-bold">
-                <i class="fas fa-question-circle me-2"></i>
+                <i class="fas fa-question-circle me-2 text-primary"></i>
                 Enunciado de la pregunta
             </label>
             <textarea class="form-control" rows="3" 
                       placeholder="Escribe el enunciado de tu pregunta aquí..."
                       data-field="enunciado"
-                      id="enunciado_{{ pregunta.id }}"
-                      required>{{ pregunta.enunciado|default:"" }}</textarea>
+                      data-pregunta-id="{{ pregunta.id }}">{{ pregunta.enunciado|default:"" }}</textarea>
             <small class="text-muted">
-                <i class="fas fa-info-circle me-1"></i>
+                <i class="fas fa-lightbulb me-1"></i>
                 Escribe una pregunta clara y específica que los estudiantes puedan entender fácilmente.
             </small>
         </div>
@@ -26,485 +21,280 @@
             <div class="row">
                 <div class="col-6">
                     <label class="form-label fw-bold">
-                        <i class="fas fa-star me-2"></i>
+                        <i class="fas fa-star me-2 text-warning"></i>
                         Puntaje
                     </label>
                     <div class="input-group">
-                        <input type="number" class="form-control" 
-                               value="{{ pregunta.puntaje|default:1 }}" 
-                               min="1" max="100" step="1" 
-                               data-field="puntaje" 
-                               id="puntaje_{{ pregunta.id }}"
-                               required>
+                        <input type="number" class="form-control" value="{{ pregunta.puntaje|default:1 }}" 
+                               min="1" step="1" data-field="puntaje" data-pregunta-id="{{ pregunta.id }}">
                         <span class="input-group-text">pts</span>
                     </div>
                     <small class="text-muted">Puntos que vale esta pregunta</small>
                 </div>
                 <div class="col-6">
                     <label class="form-label fw-bold">
-                        <i class="fas fa-check-circle me-2"></i>
+                        <i class="fas fa-user-check me-2 text-info"></i>
                         Calificación
                     </label>
                     <div class="calificacion-manual">
-                        <input type="checkbox" 
-                               id="calificacion-manual-{{ pregunta.id }}" 
+                        <input type="checkbox" id="calificacion-manual-{{ pregunta.id }}" 
                                data-field="calificacion_manual"
-                               {% if pregunta.tipo.nombre == 'respuesta_abierta' or pregunta.calificacion_manual %}checked{% endif %}
-                               {% if pregunta.tipo.nombre == 'respuesta_abierta' or pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}disabled{% endif %}>
+                               data-pregunta-id="{{ pregunta.id }}"
+                               {% if pregunta.calificacion_manual %}checked{% endif %}>
                         <label for="calificacion-manual-{{ pregunta.id }}" class="small">
                             Manual
                         </label>
                     </div>
-                    <small class="text-muted d-block">
-                        {% if pregunta.tipo.nombre == 'respuesta_abierta' or pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}
-                            Automática para este tipo
-                        {% else %}
-                            Marcar si requiere revisión manual
-                        {% endif %}
-                    </small>
+                    <small class="text-muted d-block">Marcar si requiere revisión manual</small>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- =====================================================
-         SECCIÓN 2: RECURSOS MULTIMEDIA 
-         (Solo para tipos que NO son simuladores)
-         ===================================================== -->
-    {% if pregunta.tipo.nombre != 'simulador_2d' and pregunta.tipo.nombre != 'simulador_3d' %}
-    <div class="pregunta-recursos-container mb-4">
-        <div class="card border-primary">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="fas fa-paperclip me-2"></i>
-                    Recursos de apoyo (opcional)
-                </h6>
-                <button type="button" class="btn btn-sm btn-outline-light" 
-                        onclick="toggleRecursos({{ pregunta.id }})" 
-                        id="btn-toggle-recursos-{{ pregunta.id }}">
-                    <i class="fas fa-plus me-1"></i>
-                    Agregar recurso
-                </button>
-            </div>
-            <div class="card-body" id="recursos-content-{{ pregunta.id }}" style="display: none;">
-                
-                <!-- Selector de tipo de recurso -->
-                <div class="mb-4">
-                    <label class="form-label fw-bold">
-                        <i class="fas fa-layer-group me-2"></i>
+
+    <!-- SECCIÓN DE RECURSOS MULTIMEDIA (MEJORADA Y PROFESIONAL) -->
+    <div class="recursos-multimedia-section">
+        <!-- Toggle button con diseño profesional -->
+        <button type="button" class="recursos-apoyo-toggle" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#recursos-{{ pregunta.id }}" 
+                aria-expanded="false"
+                onclick="toggleRecursosApoyo(this)">
+            <i class="fas fa-paperclip me-2"></i>
+            <span>Recursos de apoyo (opcional)</span>
+            <i class="fas fa-chevron-down ms-auto toggle-icon"></i>
+        </button>
+        
+        <!-- Contenido de recursos (colapsable) -->
+        <div class="collapse" id="recursos-{{ pregunta.id }}">
+            <div class="recursos-content">
+                <div class="recursos-header">
+                    <h6 class="mb-3">
+                        <i class="fas fa-layer-group me-2 text-primary"></i>
                         Tipo de recurso multimedia
-                    </label>
-                    <div class="row g-3">
-                        <div class="col-md-3 col-sm-6">
-                            <div class="form-check card-check">
-                                <input type="radio" class="form-check-input" 
-                                       name="tipo_recurso_{{ pregunta.id }}" 
-                                       value="imagen" 
-                                       id="tipo_imagen_{{ pregunta.id }}"
-                                       onchange="cambiarTipoRecurso({{ pregunta.id }}, 'imagen')">
-                                <label class="form-check-label card-check-label" for="tipo_imagen_{{ pregunta.id }}">
-                                    <i class="fas fa-image fa-2x text-primary mb-2"></i>
-                                    <div class="fw-bold">Imagen</div>
-                                    <small class="text-muted">JPG, PNG, GIF</small>
-                                </label>
+                    </h6>
+                </div>
+                
+                <!-- Tipos de recursos con diseño profesional -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" data-tipo="imagen" onclick="abrirModalRecurso('imagen', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-image"></i>
                             </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="form-check card-check">
-                                <input type="radio" class="form-check-input" 
-                                       name="tipo_recurso_{{ pregunta.id }}" 
-                                       value="video" 
-                                       id="tipo_video_{{ pregunta.id }}"
-                                       onchange="cambiarTipoRecurso({{ pregunta.id }}, 'video')">
-                                <label class="form-check-label card-check-label" for="tipo_video_{{ pregunta.id }}">
-                                    <i class="fas fa-video fa-2x text-success mb-2"></i>
-                                    <div class="fw-bold">Video</div>
-                                    <small class="text-muted">MP4, WebM</small>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="form-check card-check">
-                                <input type="radio" class="form-check-input" 
-                                       name="tipo_recurso_{{ pregunta.id }}" 
-                                       value="youtube" 
-                                       id="tipo_youtube_{{ pregunta.id }}"
-                                       onchange="cambiarTipoRecurso({{ pregunta.id }}, 'youtube')">
-                                <label class="form-check-label card-check-label" for="tipo_youtube_{{ pregunta.id }}">
-                                    <i class="fab fa-youtube fa-2x text-danger mb-2"></i>
-                                    <div class="fw-bold">YouTube</div>
-                                    <small class="text-muted">URL de video</small>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <div class="form-check card-check">
-                                <input type="radio" class="form-check-input" 
-                                       name="tipo_recurso_{{ pregunta.id }}" 
-                                       value="documento" 
-                                       id="tipo_documento_{{ pregunta.id }}"
-                                       onchange="cambiarTipoRecurso({{ pregunta.id }}, 'documento')">
-                                <label class="form-check-label card-check-label" for="tipo_documento_{{ pregunta.id }}">
-                                    <i class="fas fa-file-alt fa-2x text-warning mb-2"></i>
-                                    <div class="fw-bold">Documento</div>
-                                    <small class="text-muted">PDF, DOC, PPT</small>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Área de carga para archivos -->
-                <div id="upload-area-{{ pregunta.id }}" class="upload-section" style="display: none;">
-                    <div class="upload-dropzone" onclick="document.getElementById('file_{{ pregunta.id }}').click()">
-                        <div class="upload-content">
-                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                            <h5>Haz clic para seleccionar archivo</h5>
-                            <p class="text-muted mb-0">o arrastra y suelta aquí</p>
-                            <small class="text-muted mt-2 d-block" id="upload-help-{{ pregunta.id }}">
-                                <!-- Se llena dinámicamente según el tipo -->
-                            </small>
-                        </div>
-                    </div>
-                    <input type="file" id="file_{{ pregunta.id }}" 
-                           style="display: none;" 
-                           onchange="manejarCargaArchivo(this, {{ pregunta.id }})">
-                </div>
-                
-                <!-- Área para URL de YouTube -->
-                <div id="youtube-area-{{ pregunta.id }}" class="upload-section" style="display: none;">
-                    <label class="form-label fw-bold">
-                        <i class="fab fa-youtube me-2"></i>
-                        URL de YouTube
-                    </label>
-                    <div class="input-group">
-                        <span class="input-group-text">
-                            <i class="fab fa-youtube text-danger"></i>
-                        </span>
-                        <input type="url" class="form-control" 
-                               id="youtube_url_{{ pregunta.id }}"
-                               placeholder="https://www.youtube.com/watch?v=..."
-                               onchange="validarYouTube({{ pregunta.id }})">
-                        <button class="btn btn-outline-secondary" type="button" 
-                                onclick="previsualizarYouTube({{ pregunta.id }})">
-                            <i class="fas fa-eye"></i>
-                            <span class="d-none d-md-inline ms-1">Vista previa</span>
-                        </button>
-                    </div>
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Pega la URL completa del video de YouTube (ejemplo: https://www.youtube.com/watch?v=abc123)
-                    </small>
-                </div>
-                
-                <!-- Vista previa del nuevo recurso -->
-                <div class="resource-preview mt-3" id="preview_{{ pregunta.id }}" style="display: none;">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-success">
-                            <i class="fas fa-check-circle me-1"></i>
-                            Vista previa del nuevo recurso:
-                        </span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                onclick="eliminarRecurso({{ pregunta.id }})">
-                            <i class="fas fa-trash me-1"></i>
-                            Eliminar
-                        </button>
-                    </div>
-                    <div id="preview_content_{{ pregunta.id }}" class="preview-content">
-                        <!-- Contenido dinámico -->
-                    </div>
-                </div>
-                
-                <!-- Mostrar recurso multimedia existente -->
-                {% if pregunta.archivo_multimedia %}
-                <div class="resource-preview mt-3" id="existing_resource_{{ pregunta.id }}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-info">
-                            <i class="fas fa-paperclip me-1"></i>
-                            Archivo actual:
-                        </span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                onclick="eliminarRecursoExistente({{ pregunta.id }}, 'archivo')">
-                            <i class="fas fa-trash me-1"></i>
-                            Eliminar archivo
-                        </button>
-                    </div>
-                    <div class="preview-content">
-                        {% if pregunta.archivo_multimedia.url|slice:"-4:" == ".mp4" or pregunta.archivo_multimedia.url|slice:"-5:" == ".webm" %}
-                            <video controls class="preview-media">
-                                <source src="{{ pregunta.archivo_multimedia.url }}" type="video/mp4">
-                                Tu navegador no soporta este formato de video.
-                            </video>
-                        {% elif pregunta.archivo_multimedia.url|slice:"-4:" == ".pdf" %}
-                            <div class="document-preview">
-                                <i class="fas fa-file-pdf fa-3x text-danger mb-2"></i>
-                                <p class="mb-1"><strong>Documento PDF</strong></p>
-                                <a href="{{ pregunta.archivo_multimedia.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-external-link-alt me-1"></i>
-                                    Abrir documento
-                                </a>
-                            </div>
-                        {% else %}
-                            <img src="{{ pregunta.archivo_multimedia.url }}" 
-                                 class="preview-media" 
-                                 alt="Recurso de apoyo para la pregunta">
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Mostrar video de YouTube existente -->
-                {% if pregunta.url_youtube %}
-                <div class="resource-preview mt-3" id="existing_youtube_{{ pregunta.id }}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-bold text-info">
-                            <i class="fab fa-youtube me-1"></i>
-                            Video de YouTube actual:
-                        </span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                onclick="eliminarRecursoExistente({{ pregunta.id }}, 'youtube')">
-                            <i class="fas fa-trash me-1"></i>
-                            Eliminar video
-                        </button>
-                    </div>
-                    <div class="preview-content">
-                        <div class="youtube-embed">
-                            <iframe src="https://www.youtube.com/embed/{{ pregunta.url_youtube }}" 
-                                    frameborder="0" 
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                                    allowfullscreen>
-                            </iframe>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Información adicional sobre recursos -->
-                <div class="mt-3 p-3 bg-light rounded-3">
-                    <div class="row align-items-center">
-                        <div class="col-8">
-                            <h6 class="text-primary mb-1">
-                                <i class="fas fa-lightbulb me-2"></i>
-                                Consejos para recursos efectivos
-                            </h6>
-                            <ul class="text-muted small mb-0 ps-3">
-                                <li>Las imágenes deben ser claras y relevantes al contenido</li>
-                                <li>Los videos de YouTube deben estar relacionados con la pregunta</li>
-                                <li>Los documentos PDF deben ser legibles y no muy extensos</li>
-                            </ul>
-                        </div>
-                        <div class="col-4 text-end">
-                            <small class="text-muted">
-                                <i class="fas fa-shield-alt me-1"></i>
-                                Límites: 10MB imágenes, 50MB videos, 25MB documentos
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- =====================================================
-         SECCIÓN 3: CONTENIDO ESPECÍFICO POR TIPO DE PREGUNTA
-         Aquí se incluyen las subplantillas según el tipo
-         ===================================================== -->
-    <div class="tipo-pregunta-content mt-4">
-        <div class="card border-secondary">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">
-                    <i class="fas fa-cogs me-2"></i>
-                    Configuración: {{ pregunta.tipo.descripcion }}
-                </h6>
-                <span class="badge bg-primary">{{ pregunta.tipo.nombre|upper }}</span>
-            </div>
-            <div class="card-body">
-                
-                <!-- SUBPLANTILLA PARA OPCIONES MÚLTIPLES Y ÚNICAS -->
-                {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' %}
-                    {% include 'docente/plantillas/plantilla_opciones.html' with pregunta=pregunta %}
-                
-                <!-- SUBPLANTILLA PARA FALSO/VERDADERO -->
-                {% elif pregunta.tipo.nombre == 'falso_verdadero' %}
-                    {% include 'docente/plantillas/plantilla_opciones.html' with pregunta=pregunta %}
-                
-                <!-- SUBPLANTILLA PARA RESPUESTA ABIERTA -->
-                {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
-                    {% include 'docente/plantillas/plantilla_respuesta_abierta.html' with pregunta=pregunta %}
-                
-                <!-- SUBPLANTILLA PARA SIMULADORES -->
-                {% elif pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}
-                    {% include 'docente/plantillas/plantilla_simuladores.html' with pregunta=pregunta %}
-                
-                <!-- SUBPLANTILLA PARA UNIR CON LÍNEAS -->
-                {% elif pregunta.tipo.nombre == 'unir_lineas' %}
-                    {% include 'docente/plantillas/plantilla_unir_lineas.html' with pregunta=pregunta %}
-                
-                <!-- SUBPLANTILLA PARA COMPLETAR -->
-                {% elif pregunta.tipo.nombre == 'completar' %}
-                    {% include 'docente/plantillas/plantilla_completar.html' with pregunta=pregunta %}
-                
-                <!-- TIPO DE PREGUNTA NO IMPLEMENTADO -->
-                {% else %}
-                    <div class="alert alert-warning d-flex align-items-center">
-                        <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-                        <div>
-                            <h5 class="alert-heading mb-2">Tipo de pregunta en desarrollo</h5>
-                            <p class="mb-2">
-                                El tipo de pregunta "<strong>{{ pregunta.tipo.descripcion }}</strong>" no está disponible aún en esta versión.
-                            </p>
-                            <hr>
-                            <p class="mb-0">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Por favor, selecciona un tipo diferente usando el botón "Cambiar tipo" o contacta al administrador del sistema.
-                            </p>
+                            <div class="recurso-title">Imagen</div>
+                            <div class="recurso-subtitle">JPG, PNG, GIF</div>
                         </div>
                     </div>
                     
-                    <!-- Botón para cambiar tipo -->
-                    <div class="text-center mt-3">
-                        <button type="button" class="btn btn-warning" 
-                                onclick="iniciarCambioTipo({{ pregunta.id }})"
-                                title="Cambiar a un tipo de pregunta disponible">
-                            <i class="fas fa-exchange-alt me-2"></i>
-                            Cambiar a tipo disponible
-                        </button>
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" data-tipo="video" onclick="abrirModalRecurso('video', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div class="recurso-title">Video</div>
+                            <div class="recurso-subtitle">MP4, WebM</div>
+                        </div>
                     </div>
-                {% endif %}
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" data-tipo="youtube" onclick="abrirModalRecurso('youtube', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fab fa-youtube"></i>
+                            </div>
+                            <div class="recurso-title">YouTube</div>
+                            <div class="recurso-subtitle">URL de video</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" data-tipo="documento" onclick="abrirModalRecurso('documento', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="recurso-title">Documento</div>
+                            <div class="recurso-subtitle">PDF, DOC, PPT</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" data-tipo="simulador" onclick="abrirModalRecurso('simulador', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-atom"></i>
+                            </div>
+                            <div class="recurso-title">Simulador</div>
+                            <div class="recurso-subtitle">Molecular</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" data-tipo="audio" onclick="abrirModalRecurso('audio', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-volume-up"></i>
+                            </div>
+                            <div class="recurso-title">Audio</div>
+                            <div class="recurso-subtitle">MP3, WAV</div>
+                        </div>
+                    </div>
+                </div>
                 
+                <!-- Consejos para recursos efectivos -->
+                <div class="recursos-tips">
+                    <div class="alert alert-info border-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Consejos para recursos efectivos:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Las imágenes deben ser claras y relevantes al contenido</li>
+                            <li>Los videos de YouTube deben estar relacionados con la pregunta</li>
+                            <li>Los documentos PDF deben ser legibles y no muy extensos</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Recursos actualmente cargados -->
+                <div class="recursos-actuales" id="recursos-actuales-{{ pregunta.id }}">
+                    {% if pregunta.archivo_multimedia or pregunta.url_youtube %}
+                    <h6 class="mb-3">
+                        <i class="fas fa-check-circle me-2 text-success"></i>
+                        Recursos cargados
+                    </h6>
+                    <div class="recursos-lista">
+                        {% if pregunta.archivo_multimedia %}
+                        <div class="recurso-item">
+                            <div class="recurso-info">
+                                <i class="fas fa-file me-2"></i>
+                                <span>{{ pregunta.archivo_multimedia.name|default:"Archivo multimedia" }}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="eliminarRecurso('archivo', {{ pregunta.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if pregunta.url_youtube %}
+                        <div class="recurso-item">
+                            <div class="recurso-info">
+                                <i class="fab fa-youtube me-2 text-danger"></i>
+                                <span>Video de YouTube: {{ pregunta.url_youtube }}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="eliminarRecurso('youtube', {{ pregunta.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Limitaciones -->
+                <div class="recursos-limitaciones">
+                    <small class="text-muted">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Límites: 10MB imágenes, 50MB videos, 25MB documentos
+                    </small>
+                </div>
             </div>
         </div>
     </div>
+    <!-- CONTENIDO ESPECÍFICO POR TIPO DE PREGUNTA (INCLUDES) -->
+    <div class="tipo-pregunta-content">
+        {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' or pregunta.tipo.nombre == 'falso_verdadero' %}
+            <!-- Incluir plantilla de opciones -->
+            {% include 'docente/plantillas/plantilla_opciones.html' %}
+            
+        {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
+            <!-- Incluir plantilla de respuesta abierta -->
+            {% include 'docente/plantillas/plantilla_respuesta_abierta.html' %}
+            
+        {% elif pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}
+            <!-- Incluir plantilla de simuladores -->
+            {% include 'docente/plantillas/plantilla_simuladores.html' %}
+            
+        {% elif pregunta.tipo.nombre == 'unir_lineas' %}
+            <!-- Incluir plantilla de unir líneas -->
+            {% include 'docente/plantillas/plantilla_unir_lineas.html' %}
+            
+        {% elif pregunta.tipo.nombre == 'completar' %}
+            <!-- Incluir plantilla de completar -->
+            {% include 'docente/plantillas/plantilla_completar.html' %}
+            
+        {% else %}
+            <!-- Tipo de pregunta no reconocido -->
+            <div class="tipo-desconocido-container">
+                <div class="alert alert-warning border-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Tipo de pregunta "{{ pregunta.tipo.nombre }}" no está configurado aún.</strong>
+                    <br><small>Contacta al administrador para agregar soporte para este tipo.</small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
     
-    <!-- =====================================================
-         SECCIÓN 4: ACCIONES DE LA PREGUNTA
-         ===================================================== -->
-    <div class="pregunta-actions mt-4">
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-            
-            <!-- Botón principal de guardado -->
-            <button type="button" class="btn btn-success" 
-                    onclick="guardarPregunta({{ pregunta.id }})"
-                    title="Guardar todos los cambios de esta pregunta">
-                <i class="fas fa-save me-1"></i>
-                Guardar cambios
-            </button>
-            
-            <!-- Botón para cambiar tipo -->
-            <button type="button" class="btn btn-warning" 
-                    onclick="iniciarCambioTipo({{ pregunta.id }})"
-                    title="Cambiar el tipo de esta pregunta">
-                <i class="fas fa-exchange-alt me-1"></i>
-                Cambiar tipo
-            </button>
-            
-            <!-- Botón para eliminar pregunta -->
-            <button type="button" class="btn btn-danger" 
-                    onclick="eliminarPregunta({{ pregunta.id }})"
-                    title="Eliminar esta pregunta completa">
-                <i class="fas fa-trash me-1"></i>
-                Eliminar pregunta
-            </button>
-            
-            <!-- Espaciador -->
-            <div class="flex-grow-1"></div>
-            
-            <!-- Información adicional -->
-            <div class="d-flex align-items-center flex-wrap gap-2">
-                <span class="badge bg-light text-dark border p-2">
-                    <i class="fas fa-info-circle me-1"></i>
-                    <strong>ID:</strong> {{ pregunta.id }}
-                </span>
-                <span class="badge bg-light text-dark border p-2">
-                    <i class="fas fa-sort-numeric-up me-1"></i>
-                    <strong>Orden:</strong> {{ pregunta.orden }}
-                </span>
-                <span class="badge bg-light text-dark border p-2">
-                    <i class="fas fa-layer-group me-1"></i>
-                    <strong>Tipo:</strong> {{ pregunta.tipo.descripcion }}
-                </span>
-                {% if pregunta.fecha_creacion %}
-                <span class="badge bg-light text-dark border p-2">
-                    <i class="fas fa-calendar me-1"></i>
-                    <strong>Creada:</strong> {{ pregunta.fecha_creacion|date:"d/m/Y H:i" }}
-                </span>
-                {% endif %}
-                {% if pregunta.fecha_modificacion %}
-                <span class="badge bg-light text-dark border p-2">
-                    <i class="fas fa-edit me-1"></i>
-                    <strong>Modificada:</strong> {{ pregunta.fecha_modificacion|date:"d/m/Y H:i" }}
-                </span>
-                {% endif %}
-            </div>
-        </div>
+    <!-- Acciones de la pregunta (común para todos los tipos) -->
+    <div class="pregunta-actions">
+        <button type="button" class="btn btn-success btn-sm action-btn" 
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="guardarPregunta(this)"
+                title="Guardar todos los cambios realizados">
+            <i class="fas fa-save me-1"></i>Guardar cambios
+        </button>
         
-        <!-- Línea de separación con información del estado -->
-        <hr class="mt-3">
-        <div class="row text-center">
-            <div class="col-md-3">
-                <small class="text-muted">
-                    <i class="fas fa-star text-warning me-1"></i>
-                    <strong>{{ pregunta.puntaje }}</strong> punto{{ pregunta.puntaje|pluralize:"s" }}
-                </small>
-            </div>
-            <div class="col-md-3">
-                <small class="text-muted">
-                    <i class="fas fa-{% if pregunta.calificacion_manual %}user-check text-warning{% else %}robot text-success{% endif %} me-1"></i>
-                    {% if pregunta.calificacion_manual %}Manual{% else %}Automática{% endif %}
-                </small>
-            </div>
-            <div class="col-md-3">
-                <small class="text-muted">
-                    <i class="fas fa-list-ol me-1"></i>
-                    {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' or pregunta.tipo.nombre == 'falso_verdadero' %}
-                        {{ pregunta.opciones.count }} opcion{{ pregunta.opciones.count|pluralize:"es" }}
-                    {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
-                        Texto libre
-                    {% elif pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}
-                        Simulador molecular
-                    {% else %}
-                        {{ pregunta.tipo.descripcion }}
-                    {% endif %}
-                </small>
-            </div>
-            <div class="col-md-3">
-                <small class="text-muted">
-                    <i class="fas fa-{% if pregunta.archivo_multimedia or pregunta.url_youtube %}paperclip text-info{% else %}file text-muted{% endif %} me-1"></i>
-                    {% if pregunta.archivo_multimedia or pregunta.url_youtube %}
-                        Con multimedia
-                    {% else %}
-                        Sin multimedia
-                    {% endif %}
-                </small>
-            </div>
+        <button type="button" class="btn btn-warning btn-sm action-btn" 
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="iniciarCambioTipo({{ pregunta.id }})"
+                title="Cambiar el tipo de esta pregunta">
+            <i class="fas fa-exchange-alt me-1"></i>Cambiar tipo
+        </button>
+        
+        <button type="button" class="btn btn-info btn-sm action-btn" 
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="duplicarPregunta({{ pregunta.id }})"
+                title="Crear una copia de esta pregunta">
+            <i class="fas fa-copy me-1"></i>Duplicar
+        </button>
+        
+        <button type="button" class="btn btn-danger btn-sm action-btn" 
+                data-pregunta-id="{{ pregunta.id }}"
+                onclick="eliminarPreguntaExistente(this)"
+                title="Eliminar esta pregunta permanentemente">
+            <i class="fas fa-trash me-1"></i>Eliminar
+        </button>
+        
+        <!-- Información adicional -->
+        <div class="ms-auto d-flex align-items-center">
+            <span class="pregunta-info">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>{{ pregunta.tipo.descripcion|title }}</strong> | 
+                Orden: {{ pregunta.orden }} | 
+                Puntos: {{ pregunta.puntaje }}
+                {% if pregunta.fecha_creacion %}
+                | {{ pregunta.fecha_creacion|date:"d/m/Y" }}
+                {% endif %}
+            </span>
         </div>
     </div>
 </div>
 
-<!-- =====================================================
-     ESTILOS CSS ESPECÍFICOS PARA ESTA PLANTILLA
-     ===================================================== -->
+<!-- ESTILOS PROFESIONALES Y ELEGANTES -->
 <style>
-/* Contenedor principal de la pregunta */
+/* ===== ESTILOS BASE PARA LA PLANTILLA ===== */
 .plantilla-pregunta {
-    border: 2px solid #e3f2fd;
+    border: 1px solid #e8ecef;
     border-radius: 12px;
-    padding: 25px;
+    padding: 24px;
     margin-bottom: 20px;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     transition: all 0.3s ease;
     position: relative;
 }
 
 .plantilla-pregunta:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border-color: #0066cc;
 }
 
-/* Indicador visual del tipo de pregunta */
 .plantilla-pregunta::before {
     content: '';
     position: absolute;
@@ -512,1743 +302,1229 @@
     left: 0;
     width: 4px;
     height: 100%;
-    background: linear-gradient(45deg, #2196f3, #21cbf3);
+    background: linear-gradient(to bottom, #0066cc, #004499);
     border-radius: 12px 0 0 12px;
 }
 
-/* Contenedor de recursos multimedia */
-.pregunta-recursos-container {
-    margin: 20px 0;
-}
-
-.pregunta-recursos-container .card {
-    border: 2px solid #e3f2fd;
-    border-radius: 12px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-    overflow: hidden;
-}
-
-.pregunta-recursos-container .card-header {
-    background: linear-gradient(135deg, #2196f3 0%, #21cbf3 100%);
-    border-bottom: none;
-    padding: 15px 20px;
-}
-
-/* Tarjetas de selección de tipo de recurso */
-.card-check {
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 20px 15px;
-    text-align: center;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    background: white;
-    position: relative;
-    height: 130px;
+/* ===== CAMPOS DE FORMULARIO MEJORADOS ===== */
+.form-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
     display: flex;
     align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.card-check:hover {
-    border-color: #2196f3;
-    box-shadow: 0 4px 15px rgba(33,150,243,0.15);
-    transform: translateY(-3px);
+.form-control {
+    font-size: 1rem;
+    padding: 12px 16px;
+    border: 1px solid #dde2e6;
+    border-radius: 8px;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
 }
 
-.card-check input[type="radio"] {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    transform: scale(1.3);
-    accent-color: #2196f3;
+.form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.1);
+    background-color: #ffffff;
 }
 
-.card-check input[type="radio"]:checked + .card-check-label {
-    color: #2196f3;
+.form-control:hover {
+    border-color: #b8c5d1;
+}
+
+/* ===== SECCIÓN DE RECURSOS MULTIMEDIA ===== */
+.recursos-multimedia-section {
+    margin: 20px 0;
+    border-top: 1px solid #f0f3f6;
+    padding-top: 20px;
+}
+
+.recursos-apoyo-toggle {
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    color: #495057;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.recursos-apoyo-toggle:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    color: #212529;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.recursos-apoyo-toggle.active {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-color: #0066cc;
+    color: #0066cc;
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.recursos-apoyo-toggle[aria-expanded="true"] .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.recursos-content {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 12px;
+}
+
+.recursos-header h6 {
+    color: #2c3e50;
     font-weight: 600;
 }
 
-.card-check.selected {
-    border-color: #2196f3;
-    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    box-shadow: 0 6px 20px rgba(33,150,243,0.2);
-    transform: translateY(-3px);
-}
-
-.card-check-label {
+/* ===== TARJETAS DE RECURSOS ===== */
+.recurso-card {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 120px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    margin: 0;
-    width: 100%;
-    height: 100%;
     justify-content: center;
-}
-
-/* Área de carga de archivos */
-.upload-section {
-    margin-top: 20px;
-}
-
-.upload-dropzone {
-    border: 3px dashed #dee2e6;
-    border-radius: 12px;
-    padding: 40px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: #f8f9fa;
-    min-height: 200px;
-    display: flex;
     align-items: center;
-    justify-content: center;
-}
-
-.upload-dropzone:hover {
-    border-color: #2196f3;
-    background: #e3f2fd;
-    transform: scale(1.02);
-}
-
-.upload-dropzone.dragover {
-    border-color: #4caf50;
-    background: #e8f5e8;
-    transform: scale(1.02);
-}
-
-.upload-content {
-    text-align: center;
-}
-
-.upload-content h5 {
-    color: #495057;
-    margin-bottom: 10px;
-    font-weight: 600;
-}
-
-.upload-content p {
-    color: #6c757d;
-    margin-bottom: 15px;
-}
-
-/* Vista previa de recursos */
-.resource-preview {
-    background: white;
-    border: 2px solid #e9ecef;
-    border-radius: 12px;
-    padding: 20px;
-    margin-top: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.preview-content {
-    text-align: center;
-}
-
-.preview-media {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.document-preview {
-    padding: 30px;
-    text-align: center;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px dashed #dee2e6;
-}
-
-.youtube-embed {
     position: relative;
-    width: 100%;
-    height: 0;
-    padding-bottom: 56.25%; /* 16:9 aspect ratio */
     overflow: hidden;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.youtube-embed iframe {
+.recurso-card::before {
+    content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-}
-
-/* Sección de contenido específico por tipo */
-.tipo-pregunta-content .card {
-    border: 2px solid #f0f0f0;
-    border-radius: 12px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-}
-
-.tipo-pregunta-content .card-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-bottom: 2px solid #dee2e6;
-    padding: 15px 20px;
-}
-
-/* Acciones de la pregunta */
-.pregunta-actions {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 2px solid #f0f0f0;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border-radius: 0 0 8px 8px;
-    margin-left: -25px;
-    margin-right: -25px;
-    margin-bottom: -25px;
-    padding-left: 25px;
-    padding-right: 25px;
-    padding-bottom: 25px;
-}
-
-.pregunta-actions .btn {
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 10px 20px;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #0066cc, #004499);
     transition: all 0.3s ease;
+    transform: translateX(-50%);
 }
 
-.pregunta-actions .btn:hover {
+.recurso-card:hover {
+    border-color: #0066cc;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 6px 16px rgba(0, 102, 204, 0.15);
 }
 
-/* Checkbox de calificación manual */
+.recurso-card:hover::before {
+    width: 100%;
+}
+
+.recurso-icon {
+    font-size: 24px;
+    color: #6c757d;
+    margin-bottom: 8px;
+    transition: color 0.3s ease;
+}
+
+.recurso-card:hover .recurso-icon {
+    color: #0066cc;
+}
+
+.recurso-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.recurso-subtitle {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+}
+
+/* ===== TIPS Y ALERTAS ===== */
+.recursos-tips .alert {
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+    border-left: 4px solid #0066cc;
+    color: #2c3e50;
+}
+
+.recursos-tips ul {
+    padding-left: 20px;
+    font-size: 0.9rem;
+}
+
+.recursos-tips li {
+    margin-bottom: 4px;
+}
+
+/* ===== RECURSOS ACTUALES ===== */
+.recursos-actuales h6 {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.recurso-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.recurso-info {
+    display: flex;
+    align-items: center;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* ===== CALIFICACIÓN MANUAL ===== */
 .calificacion-manual {
-    background-color: #fff3cd;
-    border: 2px solid #ffeaa7;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+    border: 1px solid #f39c12;
+    border-radius: 6px;
     padding: 8px 12px;
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     gap: 8px;
-    min-height: 42px;
-    transition: all 0.3s ease;
-}
-
-.calificacion-manual:hover {
-    background-color: #ffeaa7;
+    min-height: 40px;
 }
 
 .calificacion-manual input[type="checkbox"] {
     margin: 0;
     transform: scale(1.2);
-    accent-color: #ffc107;
-}
-
-.calificacion-manual input[type="checkbox"]:disabled {
-    opacity: 0.6;
+    accent-color: #f39c12;
 }
 
 .calificacion-manual label {
     margin: 0;
     font-weight: 600;
     cursor: pointer;
-    flex: 1;
-}
-
-.calificacion-manual input[type="checkbox"]:disabled + label {
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-/* Estilos para campos de entrada */
-.form-control:focus {
-    border-color: #2196f3;
-    box-shadow: 0 0 0 0.2rem rgba(33,150,243,0.25);
-}
-
-.form-control.is-valid {
-    border-color: #28a745;
-    box-shadow: 0 0 0 0.2rem rgba(40,167,69,0.25);
-}
-
-.form-control.is-invalid {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.2rem rgba(220,53,69,0.25);
-}
-
-/* Input groups */
-.input-group-text {
-    background: #e3f2fd;
-    border-color: #2196f3;
-    color: #2196f3;
-    font-weight: 600;
-}
-
-/* Badges informativos */
-.badge {
-    font-size: 0.75rem;
-    padding: 8px 12px;
-    border-radius: 6px;
-}
-
-.badge.bg-light {
-    color: #495057 !important;
-    background-color: #f8f9fa !important;
-}
-
-/* Alertas personalizadas */
-.alert {
-    border-radius: 12px;
-    border: none;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-}
-
-.alert-warning {
-    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
     color: #856404;
 }
 
-.alert-info {
-    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-    color: #0c5460;
+/* ===== ACCIONES DE PREGUNTA ===== */
+.pregunta-actions {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f3f6;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-/* Responsive design */
+.action-btn {
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    border: none;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.pregunta-info {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* ===== LIMITACIONES ===== */
+.recursos-limitaciones {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f3f6;
+    text-align: center;
+}
+
+/* ===== TIPO DESCONOCIDO ===== */
+.tipo-desconocido-container .alert {
+    border-left: 4px solid #dc3545;
+    background: linear-gradient(135deg, #fdf2f2 0%, #fce4ec 100%);
+    color: #721c24;
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .plantilla-pregunta {
-        padding: 15px;
-        margin-bottom: 15px;
-    }
-    
-    .card-check {
-        height: 100px;
-        padding: 10px;
-    }
-    
-    .card-check-label {
-        font-size: 0.8rem;
-    }
-    
-    .card-check i {
-        font-size: 1.5rem !important;
-        margin-bottom: 5px !important;
-    }
-    
-    .upload-dropzone {
-        padding: 20px 15px;
-        min-height: 150px;
-    }
-    
-    .upload-content h5 {
-        font-size: 1rem;
+        padding: 16px;
+        margin-bottom: 16px;
     }
     
     .pregunta-actions {
         flex-direction: column;
         align-items: stretch;
-        gap: 10px;
     }
     
-    .pregunta-actions .btn {
+    .action-btn {
+        margin-bottom: 8px;
         width: 100%;
-        margin-bottom: 5px;
     }
     
-    .pregunta-actions .d-flex.flex-wrap {
-        flex-direction: column;
+    .pregunta-actions .ms-auto {
+        margin-left: 0 !important;
+        margin-top: 12px;
     }
     
     .calificacion-manual {
-        min-height: 38px;
+        min-height: 36px;
         padding: 6px 10px;
     }
     
-    .youtube-embed {
-        padding-bottom: 75%; /* Más alto en móviles */
+    .recurso-card {
+        height: 100px;
+        padding: 12px 8px;
+    }
+    
+    .recurso-icon {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+    
+    .recurso-title {
+        font-size: 0.8rem;
+    }
+    
+    .recurso-subtitle {
+        font-size: 0.7rem;
     }
 }
 
 @media (max-width: 576px) {
-    .row .col-md-8,
-    .row .col-md-4 {
-        margin-bottom: 15px;
+    .recursos-content {
+        padding: 15px;
     }
     
-    .card-check {
-        height: 80px;
-        padding: 8px;
+    .recursos-apoyo-toggle {
+        padding: 10px 15px;
+        font-size: 0.9rem;
     }
-    
-    .upload-content {
-        padding: 10px;
-    }
-    
-    .preview-media {
-        max-height: 200px;
-    }
-}
-
-/* Animaciones suaves */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.resource-preview,
-.upload-section {
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* Estados de validación para URLs */
-.form-control.youtube-valid {
-    border-color: #28a745;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73.94-.94 1.94 1.94 2.94-2.94.94.94-3.88 3.88z'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right calc(0.375em + 0.1875rem) center;
-    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
-}
-
-.form-control.youtube-invalid {
-    border-color: #dc3545;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4 1.4-1.4M7.2 7.4 5.8 6 4.4 7.4'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right calc(0.375em + 0.1875rem) center;
-    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
-}
-
-/* Efectos de hover para botones */
-.btn-success:hover {
-    background-color: #1e7e34;
-    border-color: #1c7430;
-}
-
-.btn-warning:hover {
-    background-color: #e0a800;
-    border-color: #d39e00;
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
-    border-color: #bd2130;
-}
-
-.btn-outline-primary:hover {
-    background-color: #2196f3;
-    border-color: #2196f3;
-}
-
-.btn-outline-secondary:hover {
-    background-color: #6c757d;
-    border-color: #6c757d;
-}
-
-.btn-outline-danger:hover {
-    background-color: #dc3545;
-    border-color: #dc3545;
-}
-
-/* Mejoras visuales adicionales */
-.form-label.fw-bold {
-    color: #495057;
-    margin-bottom: 8px;
-}
-
-.form-label.fw-bold i {
-    color: #2196f3;
-}
-
-.text-muted small {
-    font-size: 0.8rem;
-    line-height: 1.4;
-}
-
-/* Separadores visuales */
-hr {
-    border: none;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #dee2e6, transparent);
-    margin: 20px 0;
 }
 </style>
 
-<!-- =====================================================
-     JAVASCRIPT ESPECÍFICO PARA ESTA PLANTILLA
-     ===================================================== -->
-<script>
-// =====================================================
-// VARIABLES GLOBALES PARA ESTA PLANTILLA
-// =====================================================
+<!-- MODALES PARA CARGAR RECURSOS -->
 
-// Control de estado de recursos
-let recursosExpandidos = new Set();
-let archivosSeleccionados = new Map();
-
-// =====================================================
-// FUNCIONES PARA MANEJO DE RECURSOS MULTIMEDIA
-// =====================================================
-
-/**
- * Alterna la visibilidad de la sección de recursos multimedia
- * @param {number} preguntaId - ID de la pregunta
- */
-function toggleRecursos(preguntaId) {
-    console.log(`🔄 Alternando recursos para pregunta ${preguntaId}`);
-    
-    const content = document.getElementById(`recursos-content-${preguntaId}`);
-    const btn = document.getElementById(`btn-toggle-recursos-${preguntaId}`);
-    
-    if (!content || !btn) {
-        console.error('❌ No se encontraron elementos de recursos');
-        return;
-    }
-    
-    const isVisible = content.style.display !== 'none';
-    
-    if (isVisible) {
-        // Ocultar recursos
-        content.style.display = 'none';
-        btn.innerHTML = '<i class="fas fa-plus me-1"></i>Agregar recurso';
-        btn.classList.remove('btn-outline-light', 'btn-outline-secondary');
-        btn.classList.add('btn-outline-light');
-        recursosExpandidos.delete(preguntaId);
-    } else {
-        // Mostrar recursos
-        content.style.display = 'block';
-        btn.innerHTML = '<i class="fas fa-minus me-1"></i>Ocultar recursos';
-        btn.classList.remove('btn-outline-light');
-        btn.classList.add('btn-outline-secondary');
-        recursosExpandidos.add(preguntaId);
-    }
-    
-    console.log(`✅ Recursos ${isVisible ? 'ocultados' : 'mostrados'} para pregunta ${preguntaId}`);
-}
-
-/**
- * Cambia el tipo de recurso multimedia y ajusta la interfaz
- * @param {number} preguntaId - ID de la pregunta
- * @param {string} tipo - Tipo de recurso ('imagen', 'video', 'youtube', 'documento')
- */
-function cambiarTipoRecurso(preguntaId, tipo) {
-    console.log(`🔄 Cambiando tipo de recurso a "${tipo}" para pregunta ${preguntaId}`);
-    
-    // Ocultar todas las áreas
-    document.getElementById(`upload-area-${preguntaId}`).style.display = 'none';
-    document.getElementById(`youtube-area-${preguntaId}`).style.display = 'none';
-    
-    // Limpiar previsualizaciones anteriores
-    const preview = document.getElementById(`preview_${preguntaId}`);
-    if (preview) {
-        preview.style.display = 'none';
-    }
-    
-    // Actualizar elementos específicos
-    const helpText = document.getElementById(`upload-help-${preguntaId}`);
-    const fileInput = document.getElementById(`file_${preguntaId}`);
-    
-    // Configurar según el tipo seleccionado
-    switch(tipo) {
-        case 'imagen':
-            if (helpText) helpText.textContent = 'Formatos soportados: JPG, PNG, GIF (Máximo: 10MB)';
-            if (fileInput) fileInput.accept = 'image/jpeg,image/png,image/gif';
-            document.getElementById(`upload-area-${preguntaId}`).style.display = 'block';
-            break;
-            
-        case 'video':
-            if (helpText) helpText.textContent = 'Formatos soportados: MP4, WebM (Máximo: 50MB)';
-            if (fileInput) fileInput.accept = 'video/mp4,video/webm';
-            document.getElementById(`upload-area-${preguntaId}`).style.display = 'block';
-            break;
-            
-        case 'documento':
-            if (helpText) helpText.textContent = 'Formatos soportados: PDF, DOC, DOCX, PPT, PPTX (Máximo: 25MB)';
-            if (fileInput) fileInput.accept = '.pdf,.doc,.docx,.ppt,.pptx';
-            document.getElementById(`upload-area-${preguntaId}`).style.display = 'block';
-            break;
-            
-        case 'youtube':
-            document.getElementById(`youtube-area-${preguntaId}`).style.display = 'block';
-            break;
-            
-        default:
-            console.warn(`⚠️ Tipo de recurso no reconocido: ${tipo}`);
-            return;
-    }
-    
-    // Actualizar estilos visuales de las tarjetas
-    actualizarEstilosSeleccion(preguntaId);
-    
-    console.log(`✅ Tipo de recurso cambiado a "${tipo}" para pregunta ${preguntaId}`);
-}
-
-/**
- * Actualiza los estilos visuales de las tarjetas de selección
- * @param {number} preguntaId - ID de la pregunta
- */
-function actualizarEstilosSeleccion(preguntaId) {
-    document.querySelectorAll(`input[name="tipo_recurso_${preguntaId}"]`).forEach(radio => {
-        const card = radio.closest('.card-check');
-        if (card) {
-            if (radio.checked) {
-                card.classList.add('selected');
-            } else {
-                card.classList.remove('selected');
-            }
-        }
-    });
-}
-
-/**
- * Maneja la carga de archivos con validación
- * @param {HTMLInputElement} input - Input de archivo
- * @param {number} preguntaId - ID de la pregunta
- */
-function manejarCargaArchivo(input, preguntaId) {
-    console.log(`📁 Manejando carga de archivo para pregunta ${preguntaId}`);
-    
-    const file = input.files[0];
-    if (!file) {
-        console.warn('⚠️ No se seleccionó ningún archivo');
-        return;
-    }
-    
-    // Obtener tipo seleccionado
-    const tipoSeleccionado = document.querySelector(`input[name="tipo_recurso_${preguntaId}"]:checked`);
-    if (!tipoSeleccionado) {
-        mostrarError('Por favor, selecciona un tipo de recurso primero');
-        input.value = '';
-        return;
-    }
-    
-    const tipo = tipoSeleccionado.value;
-    console.log(`📋 Tipo seleccionado: ${tipo}, Archivo: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-    
-    // Validar tamaño según tipo
-    const limitesSize = {
-        'imagen': 10 * 1024 * 1024,    // 10MB
-        'video': 50 * 1024 * 1024,     // 50MB
-        'documento': 25 * 1024 * 1024   // 25MB
-    };
-    
-    const maxSize = limitesSize[tipo];
-    if (file.size > maxSize) {
-        const maxSizeMB = maxSize / (1024 * 1024);
-        mostrarError(`El archivo es demasiado grande. Máximo ${maxSizeMB}MB permitido para ${tipo}.`);
-        input.value = '';
-        return;
-    }
-    
-    // Validar tipo de archivo
-    if (!validarTipoArchivo(file, tipo)) {
-        mostrarError(`Tipo de archivo no válido para la categoría "${tipo}".`);
-        input.value = '';
-        return;
-    }
-    
-    // Guardar archivo seleccionado
-    archivosSeleccionados.set(preguntaId, { file, tipo });
-    
-    // Generar vista previa
-    generarVistaPrevia(file, preguntaId, tipo);
-    
-    // Ocultar recursos existentes
-    ocultarRecursosExistentes(preguntaId);
-    
-    console.log(`✅ Archivo procesado correctamente para pregunta ${preguntaId}`);
-}
-
-/**
- * Valida el tipo de archivo según la categoría seleccionada
- * @param {File} file - Archivo a validar
- * @param {string} tipo - Tipo de recurso
- * @returns {boolean} - Verdadero si es válido
- */
-function validarTipoArchivo(file, tipo) {
-    const tiposPermitidos = {
-        'imagen': ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
-        'video': ['video/mp4', 'video/webm', 'video/avi', 'video/mov'],
-        'documento': [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-        ]
-    };
-    
-    const permitidos = tiposPermitidos[tipo] || [];
-    const esValido = permitidos.includes(file.type);
-    
-    console.log(`🔍 Validando archivo: ${file.type} para tipo ${tipo} - ${esValido ? 'VÁLIDO' : 'INVÁLIDO'}`);
-    
-    return esValido;
-}
-
-/**
- * Genera vista previa del archivo seleccionado
- * @param {File} file - Archivo a previsualizar
- * @param {number} preguntaId - ID de la pregunta
- * @param {string} tipo - Tipo de recurso
- */
-function generarVistaPrevia(file, preguntaId, tipo) {
-    console.log(`👁️ Generando vista previa para ${file.name} (${tipo})`);
-    
-    const preview = document.getElementById(`preview_${preguntaId}`);
-    const content = document.getElementById(`preview_content_${preguntaId}`);
-    
-    if (!preview || !content) {
-        console.error('❌ No se encontraron elementos de vista previa');
-        return;
-    }
-    
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-        let previewHTML = '';
-        
-        switch(tipo) {
-            case 'imagen':
-                previewHTML = `
-                    <img src="${e.target.result}" 
-                         class="preview-media" 
-                         alt="Vista previa de ${file.name}"
-                         onload="console.log('🖼️ Imagen cargada correctamente')">
-                `;
-                break;
-                
-            case 'video':
-                previewHTML = `
-                    <video controls class="preview-media">
-                        <source src="${e.target.result}" type="${file.type}">
-                        Tu navegador no soporta este formato de video.
-                    </video>
-                    <div class="mt-2">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle me-1"></i>
-                            ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                        </small>
-                    </div>
-                `;
-                break;
-                
-            case 'documento':
-                const iconClass = obtenerIconoDocumento(file.name);
-                previewHTML = `
-                    <div class="document-preview">
-                        <i class="${iconClass} fa-3x mb-3"></i>
-                        <h6 class="mb-2">${file.name}</h6>
-                        <p class="text-muted mb-2">${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+<!-- Modal para Imagen -->
+<div class="modal fade" id="modalRecursoImagen" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-image me-2"></i>
+                    Cargar Imagen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Seleccionar archivo</label>
+                        <input type="file" class="form-control" id="archivo-imagen" accept="image/*">
+                        <small class="text-muted">Formatos: JPG, PNG, GIF (máx. 10MB)</small>
+                        
                         <div class="mt-3">
-                            <span class="badge bg-info">
-                                <i class="fas fa-file me-1"></i>
-                                Documento seleccionado
-                            </span>
+                            <label class="form-label">Descripción (opcional)</label>
+                            <input type="text" class="form-control" id="descripcion-imagen" 
+                                   placeholder="Describe brevemente la imagen">
                         </div>
                     </div>
-                `;
-                break;
+                    <div class="col-md-6">
+                        <div class="preview-container">
+                            <div id="preview-imagen" class="preview-area">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                                <p class="text-muted mt-2">Vista previa aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="subirRecurso('imagen')">
+                    <i class="fas fa-upload me-1"></i>Cargar Imagen
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Video -->
+<div class="modal fade" id="modalRecursoVideo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-video me-2"></i>
+                    Cargar Video
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label fw-bold">Seleccionar archivo de video</label>
+                <input type="file" class="form-control" id="archivo-video" accept="video/*">
+                <small class="text-muted">Formatos: MP4, WebM, AVI (máx. 50MB)</small>
                 
-            default:
-                console.warn(`⚠️ Tipo de vista previa no implementado: ${tipo}`);
-                return;
-        }
-        
-        content.innerHTML = previewHTML;
-        preview.style.display = 'block';
-        
-        console.log(`✅ Vista previa generada para ${file.name}`);
-    };
-    
-    reader.onerror = function() {
-        console.error('❌ Error al leer el archivo para vista previa');
-        mostrarError('Error al generar vista previa del archivo');
-    };
-    
-    // Leer archivo según el tipo
-    reader.readAsDataURL(file);
+                <div class="mt-3">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <input type="text" class="form-control" id="descripcion-video" 
+                           placeholder="Describe brevemente el video">
+                </div>
+                
+                <div class="mt-3">
+                    <div id="preview-video" class="preview-area">
+                        <i class="fas fa-video fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">Vista previa del video aparecerá aquí</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="subirRecurso('video')">
+                    <i class="fas fa-upload me-1"></i>Cargar Video
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para YouTube -->
+<div class="modal fade" id="modalRecursoYoutube" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fab fa-youtube me-2"></i>
+                    Video de YouTube
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">URL del video de YouTube</label>
+                        <input type="url" class="form-control" id="url-youtube" 
+                               placeholder="https://www.youtube.com/watch?v=..."
+                               onchange="previsualizarYoutube()">
+                        <small class="text-muted">Pega la URL completa del video de YouTube</small>
+                        
+                        <div class="mt-3">
+                            <label class="form-label">Descripción (opcional)</label>
+                            <input type="text" class="form-control" id="descripcion-youtube" 
+                                   placeholder="Describe brevemente el video">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="preview-container">
+                            <div id="preview-youtube" class="preview-area">
+                                <i class="fab fa-youtube fa-3x text-muted"></i>
+                                <p class="text-muted mt-2">Vista previa del video aparecerá aquí</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="subirRecurso('youtube')">
+                    <i class="fab fa-youtube me-1"></i>Agregar Video
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Documento -->
+<div class="modal fade" id="modalRecursoDocumento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt me-2"></i>
+                    Cargar Documento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label fw-bold">Seleccionar documento</label>
+                <input type="file" class="form-control" id="archivo-documento" 
+                       accept=".pdf,.doc,.docx,.ppt,.pptx,.txt">
+                <small class="text-muted">Formatos: PDF, DOC, DOCX, PPT, PPTX, TXT (máx. 25MB)</small>
+                
+                <div class="mt-3">
+                    <label class="form-label">Título del documento</label>
+                    <input type="text" class="form-control" id="titulo-documento" 
+                           placeholder="Nombre descriptivo del documento">
+                </div>
+                
+                <div class="mt-3">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <textarea class="form-control" rows="3" id="descripcion-documento" 
+                              placeholder="Describe el contenido del documento"></textarea>
+                </div>
+                
+                <div class="mt-3">
+                    <div id="preview-documento" class="preview-area">
+                        <i class="fas fa-file-alt fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">Información del documento aparecerá aquí</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" onclick="subirRecurso('documento')">
+                    <i class="fas fa-upload me-1"></i>Cargar Documento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Simulador -->
+<div class="modal fade" id="modalRecursoSimulador" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-atom me-2"></i>
+                    Simulador Molecular
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Configurar Molécula</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre de la molécula</label>
+                            <input type="text" class="form-control" id="nombre-molecula" 
+                                   placeholder="Ej: Etanol, Benceno, Cafeína">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">SMILES (opcional)</label>
+                            <input type="text" class="form-control" id="smiles-molecula" 
+                                   placeholder="Ej: CCO para etanol">
+                            <small class="text-muted">Si conoces el código SMILES, ingrésalo aquí</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" rows="3" id="descripcion-simulador" 
+                                      placeholder="Describe qué deben hacer los estudiantes con esta molécula"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de simulador</label>
+                            <select class="form-select" id="tipo-simulador">
+                                <option value="2d">Simulador 2D (estructuras planas)</option>
+                                <option value="3d">Simulador 3D (modelo tridimensional)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Vista Previa</h6>
+                        <div id="preview-simulador" class="preview-area" style="height: 300px;">
+                            <i class="fas fa-atom fa-3x text-muted"></i>
+                            <p class="text-muted mt-2">Simulador aparecerá aquí</p>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="previsualizarSimulador()">
+                                <i class="fas fa-eye me-1"></i>Vista Previa
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="buscarMoleculaPubChem()">
+                                <i class="fas fa-search me-1"></i>Buscar en PubChem
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info" onclick="subirRecurso('simulador')">
+                    <i class="fas fa-atom me-1"></i>Agregar Simulador
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Audio -->
+<div class="modal fade" id="modalRecursoAudio" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background: #6f42c1;">
+                <h5 class="modal-title">
+                    <i class="fas fa-volume-up me-2"></i>
+                    Cargar Audio
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label fw-bold">Seleccionar archivo de audio</label>
+                <input type="file" class="form-control" id="archivo-audio" accept="audio/*">
+                <small class="text-muted">Formatos: MP3, WAV, OGG (máx. 10MB)</small>
+                
+                <div class="mt-3">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <input type="text" class="form-control" id="descripcion-audio" 
+                           placeholder="Describe brevemente el audio">
+                </div>
+                
+                <div class="mt-3">
+                    <div id="preview-audio" class="preview-area">
+                        <i class="fas fa-volume-up fa-3x text-muted"></i>
+                        <p class="text-muted mt-2">Reproductor de audio aparecerá aquí</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn" onclick="subirRecurso('audio')" 
+                        style="background: #6f42c1; border-color: #6f42c1; color: white;">
+                    <i class="fas fa-upload me-1"></i>Cargar Audio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ESTILOS PARA LOS MODALES -->
+<style>
+.preview-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
 }
 
-/**
- * Obtiene el icono apropiado para un documento según su extensión
- * @param {string} filename - Nombre del archivo
- * @returns {string} - Clases CSS del icono
- */
-function obtenerIconoDocumento(filename) {
-    const extension = filename.split('.').pop().toLowerCase();
-    
-    const iconos = {
-        'pdf': 'fas fa-file-pdf text-danger',
-        'doc': 'fas fa-file-word text-primary',
-        'docx': 'fas fa-file-word text-primary',
-        'ppt': 'fas fa-file-powerpoint text-warning',
-        'pptx': 'fas fa-file-powerpoint text-warning',
-        'xls': 'fas fa-file-excel text-success',
-        'xlsx': 'fas fa-file-excel text-success'
-    };
-    
-    return iconos[extension] || 'fas fa-file-alt text-secondary';
+.preview-area.has-content {
+    border-style: solid;
+    border-color: #28a745;
+    background: #f8fff9;
 }
 
-/**
- * Valida una URL de YouTube
- * @param {number} preguntaId - ID de la pregunta
- */
-function validarYouTube(preguntaId) {
-    console.log(`🔍 Validando URL de YouTube para pregunta ${preguntaId}`);
+.preview-container {
+    height: 100%;
+}
+
+.modal-content {
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border-radius: 12px;
+}
+
+.modal-header {
+    border-radius: 12px 12px 0 0;
+    padding: 20px 24px;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Vista previa específica para cada tipo */
+.preview-imagen img {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.preview-video video {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 8px;
+}
+
+.preview-youtube iframe {
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+}
+
+.preview-audio audio {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.preview-documento .doc-info {
+    background: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: left;
+}
+
+.preview-simulador .simulador-preview {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+}
+</style>
+
+<!-- JAVASCRIPT PARA FUNCIONALIDAD DE RECURSOS -->
+<script>
+// Variables globales para recursos
+let preguntaActual = null;
+let tipoRecursoActual = null;
+
+// ===== FUNCIONES PRINCIPALES =====
+
+function toggleRecursosApoyo(element) {
+    const icon = element.querySelector('.toggle-icon');
+    const isExpanded = element.getAttribute('aria-expanded') === 'true';
     
-    const input = document.getElementById(`youtube_url_${preguntaId}`);
-    if (!input) {
-        console.error('❌ No se encontró el input de YouTube');
-        return;
+    if (isExpanded) {
+        element.classList.add('active');
+    } else {
+        element.classList.remove('active');
     }
     
-    const url = input.value.trim();
+    console.log(`📎 Recursos de apoyo ${isExpanded ? 'expandidos' : 'colapsados'}`);
+}
+
+function abrirModalRecurso(tipo, preguntaId) {
+    preguntaActual = preguntaId;
+    tipoRecursoActual = tipo;
+    
+    console.log(`📂 Abriendo modal para ${tipo} en pregunta ${preguntaId}`);
+    
+    // Limpiar formularios previos
+    limpiarModalRecurso(tipo);
+    
+    // Abrir modal correspondiente
+    const modalId = `modalRecurso${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
+    const modal = new bootstrap.Modal(document.getElementById(modalId));
+    modal.show();
+}
+
+function limpiarModalRecurso(tipo) {
+    // Limpiar campos según el tipo
+    switch (tipo) {
+        case 'imagen':
+            document.getElementById('archivo-imagen').value = '';
+            document.getElementById('descripcion-imagen').value = '';
+            resetPreview('preview-imagen');
+            break;
+        case 'video':
+            document.getElementById('archivo-video').value = '';
+            document.getElementById('descripcion-video').value = '';
+            resetPreview('preview-video');
+            break;
+        case 'youtube':
+            document.getElementById('url-youtube').value = '';
+            document.getElementById('descripcion-youtube').value = '';
+            resetPreview('preview-youtube');
+            break;
+        case 'documento':
+            document.getElementById('archivo-documento').value = '';
+            document.getElementById('titulo-documento').value = '';
+            document.getElementById('descripcion-documento').value = '';
+            resetPreview('preview-documento');
+            break;
+        case 'simulador':
+            document.getElementById('nombre-molecula').value = '';
+            document.getElementById('smiles-molecula').value = '';
+            document.getElementById('descripcion-simulador').value = '';
+            document.getElementById('tipo-simulador').value = '2d';
+            resetPreview('preview-simulador');
+            break;
+        case 'audio':
+            document.getElementById('archivo-audio').value = '';
+            document.getElementById('descripcion-audio').value = '';
+            resetPreview('preview-audio');
+            break;
+    }
+}
+
+function resetPreview(previewId) {
+    const preview = document.getElementById(previewId);
+    if (preview) {
+        preview.className = 'preview-area';
+        
+        // Contenido por defecto según el tipo
+        const iconMap = {
+            'preview-imagen': 'fas fa-image',
+            'preview-video': 'fas fa-video',
+            'preview-youtube': 'fab fa-youtube',
+            'preview-documento': 'fas fa-file-alt',
+            'preview-simulador': 'fas fa-atom',
+            'preview-audio': 'fas fa-volume-up'
+        };
+        
+        const textMap = {
+            'preview-imagen': 'Vista previa aparecerá aquí',
+            'preview-video': 'Vista previa del video aparecerá aquí',
+            'preview-youtube': 'Vista previa del video aparecerá aquí',
+            'preview-documento': 'Información del documento aparecerá aquí',
+            'preview-simulador': 'Simulador aparecerá aquí',
+            'preview-audio': 'Reproductor de audio aparecerá aquí'
+        };
+        
+        preview.innerHTML = `
+            <i class="${iconMap[previewId]} fa-3x text-muted"></i>
+            <p class="text-muted mt-2">${textMap[previewId]}</p>
+        `;
+    }
+}
+
+// ===== FUNCIONES DE VISTA PREVIA =====
+
+function previsualizarYoutube() {
+    const url = document.getElementById('url-youtube').value;
+    const preview = document.getElementById('preview-youtube');
     
     if (!url) {
-        input.classList.remove('youtube-valid', 'youtube-invalid', 'is-valid', 'is-invalid');
+        resetPreview('preview-youtube');
         return;
     }
     
-    const videoId = extraerVideoIdYouTube(url);
+    // Extraer ID del video de YouTube
+    const videoId = extraerYouTubeId(url);
     
     if (videoId) {
-        input.classList.remove('youtube-invalid', 'is-invalid');
-        input.classList.add('youtube-valid', 'is-valid');
-        mostrarExito('URL de YouTube válida');
-        console.log(`✅ URL válida, ID del video: ${videoId}`);
-    } else {
-        input.classList.remove('youtube-valid', 'is-valid');
-        input.classList.add('youtube-invalid', 'is-invalid');
-        mostrarError('URL de YouTube no válida. Debe ser una URL completa de YouTube.');
-        console.log(`❌ URL inválida: ${url}`);
-    }
-}
-
-/**
- * Extrae el ID de video de una URL de YouTube
- * @param {string} url - URL de YouTube
- * @returns {string|null} - ID del video o null si no es válida
- */
-function extraerVideoIdYouTube(url) {
-    // Patrones para diferentes formatos de URL de YouTube
-    const patrones = [
-        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^#&?]*)/,
-        /youtube\.com\/watch\?.*v=([^#&?]*)/
-    ];
-    
-    for (const patron of patrones) {
-        const match = url.match(patron);
-        if (match && match[1] && match[1].length === 11) {
-            return match[1];
-        }
-    }
-    
-    return null;
-}
-
-/**
- * Previsualiza un video de YouTube
- * @param {number} preguntaId - ID de la pregunta
- */
-function previsualizarYouTube(preguntaId) {
-    console.log(`👁️ Previsualizando YouTube para pregunta ${preguntaId}`);
-    
-    const input = document.getElementById(`youtube_url_${preguntaId}`);
-    if (!input) {
-        mostrarError('No se encontró el campo de URL');
-        return;
-    }
-    
-    const url = input.value.trim();
-    
-    if (!url) {
-        mostrarError('Ingresa una URL de YouTube primero');
-        return;
-    }
-    
-    const videoId = extraerVideoIdYouTube(url);
-    if (!videoId) {
-        mostrarError('URL de YouTube no válida');
-        return;
-    }
-    
-    const preview = document.getElementById(`preview_${preguntaId}`);
-    const content = document.getElementById(`preview_content_${preguntaId}`);
-    
-    if (!preview || !content) {
-        console.error('❌ No se encontraron elementos de vista previa');
-        return;
-    }
-    
-    content.innerHTML = `
-        <div class="youtube-embed">
+        preview.className = 'preview-area has-content';
+        preview.innerHTML = `
             <iframe src="https://www.youtube.com/embed/${videoId}" 
                     frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen
-                    onload="console.log('📺 Video de YouTube cargado correctamente')">
+                    allowfullscreen>
             </iframe>
-        </div>
-        <div class="mt-3">
-            <span class="badge bg-danger">
-                <i class="fab fa-youtube me-1"></i>
-                Video ID: ${videoId}
-            </span>
+        `;
+        console.log(`🎥 Vista previa de YouTube cargada: ${videoId}`);
+    } else {
+        preview.innerHTML = `
+            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+            <p class="text-warning mt-2">URL de YouTube no válida</p>
+        `;
+    }
+}
+
+function extraerYouTubeId(url) {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+
+function previsualizarSimulador() {
+    const nombre = document.getElementById('nombre-molecula').value;
+    const smiles = document.getElementById('smiles-molecula').value;
+    const tipo = document.getElementById('tipo-simulador').value;
+    const preview = document.getElementById('preview-simulador');
+    
+    if (!nombre && !smiles) {
+        resetPreview('preview-simulador');
+        return;
+    }
+    
+    preview.className = 'preview-area has-content';
+    preview.innerHTML = `
+        <div class="simulador-preview">
+            <div class="text-center p-4">
+                <i class="fas fa-atom fa-4x text-info mb-3"></i>
+                <h6>${nombre || 'Molécula'}</h6>
+                <p class="text-muted">Simulador ${tipo.toUpperCase()}</p>
+                ${smiles ? `<small class="text-info">SMILES: ${smiles}</small>` : ''}
+            </div>
         </div>
     `;
     
-    preview.style.display = 'block';
-    ocultarRecursosExistentes(preguntaId);
-    
-    console.log(`✅ Vista previa de YouTube generada (ID: ${videoId})`);
+    console.log(`🧪 Vista previa de simulador: ${nombre} (${tipo})`);
 }
 
-/**
- * Elimina la vista previa del recurso actual
- * @param {number} preguntaId - ID de la pregunta
- */
-function eliminarRecurso(preguntaId) {
-    console.log(`🗑️ Eliminando recurso temporal para pregunta ${preguntaId}`);
+function buscarMoleculaPubChem() {
+    const nombre = document.getElementById('nombre-molecula').value;
     
-    const preview = document.getElementById(`preview_${preguntaId}`);
-    const fileInput = document.getElementById(`file_${preguntaId}`);
-    const youtubeInput = document.getElementById(`youtube_url_${preguntaId}`);
-    
-    // Limpiar vista previa
-    if (preview) {
-        preview.style.display = 'none';
-    }
-    
-    // Limpiar inputs
-    if (fileInput) {
-        fileInput.value = '';
-    }
-    if (youtubeInput) {
-        youtubeInput.value = '';
-        youtubeInput.classList.remove('youtube-valid', 'youtube-invalid', 'is-valid', 'is-invalid');
-    }
-    
-    // Limpiar archivo seleccionado
-    archivosSeleccionados.delete(preguntaId);
-    
-    // Mostrar recursos existentes si los hay
-    mostrarRecursosExistentes(preguntaId);
-    
-    console.log(`✅ Recurso temporal eliminado para pregunta ${preguntaId}`);
-}
-
-/**
- * Elimina un recurso existente (archivo o YouTube)
- * @param {number} preguntaId - ID de la pregunta
- * @param {string} tipo - Tipo de recurso ('archivo' o 'youtube')
- */
-function eliminarRecursoExistente(preguntaId, tipo) {
-    const tipoTexto = tipo === 'archivo' ? 'archivo' : 'video de YouTube';
-    
-    if (!confirm(`¿Estás seguro de que quieres eliminar este ${tipoTexto}? Esta acción no se puede deshacer.`)) {
+    if (!nombre) {
+        mostrarAdvertencia('Ingrese el nombre de la molécula');
         return;
     }
     
-    console.log(`🗑️ Eliminando ${tipoTexto} existente para pregunta ${preguntaId}`);
+    console.log(`🔍 Buscando en PubChem: ${nombre}`);
     
-    const loadingToast = mostrarCargando(`Eliminando ${tipoTexto}...`);
+    const loadingToast = mostrarCargando('Buscando en PubChem...');
     
-    fetch('/docente/cuestionario/eliminar-recurso-pregunta/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            pregunta_id: preguntaId,
-            tipo: tipo
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
+    // Simular búsqueda en PubChem
+    setTimeout(() => {
         loadingToast.hide();
         
-        if (data.success) {
-            const elementId = tipo === 'archivo' ? `existing_resource_${preguntaId}` : `existing_youtube_${preguntaId}`;
-            const elemento = document.getElementById(elementId);
-            
-            if (elemento) {
-                elemento.remove();
-            }
-            
-            mostrarExito(`${tipoTexto.charAt(0).toUpperCase() + tipoTexto.slice(1)} eliminado exitosamente`);
-            console.log(`✅ ${tipoTexto} eliminado correctamente`);
-        } else {
-            mostrarError('Error: ' + (data.error || `Error al eliminar ${tipoTexto}`));
-            console.error(`❌ Error al eliminar ${tipoTexto}:`, data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error(`❌ Error de conexión al eliminar ${tipoTexto}:`, error);
-        mostrarError(`Error de conexión al eliminar ${tipoTexto}`);
-    });
+        // Datos de ejemplo
+        const ejemplosSMILES = {
+            'etanol': 'CCO',
+            'benceno': 'c1ccccc1',
+            'cafeina': 'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',
+            'agua': 'O',
+            'metano': 'C'
+        };
+        
+        const smiles = ejemplosSMILES[nombre.toLowerCase()] || 'CCO';
+        document.getElementById('smiles-molecula').value = smiles;
+        
+        mostrarExito(`SMILES encontrado: ${smiles}`);
+        previsualizarSimulador();
+    }, 2000);
 }
 
-/**
- * Oculta los recursos existentes
- * @param {number} preguntaId - ID de la pregunta
- */
-function ocultarRecursosExistentes(preguntaId) {
-    const existingResource = document.getElementById(`existing_resource_${preguntaId}`);
-    const existingYoutube = document.getElementById(`existing_youtube_${preguntaId}`);
-    
-    if (existingResource) existingResource.style.display = 'none';
-    if (existingYoutube) existingYoutube.style.display = 'none';
-}
+// ===== FUNCIÓN PRINCIPAL DE SUBIDA =====
 
-/**
- * Muestra los recursos existentes
- * @param {number} preguntaId - ID de la pregunta
- */
-function mostrarRecursosExistentes(preguntaId) {
-    const existingResource = document.getElementById(`existing_resource_${preguntaId}`);
-    const existingYoutube = document.getElementById(`existing_youtube_${preguntaId}`);
-    
-    if (existingResource) existingResource.style.display = 'block';
-    if (existingYoutube) existingYoutube.style.display = 'block';
-}
-
-// =====================================================
-// FUNCIONES PRINCIPALES PARA GESTIÓN DE PREGUNTAS
-// =====================================================
-
-/**
- * Guarda una pregunta con todos sus datos y multimedia
- * @param {number} preguntaId - ID de la pregunta
- */
-function guardarPregunta(preguntaId) {
-    console.log(`💾 Iniciando guardado de pregunta ${preguntaId}`);
-    
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    if (!preguntaElement) {
-        mostrarError('No se pudo encontrar la pregunta en la página');
-        console.error(`❌ No se encontró elemento para pregunta ${preguntaId}`);
+function subirRecurso(tipo) {
+    if (!preguntaActual) {
+        mostrarError('Error: No se pudo identificar la pregunta');
         return;
     }
     
-    // Validar campos obligatorios
-    const enunciado = document.getElementById(`enunciado_${preguntaId}`);
-    const puntaje = document.getElementById(`puntaje_${preguntaId}`);
+    console.log(`📤 Subiendo recurso ${tipo} para pregunta ${preguntaActual}`);
     
-    if (!enunciado || !enunciado.value.trim()) {
-        mostrarError('El enunciado de la pregunta es obligatorio');
-        if (enunciado) enunciado.focus();
+    // Validar campos según el tipo
+    if (!validarRecurso(tipo)) {
         return;
     }
     
-    if (!puntaje || !puntaje.value || parseInt(puntaje.value) < 1) {
-        mostrarError('El puntaje debe ser un número positivo');
-        if (puntaje) puntaje.focus();
-        return;
-    }
+    const loadingToast = mostrarCargando(`Cargando ${tipo}...`);
     
-    // Recopilar datos básicos
-    const datosBasicos = {
-        enunciado: enunciado.value.trim(),
-        puntaje: parseInt(puntaje.value)
-    };
-    
-    // Obtener estado de calificación manual
-    const calificacionManualCheckbox = document.getElementById(`calificacion-manual-${preguntaId}`);
-    datosBasicos.calificacion_manual = calificacionManualCheckbox ? calificacionManualCheckbox.checked : false;
-    
-    console.log(`📋 Datos básicos recopilados:`, datosBasicos);
-    
-    const loadingToast = mostrarCargando('Guardando pregunta...');
-    
-    // Preparar FormData para archivos multimedia
+    // Preparar datos para envío
     const formData = new FormData();
-    formData.append('pregunta_id', preguntaId);
-    formData.append('enunciado', datosBasicos.enunciado);
-    formData.append('puntaje', datosBasicos.puntaje);
-    formData.append('calificacion_manual', datosBasicos.calificacion_manual);
-    
-    // Agregar archivo multimedia si hay uno seleccionado
-    const archivoSeleccionado = archivosSeleccionados.get(preguntaId);
-    if (archivoSeleccionado) {
-        formData.append('archivo_multimedia', archivoSeleccionado.file);
-        formData.append('tipo_recurso', archivoSeleccionado.tipo);
-        console.log(`📎 Archivo multimedia agregado: ${archivoSeleccionado.file.name} (${archivoSeleccionado.tipo})`);
-    }
-    
-    // Agregar URL de YouTube si existe y es válida
-    const youtubeInput = document.getElementById(`youtube_url_${preguntaId}`);
-    if (youtubeInput && youtubeInput.value.trim()) {
-        const videoId = extraerVideoIdYouTube(youtubeInput.value.trim());
-        if (videoId) {
-            formData.append('youtube_video_id', videoId);
-            console.log(`📺 Video de YouTube agregado: ${videoId}`);
-        }
-    }
-    
+    formData.append('pregunta_id', preguntaActual);
+    formData.append('tipo_recurso', tipo);
     formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
     
-    // Enviar datos de la pregunta
-    fetch('/docente/cuestionario/actualizar-pregunta/', {
+    // Agregar datos específicos según el tipo
+    agregarDatosRecurso(formData, tipo);
+    
+    // Enviar al servidor
+    fetch('/docente/cuestionario/subir-recurso/', {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        if (!data.success) {
-            loadingToast.hide();
-            mostrarError('Error al guardar pregunta: ' + (data.error || 'Error desconocido'));
-            console.error('❌ Error del servidor:', data.error);
-            return Promise.reject(new Error(data.error));
-        }
-        
-        console.log(`✅ Pregunta ${preguntaId} guardada exitosamente`);
-        
-        // Guardar opciones si existen
-        const promesasOpciones = guardarOpcionesPregunta(preguntaId);
-        
-        // Guardar configuración específica del tipo
-        const promesaConfiguracion = guardarConfiguracionEspecifica(preguntaId);
-        
-        // Combinar todas las promesas
-        const todasLasPromesas = [...promesasOpciones];
-        if (promesaConfiguracion) {
-            todasLasPromesas.push(promesaConfiguracion);
-        }
-        
-        return Promise.all(todasLasPromesas);
-    })
-    .then(() => {
         loadingToast.hide();
-        mostrarExito('Pregunta guardada exitosamente');
         
-        // Actualizar interfaz
-        actualizarInterfazDespuesGuardar(preguntaId, datosBasicos.enunciado);
-        
-        // Limpiar archivos temporales
-        limpiarDatosTemporal(preguntaId);
-        
-        console.log(`🎉 Guardado completo para pregunta ${preguntaId}`);
+        if (data.success) {
+            mostrarExito(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)} cargado exitosamente`);
+            
+            // Cerrar modal
+            const modalId = `modalRecurso${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
+            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+            modal.hide();
+            
+            // Actualizar vista de recursos cargados
+            actualizarRecursosCargados(preguntaActual);
+            
+        } else {
+            mostrarError('Error: ' + (data.error || `Error al cargar ${tipo}`));
+        }
     })
     .catch(error => {
         loadingToast.hide();
-        console.error('❌ Error completo en el guardado:', error);
-        mostrarError('Error al guardar la pregunta');
+        console.error('Error:', error);
+        mostrarError(`Error de conexión al cargar ${tipo}`);
     });
 }
 
-/**
- * Guarda las opciones de una pregunta
- * @param {number} preguntaId - ID de la pregunta
- * @returns {Array} - Array de promesas para guardar opciones
- */
-function guardarOpcionesPregunta(preguntaId) {
-    console.log(`📝 Guardando opciones para pregunta ${preguntaId}`);
-    
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    const promesas = [];
-    
-    if (!preguntaElement) {
-        console.warn(`⚠️ No se encontró elemento de pregunta ${preguntaId} para opciones`);
-        return promesas;
-    }
-    
-    const contenedoresOpciones = preguntaElement.querySelectorAll('.opcion-container');
-    console.log(`📋 Encontrados ${contenedoresOpciones.length} contenedores de opciones`);
-    
-    contenedoresOpciones.forEach((container, index) => {
-        const opcionId = container.dataset.opcionId;
-        
-        if (!opcionId || opcionId === 'undefined') {
-            console.warn(`⚠️ Opción ${index + 1} sin ID válido, saltando`);
-            return;
-        }
-        
-        const textoInput = document.getElementById(`texto_opcion_${opcionId}`);
-        const esCorrectaInput = container.querySelector('input[type="radio"], input[type="checkbox"]');
-        
-        if (!textoInput || !esCorrectaInput) {
-            console.warn(`⚠️ Elementos faltantes para opción ${opcionId}`);
-            return;
-        }
-        
-        const datosOpcion = {
-            opcion_id: parseInt(opcionId),
-            texto: textoInput.value.trim(),
-            es_correcta: esCorrectaInput.checked
-        };
-        
-        console.log(`📝 Guardando opción ${opcionId}:`, datosOpcion);
-        
-        const promesa = fetch('/docente/cuestionario/actualizar-opcion/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify(datosOpcion)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log(`✅ Opción ${opcionId} guardada exitosamente`);
-            } else {
-                console.error(`❌ Error al guardar opción ${opcionId}:`, data.error);
-                throw new Error(`Error en opción ${opcionId}: ${data.error}`);
+function validarRecurso(tipo) {
+    switch (tipo) {
+        case 'imagen':
+            const archivoImagen = document.getElementById('archivo-imagen').files[0];
+            if (!archivoImagen) {
+                mostrarError('Seleccione una imagen');
+                return false;
             }
-        });
-        
-        promesas.push(promesa);
-    });
-    
-    return promesas;
-}
-
-/**
- * Guarda la configuración específica según el tipo de pregunta
- * @param {number} preguntaId - ID de la pregunta
- * @returns {Promise|null} - Promesa de guardado o null si no hay configuración
- */
-function guardarConfiguracionEspecifica(preguntaId) {
-    const configuracion = obtenerConfiguracionEspecifica(preguntaId);
-    
-    if (!configuracion || Object.keys(configuracion).length === 0) {
-        console.log(`ℹ️ No hay configuración específica para pregunta ${preguntaId}`);
-        return null;
-    }
-    
-    console.log(`⚙️ Guardando configuración específica para pregunta ${preguntaId}:`, configuracion);
-    
-    return fetch('/docente/cuestionario/actualizar-configuracion-pregunta/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            pregunta_id: preguntaId,
-            configuracion: configuracion
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log(`✅ Configuración específica guardada para pregunta ${preguntaId}`);
-        } else {
-            console.error(`❌ Error al guardar configuración específica:`, data.error);
-            throw new Error(`Error en configuración: ${data.error}`);
-        }
-    });
-}
-
-/**
- * Obtiene la configuración específica según el tipo de pregunta
- * @param {number} preguntaId - ID de la pregunta
- * @returns {Object} - Objeto con la configuración específica
- */
-function obtenerConfiguracionEspecifica(preguntaId) {
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    if (!preguntaElement) return {};
-    
-    const tipo = preguntaElement.dataset.tipo;
-    let configuracion = {};
-    
-    console.log(`🔍 Obteniendo configuración específica para tipo: ${tipo}`);
-    
-    switch(tipo) {
-        case 'respuesta_abierta':
-            const elementos = {
-                respuesta_modelo: document.getElementById(`respuesta_modelo_${preguntaId}`),
-                criterios_evaluacion: document.getElementById(`criterios_evaluacion_${preguntaId}`),
-                longitud_minima: document.getElementById(`longitud_minima_${preguntaId}`),
-                longitud_maxima: document.getElementById(`longitud_maxima_${preguntaId}`)
-            };
-            
-            Object.keys(elementos).forEach(key => {
-                const elemento = elementos[key];
-                if (elemento && elemento.value) {
-                    configuracion[key] = elemento.type === 'number' ? 
-                        parseInt(elemento.value) : elemento.value;
-                }
-            });
-            break;
-            
-        case 'simulador_2d':
-        case 'simulador_3d':
-            const elementosSimulador = {
-                smiles_objetivo: document.getElementById(`smiles_objetivo_${preguntaId}`),
-                descripcion_molecula: document.getElementById(`descripcion_molecula_${preguntaId}`),
-                tolerancia_similitud: document.getElementById(`tolerancia_similitud_${preguntaId}`),
-                permitir_isomeros: document.getElementById(`permitir_isomeros_${preguntaId}`)
-            };
-            
-            Object.keys(elementosSimulador).forEach(key => {
-                const elemento = elementosSimulador[key];
-                if (elemento) {
-                    if (elemento.type === 'checkbox') {
-                        configuracion[key] = elemento.checked;
-                    } else if (elemento.type === 'number') {
-                        configuracion[key] = parseInt(elemento.value);
-                    } else if (elemento.value) {
-                        configuracion[key] = elemento.value;
-                    }
-                }
-            });
-            break;
-            
-        case 'unir_lineas':
-            const elementosUnir = {
-                columna_izquierda: document.getElementById(`columna_izquierda_${preguntaId}`),
-                columna_derecha: document.getElementById(`columna_derecha_${preguntaId}`),
-                conexiones_correctas: document.getElementById(`conexiones_correctas_${preguntaId}`),
-                mezclar_opciones: document.getElementById(`mezclar_opciones_${preguntaId}`),
-                permitir_conexiones_multiples: document.getElementById(`permitir_conexiones_multiples_${preguntaId}`)
-            };
-            
-            Object.keys(elementosUnir).forEach(key => {
-                const elemento = elementosUnir[key];
-                if (elemento) {
-                    if (elemento.type === 'checkbox') {
-                        configuracion[key] = elemento.checked;
-                    } else if (elemento.value) {
-                        configuracion[key] = elemento.value;
-                    }
-                }
-            });
-            break;
-            
-        case 'completar':
-            const elementosCompletar = {
-                texto_completar: document.getElementById(`texto_completar_${preguntaId}`),
-                respuestas_completar: document.getElementById(`respuestas_completar_${preguntaId}`),
-                sensible_mayusculas: document.getElementById(`sensible_mayusculas_${preguntaId}`),
-                ignorar_espacios: document.getElementById(`ignorar_espacios_${preguntaId}`),
-                permitir_alternativas: document.getElementById(`permitir_alternativas_${preguntaId}`),
-                respuestas_alternativas: document.getElementById(`respuestas_alternativas_${preguntaId}`)
-            };
-            
-            Object.keys(elementosCompletar).forEach(key => {
-                const elemento = elementosCompletar[key];
-                if (elemento) {
-                    if (elemento.type === 'checkbox') {
-                        configuracion[key] = elemento.checked;
-                    } else if (elemento.value) {
-                        configuracion[key] = elemento.value;
-                    }
-                }
-            });
-            break;
-            
-        default:
-            console.log(`ℹ️ No hay configuración específica definida para tipo: ${tipo}`);
-    }
-    
-    console.log(`📋 Configuración obtenida para ${tipo}:`, configuracion);
-    return configuracion;
-}
-
-/**
- * Actualiza la interfaz después de guardar exitosamente
- * @param {number} preguntaId - ID de la pregunta
- * @param {string} enunciado - Enunciado de la pregunta
- */
-function actualizarInterfazDespuesGuardar(preguntaId, enunciado) {
-    console.log(`🖼️ Actualizando interfaz para pregunta ${preguntaId}`);
-    
-    // Actualizar título en el acordeón
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    if (preguntaElement) {
-        const acordeonButton = preguntaElement.closest('.accordion-item')?.querySelector('.accordion-button span.fw-bold');
-        if (acordeonButton) {
-            const nuevoTexto = enunciado.length > 60 ? 
-                enunciado.substring(0, 60) + '...' : enunciado;
-            acordeonButton.textContent = nuevoTexto;
-            console.log(`📝 Título del acordeón actualizado`);
-        }
-    }
-    
-    // Aplicar estilos correctos a opciones
-    const contenedoresOpciones = document.querySelectorAll(`[data-pregunta-id="${preguntaId}"] .opcion-container`);
-    contenedoresOpciones.forEach(container => {
-        const input = container.querySelector('input[type="radio"], input[type="checkbox"]');
-        if (input) {
-            if (input.checked) {
-                container.classList.add('opcion-correcta');
-            } else {
-                container.classList.remove('opcion-correcta');
+            if (archivoImagen.size > 10 * 1024 * 1024) {
+                mostrarError('La imagen no puede superar 10MB');
+                return false;
             }
-        }
-    });
-    
-    console.log(`✅ Interfaz actualizada para pregunta ${preguntaId}`);
-}
-
-/**
- * Limpia los datos temporales después del guardado
- * @param {number} preguntaId - ID de la pregunta
- */
-function limpiarDatosTemporal(preguntaId) {
-    console.log(`🧹 Limpiando datos temporales para pregunta ${preguntaId}`);
-    
-    // Limpiar archivos seleccionados
-    archivosSeleccionados.delete(preguntaId);
-    
-    // Limpiar inputs de archivos
-    const fileInput = document.getElementById(`file_${preguntaId}`);
-    const youtubeInput = document.getElementById(`youtube_url_${preguntaId}`);
-    
-    if (fileInput && fileInput.files.length > 0) {
-        fileInput.value = '';
-    }
-    
-    if (youtubeInput && youtubeInput.value.trim()) {
-        youtubeInput.value = '';
-        youtubeInput.classList.remove('youtube-valid', 'youtube-invalid', 'is-valid', 'is-invalid');
-    }
-    
-    // Ocultar vista previa temporal
-    const preview = document.getElementById(`preview_${preguntaId}`);
-    if (preview) {
-        preview.style.display = 'none';
-    }
-    
-    // Mostrar recursos existentes
-    mostrarRecursosExistentes(preguntaId);
-    
-    console.log(`✅ Datos temporales limpiados para pregunta ${preguntaId}`);
-}
-
-/**
- * Elimina una pregunta completa
- * @param {number} preguntaId - ID de la pregunta
- */
-function eliminarPregunta(preguntaId) {
-    console.log(`🗑️ Iniciando eliminación de pregunta ${preguntaId}`);
-    
-    if (!confirm('¿Estás seguro de que quieres eliminar esta pregunta completa? Se eliminarán todas sus opciones y configuraciones. Esta acción no se puede deshacer.')) {
-        console.log(`⏹️ Eliminación cancelada por el usuario`);
-        return;
-    }
-    
-    const loadingToast = mostrarCargando('Eliminando pregunta...');
-    
-    fetch(`/docente/cuestionario/eliminar-pregunta/${preguntaId}/`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        loadingToast.hide();
-        
-        if (data.success) {
-            mostrarExito('Pregunta eliminada exitosamente');
-            console.log(`✅ Pregunta ${preguntaId} eliminada exitosamente`);
+            break;
             
-            // Recargar página después de un momento
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        } else {
-            mostrarError('Error: ' + (data.error || 'Error al eliminar la pregunta'));
-            console.error(`❌ Error al eliminar pregunta ${preguntaId}:`, data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('❌ Error de conexión al eliminar pregunta:', error);
-        mostrarError('Error de conexión al eliminar la pregunta');
-    });
-}
-
-/**
- * Agrega una nueva opción a una pregunta
- * @param {number} preguntaId - ID de la pregunta
- */
-function agregarOpcion(preguntaId) {
-    console.log(`➕ Agregando nueva opción a pregunta ${preguntaId}`);
-    
-    const loadingToast = mostrarCargando('Agregando opción...');
-    
-    fetch('/docente/cuestionario/agregar-opcion/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            pregunta_id: preguntaId
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        loadingToast.hide();
-        
-        if (data.success) {
-            console.log(`✅ Opción agregada exitosamente a pregunta ${preguntaId}`);
+        case 'video':
+            const archivoVideo = document.getElementById('archivo-video').files[0];
+            if (!archivoVideo) {
+                mostrarError('Seleccione un video');
+                return false;
+            }
+            if (archivoVideo.size > 50 * 1024 * 1024) {
+                mostrarError('El video no puede superar 50MB');
+                return false;
+            }
+            break;
             
-            // Guardar estado del acordeón
-            sessionStorage.setItem('acordeonAbierto', `collapse${preguntaId}`);
+        case 'youtube':
+            const urlYoutube = document.getElementById('url-youtube').value;
+            if (!urlYoutube) {
+                mostrarError('Ingrese la URL del video de YouTube');
+                return false;
+            }
+            if (!extraerYouTubeId(urlYoutube)) {
+                mostrarError('URL de YouTube no válida');
+                return false;
+            }
+            break;
             
-            // Recargar página
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
-        } else {
-            mostrarError('Error: ' + (data.error || 'Error al agregar la opción'));
-            console.error(`❌ Error al agregar opción:`, data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('❌ Error de conexión al agregar opción:', error);
-        mostrarError('Error de conexión al agregar la opción');
-    });
-}
-
-/**
- * Elimina una opción de pregunta
- * @param {number} opcionId - ID de la opción
- */
-function eliminarOpcion(opcionId) {
-    console.log(`🗑️ Eliminando opción ${opcionId}`);
-    
-    if (!confirm('¿Estás seguro de que quieres eliminar esta opción? Esta acción no se puede deshacer.')) {
-        console.log(`⏹️ Eliminación de opción cancelada`);
-        return;
+        case 'documento':
+            const archivoDoc = document.getElementById('archivo-documento').files[0];
+            const tituloDoc = document.getElementById('titulo-documento').value;
+            if (!archivoDoc) {
+                mostrarError('Seleccione un documento');
+                return false;
+            }
+            if (!tituloDoc.trim()) {
+                mostrarError('Ingrese un título para el documento');
+                return false;
+            }
+            if (archivoDoc.size > 25 * 1024 * 1024) {
+                mostrarError('El documento no puede superar 25MB');
+                return false;
+            }
+            break;
+            
+        case 'simulador':
+            const nombreMol = document.getElementById('nombre-molecula').value;
+            if (!nombreMol.trim()) {
+                mostrarError('Ingrese el nombre de la molécula');
+                return false;
+            }
+            break;
+            
+        case 'audio':
+            const archivoAudio = document.getElementById('archivo-audio').files[0];
+            if (!archivoAudio) {
+                mostrarError('Seleccione un archivo de audio');
+                return false;
+            }
+            if (archivoAudio.size > 10 * 1024 * 1024) {
+                mostrarError('El audio no puede superar 10MB');
+                return false;
+            }
+            break;
     }
     
-    const loadingToast = mostrarCargando('Eliminando opción...');
-    
-    fetch(`/docente/cuestionario/eliminar-opcion/${opcionId}/`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        loadingToast.hide();
-        
-        if (data.success) {
-            mostrarExito('Opción eliminada exitosamente');
-            console.log(`✅ Opción ${opcionId} eliminada exitosamente`);
-            
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        } else {
-            mostrarError('Error: ' + (data.error || 'Error al eliminar la opción'));
-            console.error(`❌ Error al eliminar opción ${opcionId}:`, data.error);
-        }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('❌ Error de conexión al eliminar opción:', error);
-        mostrarError('Error de conexión al eliminar la opción');
-    });
+    return true;
 }
 
-/**
- * Maneja el cambio de opción correcta con efectos visuales
- * @param {HTMLInputElement} element - Elemento input que cambió
- * @param {number} preguntaId - ID de la pregunta
- * @param {number} opcionId - ID de la opción
- */
-function manejarCambioOpcionCorrecta(element, preguntaId, opcionId) {
-    console.log(`🔄 Cambio de opción correcta: pregunta ${preguntaId}, opción ${opcionId}, estado: ${element.checked}`);
-    
-    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
-    if (!preguntaElement) {
-        console.error(`❌ No se encontró elemento de pregunta ${preguntaId}`);
-        return;
+function agregarDatosRecurso(formData, tipo) {
+    switch (tipo) {
+        case 'imagen':
+            formData.append('archivo', document.getElementById('archivo-imagen').files[0]);
+            formData.append('descripcion', document.getElementById('descripcion-imagen').value);
+            break;
+            
+        case 'video':
+            formData.append('archivo', document.getElementById('archivo-video').files[0]);
+            formData.append('descripcion', document.getElementById('descripcion-video').value);
+            break;
+            
+        case 'youtube':
+            const urlYoutube = document.getElementById('url-youtube').value;
+            const videoId = extraerYouTubeId(urlYoutube);
+            formData.append('youtube_id', videoId);
+            formData.append('descripcion', document.getElementById('descripcion-youtube').value);
+            break;
+            
+        case 'documento':
+            formData.append('archivo', document.getElementById('archivo-documento').files[0]);
+            formData.append('titulo', document.getElementById('titulo-documento').value);
+            formData.append('descripcion', document.getElementById('descripcion-documento').value);
+            break;
+            
+        case 'simulador':
+            formData.append('nombre_molecula', document.getElementById('nombre-molecula').value);
+            formData.append('smiles', document.getElementById('smiles-molecula').value);
+            formData.append('descripcion', document.getElementById('descripcion-simulador').value);
+            formData.append('tipo_simulador', document.getElementById('tipo-simulador').value);
+            break;
+            
+        case 'audio':
+            formData.append('archivo', document.getElementById('archivo-audio').files[0]);
+            formData.append('descripcion', document.getElementById('descripcion-audio').value);
+            break;
     }
+}
+
+function eliminarRecurso(tipo, preguntaId) {
+    console.log(`🗑️ Eliminando recurso ${tipo} de pregunta ${preguntaId}`);
     
-    // Si es radio button, quitar la clase de todas las opciones
-    if (element.type === 'radio') {
-        preguntaElement.querySelectorAll('.opcion-container').forEach(container => {
-            container.classList.remove('opcion-correcta');
-        });
-    }
-    
-    // Agregar o quitar la clase según el estado
-    const container = element.closest('.opcion-container');
+    mostrarConfirmacionElegante(
+        'Eliminar Recurso',
+        `¿Estás seguro de que quieres eliminar este ${tipo}?`,
+        function() {
+            const loadingToast = mostrarCargando('Eliminando recurso...');
+            
+            fetch('/docente/cuestionario/eliminar-recurso-pregunta/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    pregunta_id: preguntaId,
+                    tipo: tipo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                
+                if (data.success) {
+                    mostrarExito('Recurso eliminado exitosamente');
+                    actualizarRecursosCargados(preguntaId);
+                } else {
+                    mostrarError('Error: ' + (data.error || 'Error al eliminar recurso'));
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                console.error('Error:', error);
+                mostrarError('Error de conexión al eliminar recurso');
+            });
+        }
+    );
+}
+
+function actualizarRecursosCargados(preguntaId) {
+    const container = document.getElementById(`recursos-actuales-${preguntaId}`);
     if (container) {
-        if (element.checked) {
-            container.classList.add('opcion-correcta');
-        } else {
-            container.classList.remove('opcion-correcta');
-        }
-    }
-    
-    console.log(`✅ Estilos visuales actualizados para opción ${opcionId}`);
-}
-
-/**
- * Inicia el cambio de tipo de pregunta
- * @param {number} preguntaId - ID de la pregunta
- */
-function iniciarCambioTipo(preguntaId) {
-    console.log(`🔄 Iniciando cambio de tipo para pregunta ${preguntaId}`);
-    
-    // Esta función debe estar definida en el archivo principal de crear_cuestionario.html
-    if (typeof window.crearCuestionario?.iniciarCambioTipo === 'function') {
-        window.crearCuestionario.iniciarCambioTipo(preguntaId);
-    } else {
-        console.error('❌ Función iniciarCambioTipo no encontrada en el scope global');
-        mostrarError('Error: No se pudo iniciar el cambio de tipo de pregunta');
+        // Recargar la sección de recursos cargados
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
     }
 }
 
-// =====================================================
-// FUNCIONES DE UTILIDAD Y HELPERS
-// =====================================================
+// ===== FUNCIONES DE UTILIDAD =====
 
-/**
- * Muestra un toast de carga
- * @param {string} mensaje - Mensaje a mostrar
- * @returns {Object} - Objeto toast de Bootstrap
- */
-function mostrarCargando(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-primary border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
-                ${mensaje}
-            </div>
-        </div>
-    `;
+function duplicarPregunta(preguntaId) {
+    console.log(`📋 Duplicando pregunta ${preguntaId}...`);
     
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { autohide: false });
-    bsToast.show();
-    
-    return {
-        hide: function() {
-            bsToast.hide();
-            setTimeout(() => {
-                if (document.body.contains(toast)) {
-                    document.body.removeChild(toast);
+    mostrarConfirmacionElegante(
+        'Duplicar Pregunta',
+        '¿Deseas crear una copia de esta pregunta?',
+        function() {
+            const loadingToast = mostrarCargando('Duplicando pregunta...');
+            
+            fetch('/docente/cuestionario/duplicar-pregunta/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    pregunta_id: preguntaId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                
+                if (data.success) {
+                    mostrarExito('Pregunta duplicada exitosamente');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    mostrarError('Error: ' + (data.error || 'Error al duplicar pregunta'));
                 }
-            }, 300);
+            })
+            .catch(error => {
+                loadingToast.hide();
+                console.error('Error:', error);
+                mostrarError('Error de conexión al duplicar pregunta');
+            });
         }
-    };
+    );
 }
 
-/**
- * Muestra un toast de error
- * @param {string} mensaje - Mensaje de error
- */
-function mostrarError(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-danger border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                ${mensaje}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
-    bsToast.show();
-    
-    // Limpiar DOM después de ocultar
-    toast.addEventListener('hidden.bs.toast', () => {
-        if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-        }
-    });
-    
-    console.log(`❌ Error mostrado: ${mensaje}`);
+// Funciones de notificación (deben estar definidas en el archivo principal)
+function mostrarCargando(mensaje) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarCargando === 'function') {
+        return window.crearCuestionario.mostrarCargando(mensaje);
+    }
+    console.log('⏳ ' + mensaje);
+    return { hide: () => {} };
 }
 
-/**
- * Muestra un toast de éxito
- * @param {string} mensaje - Mensaje de éxito
- */
 function mostrarExito(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-check-circle me-2"></i>
-                ${mensaje}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
-    bsToast.show();
-    
-    // Limpiar DOM después de ocultar
-    toast.addEventListener('hidden.bs.toast', () => {
-        if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-        }
-    });
-    
-    console.log(`✅ Éxito mostrado: ${mensaje}`);
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarExito === 'function') {
+        window.crearCuestionario.mostrarExito(mensaje);
+    } else {
+        console.log('✅ ' + mensaje);
+    }
 }
 
-/**
- * Muestra un toast informativo
- * @param {string} mensaje - Mensaje informativo
- */
-function mostrarInfo(mensaje) {
-    const toast = document.createElement('div');
-    toast.className = 'toast align-items-center text-white bg-info border-0 position-fixed';
-    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
-    toast.innerHTML = `
-        <div class="d-flex">
-            <div class="toast-body">
-                <i class="fas fa-info-circle me-2"></i>
-                ${mensaje}
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
-    bsToast.show();
-    
-    // Limpiar DOM después de ocultar
-    toast.addEventListener('hidden.bs.toast', () => {
-        if (document.body.contains(toast)) {
-            document.body.removeChild(toast);
-        }
-    });
-    
-    console.log(`ℹ️ Info mostrada: ${mensaje}`);
+function mostrarError(mensaje) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarError === 'function') {
+        window.crearCuestionario.mostrarError(mensaje);
+    } else {
+        console.error('❌ ' + mensaje);
+    }
 }
 
-/**
- * Obtiene el valor de una cookie
- * @param {string} name - Nombre de la cookie
- * @returns {string|null} - Valor de la cookie o null
- */
+function mostrarAdvertencia(mensaje) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarInfo === 'function') {
+        window.crearCuestionario.mostrarInfo(mensaje);
+    } else {
+        console.warn('⚠️ ' + mensaje);
+    }
+}
+
+function mostrarConfirmacionElegante(titulo, mensaje, callback) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarConfirmacion === 'function') {
+        window.crearCuestionario.mostrarConfirmacion(titulo, mensaje, callback);
+    } else {
+        if (confirm(mensaje)) {
+            callback();
+        }
+    }
+}
+
 function getCookie(name) {
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.getCookie === 'function') {
+        return window.crearCuestionario.getCookie(name);
+    }
+    
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
@@ -2263,415 +1539,224 @@ function getCookie(name) {
     return cookieValue;
 }
 
-/**
- * Valida un campo de entrada
- * @param {HTMLElement} elemento - Elemento a validar
- * @param {Object} opciones - Opciones de validación
- * @returns {boolean} - True si es válido
- */
-function validarCampo(elemento, opciones = {}) {
-    if (!elemento) return false;
-    
-    const valor = elemento.value.trim();
-    const {
-        requerido = false,
-        minLength = 0,
-        maxLength = Infinity,
-        patron = null,
-        mensajeError = 'Campo inválido'
-    } = opciones;
-    
-    // Limpiar clases previas
-    elemento.classList.remove('is-valid', 'is-invalid');
-    
-    // Verificar si es requerido
-    if (requerido && !valor) {
-        elemento.classList.add('is-invalid');
-        mostrarError('Este campo es obligatorio');
-        return false;
-    }
-    
-    // Verificar longitud mínima
-    if (valor && valor.length < minLength) {
-        elemento.classList.add('is-invalid');
-        mostrarError(`Mínimo ${minLength} caracteres requeridos`);
-        return false;
-    }
-    
-    // Verificar longitud máxima
-    if (valor.length > maxLength) {
-        elemento.classList.add('is-invalid');
-        mostrarError(`Máximo ${maxLength} caracteres permitidos`);
-        return false;
-    }
-    
-    // Verificar patrón
-    if (patron && valor && !patron.test(valor)) {
-        elemento.classList.add('is-invalid');
-        mostrarError(mensajeError);
-        return false;
-    }
-    
-    // Si llega aquí, es válido
-    if (valor || !requerido) {
-        elemento.classList.add('is-valid');
-    }
-    
-    return true;
-}
+// ===== EVENT LISTENERS PARA VISTA PREVIA AUTOMÁTICA =====
 
-/**
- * Formatea el tamaño de archivo para mostrar
- * @param {number} bytes - Tamaño en bytes
- * @returns {string} - Tamaño formateado
- */
-function formatearTamanoArchivo(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-/**
- * Debounce para limitar llamadas a funciones
- * @param {Function} func - Función a ejecutar
- * @param {number} wait - Tiempo de espera en ms
- * @returns {Function} - Función con debounce
- */
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// =====================================================
-// INICIALIZACIÓN Y EVENT LISTENERS
-// =====================================================
-
-/**
- * Inicializa la plantilla cuando el DOM está listo
- */
-function inicializarPlantillaPregunta() {
-    console.log('🚀 Inicializando plantilla de pregunta adaptada...');
-    
-    // Aplicar estilos correctos a opciones existentes
-    document.querySelectorAll('.opcion-container').forEach(container => {
-        const input = container.querySelector('input[type="radio"], input[type="checkbox"]');
-        if (input && input.checked) {
-            container.classList.add('opcion-correcta');
-        } else {
-            container.classList.remove('opcion-correcta');
+document.addEventListener('DOMContentLoaded', function() {
+    // Vista previa automática para imágenes
+    document.addEventListener('change', function(e) {
+        if (e.target.id === 'archivo-imagen') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-imagen');
+            
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.className = 'preview-area has-content';
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Vista previa">
+                        <p class="text-success mt-2">
+                            <i class="fas fa-check me-1"></i>
+                            ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
         }
-    });
-    
-    // Configurar validación para campos numéricos
-    document.querySelectorAll('input[type="number"]').forEach(input => {
-        input.addEventListener('change', function() {
-            const min = parseInt(this.getAttribute('min')) || 0;
-            const max = parseInt(this.getAttribute('max')) || 999999;
-            const value = parseInt(this.value) || 0;
+        
+        // Vista previa automática para videos
+        if (e.target.id === 'archivo-video') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-video');
             
-            if (value < min) {
-                this.value = min;
-                mostrarError(`Valor mínimo permitido: ${min}`);
+            if (file && file.type.startsWith('video/')) {
+                const url = URL.createObjectURL(file);
+                preview.className = 'preview-area has-content';
+                preview.innerHTML = `
+                    <video controls style="max-width: 100%; max-height: 150px;">
+                        <source src="${url}" type="${file.type}">
+                    </video>
+                    <p class="text-success mt-2">
+                        <i class="fas fa-check me-1"></i>
+                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                `;
             }
-            if (value > max) {
-                this.value = max;
-                mostrarError(`Valor máximo permitido: ${max}`);
-            }
-        });
-    });
-    
-    // Configurar validación en tiempo real para campos de texto
-    document.querySelectorAll('textarea, input[type="text"]').forEach(input => {
-        const validacionDebounced = debounce(() => {
-            if (input.hasAttribute('required') && !input.value.trim()) {
-                input.classList.add('is-invalid');
-                input.classList.remove('is-valid');
-            } else if (input.value.trim()) {
-                input.classList.add('is-valid');
-                input.classList.remove('is-invalid');
-            } else {
-                input.classList.remove('is-valid', 'is-invalid');
-            }
-        }, 500);
+        }
         
-        input.addEventListener('input', validacionDebounced);
-    });
-    
-    // Configurar drag & drop para las áreas de carga
-    configurarDragAndDrop();
-    
-    // Configurar auto-guardado (opcional)
-    configurarAutoGuardado();
-    
-    // Restaurar estado de recursos expandidos
-    restaurarEstadoRecursos();
-    
-    console.log('✅ Plantilla de pregunta inicializada correctamente');
-}
-
-/**
- * Configura drag & drop para todas las áreas de carga
- */
-function configurarDragAndDrop() {
-    console.log('🖱️ Configurando drag & drop...');
-    
-    document.querySelectorAll('.upload-dropzone').forEach(dropzone => {
-        // Prevenir comportamientos por defecto
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropzone.addEventListener(eventName, preventDefaults, false);
-        });
-        
-        // Efectos visuales
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropzone.addEventListener(eventName, () => {
-                dropzone.classList.add('dragover');
-            }, false);
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropzone.addEventListener(eventName, () => {
-                dropzone.classList.remove('dragover');
-            }, false);
-        });
-        
-        // Manejar drop
-        dropzone.addEventListener('drop', function(e) {
-            const preguntaId = this.closest('[data-pregunta-id]')?.dataset.preguntaId;
-            if (!preguntaId) {
-                console.error('❌ No se pudo determinar ID de pregunta para drag & drop');
-                return;
-            }
+        // Vista previa automática para documentos
+        if (e.target.id === 'archivo-documento') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-documento');
             
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const fileInput = document.getElementById(`file_${preguntaId}`);
-                if (fileInput) {
-                    // Simular selección de archivo
-                    const dt = new DataTransfer();
-                    dt.items.add(files[0]);
-                    fileInput.files = dt.files;
-                    
-                    manejarCargaArchivo(fileInput, parseInt(preguntaId));
+            if (file) {
+                preview.className = 'preview-area has-content';
+                
+                const iconMap = {
+                    'application/pdf': 'fas fa-file-pdf text-danger',
+                    'application/msword': 'fas fa-file-word text-primary',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'fas fa-file-word text-primary',
+                    'application/vnd.ms-powerpoint': 'fas fa-file-powerpoint text-warning',
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'fas fa-file-powerpoint text-warning',
+                    'text/plain': 'fas fa-file-alt text-secondary'
+                };
+                
+                const icon = iconMap[file.type] || 'fas fa-file text-muted';
+                
+                preview.innerHTML = `
+                    <div class="doc-info">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="${icon} fa-2x me-3"></i>
+                            <div>
+                                <h6 class="mb-1">${file.name}</h6>
+                                <small class="text-muted">${(file.size / 1024 / 1024).toFixed(2)} MB</small>
+                            </div>
+                        </div>
+                        <div class="text-success">
+                            <i class="fas fa-check me-1"></i>
+                            Documento listo para cargar
+                        </div>
+                    </div>
+                `;
+                
+                // Auto-llenar título si está vacío
+                const tituloInput = document.getElementById('titulo-documento');
+                if (!tituloInput.value) {
+                    const nombreSinExtension = file.name.split('.').slice(0, -1).join('.');
+                    tituloInput.value = nombreSinExtension;
                 }
             }
-        }, false);
+        }
+        
+        // Vista previa automática para audio
+        if (e.target.id === 'archivo-audio') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('preview-audio');
+            
+            if (file && file.type.startsWith('audio/')) {
+                const url = URL.createObjectURL(file);
+                preview.className = 'preview-area has-content';
+                preview.innerHTML = `
+                    <audio controls style="width: 100%;">
+                        <source src="${url}" type="${file.type}">
+                    </audio>
+                    <p class="text-success mt-2">
+                        <i class="fas fa-check me-1"></i>
+                        ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    </p>
+                `;
+            }
+        }
     });
     
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-    
-    console.log('✅ Drag & drop configurado');
-}
-
-/**
- * Configura auto-guardado para campos importantes
- */
-function configurarAutoGuardado() {
-    console.log('💾 Configurando auto-guardado...');
-    
-    // Auto-guardado para enunciados (cada 30 segundos de inactividad)
-    document.querySelectorAll('[id^="enunciado_"]').forEach(textarea => {
-        const preguntaId = textarea.id.replace('enunciado_', '');
-        
-        const autoGuardado = debounce(() => {
-            if (textarea.value.trim()) {
-                console.log(`💾 Auto-guardando enunciado para pregunta ${preguntaId}`);
-                // Aquí se podría implementar un guardado automático
-                // guardarPregunta(parseInt(preguntaId));
-            }
-        }, 30000); // 30 segundos
-        
-        textarea.addEventListener('input', autoGuardado);
+    // Vista previa automática para YouTube al escribir
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'url-youtube') {
+            // Debounce para evitar muchas llamadas
+            clearTimeout(e.target.debounceTimer);
+            e.target.debounceTimer = setTimeout(() => {
+                previsualizarYoutube();
+            }, 500);
+        }
     });
     
-    console.log('✅ Auto-guardado configurado');
-}
-
-/**
- * Restaura el estado de recursos expandidos
- */
-function restaurarEstadoRecursos() {
-    console.log('🔄 Restaurando estado de recursos...');
-    
-    // Restaurar recursos expandidos de la sesión anterior
-    const recursosGuardados = sessionStorage.getItem('recursosExpandidos');
-    if (recursosGuardados) {
-        try {
-            const ids = JSON.parse(recursosGuardados);
-            ids.forEach(id => {
-                toggleRecursos(id);
-                recursosExpandidos.add(id);
-            });
-        } catch (e) {
-            console.warn('⚠️ No se pudo restaurar estado de recursos:', e);
+    // Auto-preview para simulador al cambiar campos
+    document.addEventListener('input', function(e) {
+        if (['nombre-molecula', 'smiles-molecula', 'tipo-simulador'].includes(e.target.id)) {
+            clearTimeout(e.target.debounceTimer);
+            e.target.debounceTimer = setTimeout(() => {
+                previsualizarSimulador();
+            }, 1000);
         }
-    }
+    });
     
-    console.log('✅ Estado de recursos restaurado');
-}
-
-/**
- * Guarda el estado actual antes de salir
- */
-function guardarEstadoAntesSalir() {
-    console.log('💾 Guardando estado antes de salir...');
-    
-    // Guardar recursos expandidos
-    if (recursosExpandidos.size > 0) {
-        sessionStorage.setItem('recursosExpandidos', JSON.stringify([...recursosExpandidos]));
-    }
-    
-    console.log('✅ Estado guardado');
-}
-
-// =====================================================
-// EVENT LISTENERS GLOBALES
-// =====================================================
-
-// Inicializar cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', inicializarPlantillaPregunta);
-
-// Guardar estado antes de salir
-window.addEventListener('beforeunload', guardarEstadoAntesSalir);
-
-// Prevenir pérdida de datos no guardados
-window.addEventListener('beforeunload', function(e) {
-    if (archivosSeleccionados.size > 0) {
-        const mensaje = 'Tienes archivos seleccionados que no han sido guardados. ¿Estás seguro de que quieres salir?';
-        e.returnValue = mensaje;
-        return mensaje;
-    }
+    console.log('✅ Sistema de recursos multimedia inicializado');
 });
 
-// Manejar teclas de acceso rápido
-document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + S para guardar pregunta activa
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        
-        const acordeonAbierto = document.querySelector('.accordion-collapse.show');
-        if (acordeonAbierto) {
-            const preguntaId = acordeonAbierto.id.replace('collapse', '');
-            if (preguntaId) {
-                guardarPregunta(parseInt(preguntaId));
-            }
-        } else {
-            mostrarInfo('Abre una pregunta para guardarla con Ctrl+S');
-        }
+// ===== FUNCIONES PRINCIPALES COMPARTIDAS =====
+
+function guardarPregunta(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
     }
     
-    // Escape para cerrar modales y cancelar acciones
-    if (e.key === 'Escape') {
-        // Cerrar previsualizaciones
-        document.querySelectorAll('.resource-preview[style*="display: block"]').forEach(preview => {
-            preview.style.display = 'none';
-        });
-        
-        // Limpiar selecciones de archivos temporales
-        archivosSeleccionados.clear();
-    }
-});
-
-// =====================================================
-// EXPOSICIÓN DE FUNCIONES GLOBALES
-// =====================================================
-
-// Exponer funciones principales para uso desde subplantillas
-window.plantillaPregunta = {
-    // Funciones principales
-    guardarPregunta,
-    eliminarPregunta,
-    agregarOpcion,
-    eliminarOpcion,
-    manejarCambioOpcionCorrecta,
-    iniciarCambioTipo,
+    console.log(`💾 Guardando pregunta ${preguntaId}...`);
     
-    // Funciones de recursos
-    toggleRecursos,
-    cambiarTipoRecurso,
-    manejarCargaArchivo,
-    validarYouTube,
-    previsualizarYouTube,
-    eliminarRecurso,
-    eliminarRecursoExistente,
-    
-    // Utilidades
-    mostrarCargando,
-    mostrarError,
-    mostrarExito,
-    mostrarInfo,
-    getCookie,
-    validarCampo,
-    formatearTamanoArchivo,
-    debounce,
-    
-    // Variables de estado
-    getArchivosSeleccionados: () => archivosSeleccionados,
-    getRecursosExpandidos: () => recursosExpandidos,
-    
-    // Funciones de configuración
-    obtenerConfiguracionEspecifica,
-    validarTipoArchivo,
-    extraerVideoIdYouTube,
-    obtenerIconoDocumento
-};
-
-// =====================================================
-// LOGGING Y DEBUGGING
-// =====================================================
-
-console.log('📚 Plantilla de Pregunta Adaptada - Sistema Completo Cargado');
-console.log('🔧 Funciones principales disponibles en window.plantillaPregunta:');
-console.log('   - guardarPregunta(id)');
-console.log('   - eliminarPregunta(id)');
-console.log('   - agregarOpcion(preguntaId)');
-console.log('   - eliminarOpcion(opcionId)');
-console.log('   - toggleRecursos(preguntaId)');
-console.log('   - manejarCargaArchivo(input, preguntaId)');
-console.log('🛠️  Funciones de utilidad disponibles');
-console.log('📊 Variables de estado:');
-console.log('   - archivosSeleccionados (Map)');
-console.log('   - recursosExpandidos (Set)');
-
-// Función de verificación del sistema
-function verificarSistema() {
-    console.log('🔍 Verificando sistema de plantilla de pregunta...');
-    
-    const checks = {
-        bootstrap: typeof bootstrap !== 'undefined',
-        jquery: typeof $ !== 'undefined',
-        elementos: document.querySelectorAll('.plantilla-pregunta').length > 0,
-        funciones: typeof guardarPregunta === 'function'
-    };
-    
-    console.log('📋 Estado del sistema:', checks);
-    
-    if (Object.values(checks).every(check => check)) {
-        console.log('✅ Sistema completamente funcional');
+    // Llamar a la función global de guardado
+    if (typeof window.guardarPregunta === 'function') {
+        window.guardarPregunta(element);
     } else {
-        console.warn('⚠️ Algunos componentes pueden no estar disponibles');
+        console.error('Función guardarPregunta no encontrada en el contexto global');
+        mostrarError('Error: Función de guardado no disponible');
     }
-    
-    return checks;
 }
 
-// Auto-verificar sistema
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', verificarSistema);
-} else {
-    verificarSistema();
+function iniciarCambioTipo(preguntaId) {
+    console.log(`🔄 Iniciando cambio de tipo para pregunta: ${preguntaId}`);
+    
+    // Llamar a la función global
+    if (typeof window.iniciarCambioTipo === 'function') {
+        window.iniciarCambioTipo(preguntaId);
+    } else {
+        console.error('Función iniciarCambioTipo no encontrada en el contexto global');
+        mostrarError('Error: Función de cambio de tipo no disponible');
+    }
 }
+
+function eliminarPreguntaExistente(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`🗑️ Eliminando pregunta: ${preguntaId}`);
+    
+    // Llamar a la función global
+    if (typeof window.eliminarPreguntaExistente === 'function') {
+        window.eliminarPreguntaExistente(element);
+    } else {
+        console.error('Función eliminarPreguntaExistente no encontrada en el contexto global');
+        mostrarError('Error: Función de eliminación no disponible');
+    }
+}
+
+// Función de utilidad compartida
+function obtenerPreguntaId(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        
+        if (current.getAttribute && current.getAttribute('data-pregunta-id')) {
+            return current.getAttribute('data-pregunta-id');
+        }
+        
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        
+        const preguntaParent = current.closest('[data-pregunta-id]');
+        if (preguntaParent) {
+            return preguntaParent.dataset.preguntaId;
+        }
+        
+        current = current.parentElement;
+    }
+    
+    console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
+    return null;
+}
+
+console.log('📋 Plantilla pregunta adaptada - Sistema completo con recursos multimedia cargado');
+console.log('📎 Funcionalidad de recursos: ✅');
+console.log('🎨 Interfaz profesional: ✅');
+console.log('📱 Diseño responsive: ✅');
+console.log('🔧 Modales funcionales: ✅');
 </script>
