@@ -6,7 +6,8 @@ urlpatterns = [
     path('login/', views.vistaLogin, name='inicio'),
     path("logout/", views.signout, name="logout"),
     path('registro/', views.registroUser),
-    path('inicio/',views.custom_login),
+    #path('inicio/',views.custom_login),
+    path('inicio/', views.custom_login, name='custom_login'), #cambio de Paula
     path('usAdmin/', views.inicioAdmin, name="dashboard-adm"),
     path('usAdmin/detalleCursos', views.vistaAllCursos, name="detalleCursos-adm"),
     path('detalleCurso/<int:curso_id>/', views.detalle_curso, name='detalle_curso'),
@@ -56,6 +57,6 @@ urlpatterns = [
     path('docente/cuestionario/eliminar-recurso-pregunta/', views.eliminar_recurso_pregunta, name='eliminarRecursoPregunta'),
     path('docente/cuestionario/crear-tipos/', views.crearTiposPregunta, name='crearTiposPregunta'),
     path('docente/cuestionario/inicializar-tipos/', views.inicializar_tipos_pregunta, name='inicializarTiposPregunta'),
-
+    path('docente/biblioteca-cuestionarios/', views.biblioteca_cuestionarios, name='bibliotecaCuestionarios'),
 
 ]

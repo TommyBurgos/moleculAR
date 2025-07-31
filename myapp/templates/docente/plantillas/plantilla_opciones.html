@@ -1,4 +1,4 @@
-<!-- plantillas/plantilla_opciones.html - COMPLETA CON BOTONES ELIMINAR -->
+<!-- plantillas/plantilla_opciones.html - CORREGIDA COMPLETAMENTE -->
 <div class="opciones-container">
     <label class="form-label fw-bold">
         <i class="fas fa-list me-2 text-success"></i>
@@ -51,14 +51,14 @@
                    data-field="texto_opcion"
                    onchange="actualizarTextoOpcion(this)">
             
-            <!-- Botón eliminar opción -->
+            <!-- Botón eliminar opción - CUADRADO Y CON STOP PROPAGATION -->
             {% if pregunta.opciones.count > 2 %}
             <button type="button" 
-                    class="btn btn-eliminar-opcion" 
+                    class="btn btn-eliminar-opcion btn-eliminar-cuadrado" 
                     title="Eliminar esta opción"
                     data-opcion-id="{{ opcion.id }}"
-                    onclick="eliminarOpcionExistente(this)">
-                <i class="fas fa-trash"></i>
+                    onclick="event.stopPropagation(); eliminarOpcionConConfirmacion(this);">
+                <i class="fas fa-times"></i>
             </button>
             {% endif %}
         </div>
@@ -67,21 +67,22 @@
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle me-2"></i>
             No hay opciones definidas para esta pregunta. 
-            <button type="button" class="btn btn-sm btn-primary ms-2" onclick="agregarOpcionExistente(this)">
+            <button type="button" class="btn btn-sm btn-primary ms-2" 
+                    onclick="event.stopPropagation(); agregarOpcionSinCerrar(this);">
                 <i class="fas fa-plus me-1"></i>Agregar primera opción
             </button>
         </div>
         {% endfor %}
     </div>
     
-    <!-- Botón agregar nueva opción -->
+    <!-- Botón agregar nueva opción - CON STOP PROPAGATION -->
     {% if pregunta.tipo.nombre != 'falso_verdadero' %}
     <div class="agregar-opcion-container mt-3">
         <button type="button" 
-                class="btn-agregar-opcion" 
+                class="btn-agregar-opcion btn-cuadrado-agregar" 
                 title="Agregar nueva opción"
                 data-pregunta-id="{{ pregunta.id }}"
-                onclick="agregarOpcionExistente(this)">
+                onclick="event.stopPropagation(); agregarOpcionSinCerrar(this);">
             <i class="fas fa-plus"></i>
         </button>
         <span class="ms-2 text-muted">Agregar nueva opción</span>
@@ -103,7 +104,7 @@
     </div>
 </div>
 
-<!-- Estilos específicos para opciones -->
+<!-- Estilos corregidos -->
 <style>
 .opciones-container {
     background-color: #ffffff;
@@ -170,15 +171,15 @@
     accent-color: #27ae60;
 }
 
-/* Botón agregar opción */
+/* Botón agregar opción - CUADRADO */
 .btn-agregar-opcion {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px !important; /* CUADRADO EN LUGAR DE CÍRCULO */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
     border: 2px dashed #3498db;
     background: transparent;
@@ -187,10 +188,14 @@
     transition: all 0.3s ease;
 }
 
+.btn-cuadrado-agregar {
+    border-radius: 4px !important;
+}
+
 .btn-agregar-opcion:hover {
     background-color: #3498db;
     color: white;
-    transform: scale(1.1);
+    transform: scale(1.05);
     border-style: solid;
 }
 
@@ -209,25 +214,29 @@
     background-color: #e3f2fd;
 }
 
-/* Botón eliminar opción */
+/* Botón eliminar opción - CUADRADO */
 .btn-eliminar-opcion {
     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
     color: white;
     border: none;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px !important; /* CUADRADO EN LUGAR DE CÍRCULO */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     transition: all 0.3s ease;
     cursor: pointer;
 }
 
+.btn-eliminar-cuadrado {
+    border-radius: 4px !important;
+}
+
 .btn-eliminar-opcion:hover {
     background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
-    transform: scale(1.1);
+    transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
 }
 
@@ -271,8 +280,10 @@
 }
 </style>
 
-<!-- JavaScript para funcionalidad de opciones -->
+<!-- JavaScript corregido para funcionalidad -->
 <script>
+// ===== FUNCIONES PRINCIPALES CORREGIDAS =====
+
 // Función para manejar cambio de opción correcta
 function manejarCambioOpcionCorrecta(element) {
     const opcionId = element.dataset.opcionId;
@@ -303,8 +314,12 @@ function manejarCambioOpcionCorrecta(element) {
         }
     }
     
+    // Obtener texto actual
+    const textoInput = container.querySelector('.opcion-input');
+    const textoActual = textoInput ? textoInput.value.trim() : '';
+    
     // Enviar actualización al servidor
-    actualizarOpcionEnServidor(opcionId, element.closest('.opcion-input').value, esCorrecta);
+    actualizarOpcionEnServidor(opcionId, textoActual, esCorrecta);
 }
 
 // Función para actualizar texto de opción
@@ -357,53 +372,49 @@ function actualizarOpcionEnServidor(opcionId, texto, esCorrecta) {
     });
 }
 
-// Función para agregar opción
-function agregarOpcionExistente(element) {
-    const preguntaId = obtenerPreguntaId(element);
-    if (!preguntaId) {
-        mostrarError('No se pudo obtener el ID de pregunta');
-        return;
+// Funciones fallback (solo se usan si el sistema principal no está disponible)
+function eliminarOpcionFallback(opcionId) {
+    if (confirm('¿Eliminar esta opción?')) {
+        fetch(`/docente/cuestionario/eliminar-opcion/${opcionId}/`, {
+            method: 'DELETE',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Opción eliminada');
+                location.reload();
+            } else {
+                alert('Error al eliminar');
+            }
+        });
     }
-    
-    console.log(`➕ Agregando opción a pregunta ${preguntaId}`);
-    
-    const loadingToast = mostrarCargando('Agregando opción...');
-    
+}
+
+function agregarOpcionFallback(preguntaId) {
     fetch('/docente/cuestionario/agregar-opcion/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: JSON.stringify({
-            pregunta_id: preguntaId
-        })
+        body: JSON.stringify({ pregunta_id: preguntaId })
     })
     .then(response => response.json())
     .then(data => {
-        loadingToast.hide();
         if (data.success) {
-            console.log(`✅ Opción agregada exitosamente a pregunta ${preguntaId}`);
-            // Guardar estado del acordeón
-            sessionStorage.setItem('acordeonAbierto', `collapse${preguntaId}`);
-            // Recargar página
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
+            alert('Opción agregada');
+            location.reload();
         } else {
-            console.error("❌ Error agregar opción:", data.error);
-            mostrarError('Error: ' + (data.error || 'Error al agregar la opción'));
+            alert('Error al agregar');
         }
-    })
-    .catch(error => {
-        loadingToast.hide();
-        console.error('❌ Error de conexión agregar opción:', error);
-        mostrarError('Error de conexión al agregar la opción');
     });
 }
 
-// Función para eliminar opción
-function eliminarOpcionExistente(element) {
+// ===== FUNCIONES CORREGIDAS SIN DUPLICACIÓN =====
+
+// Función para eliminar opción - USA LA FUNCIÓN GLOBAL
+function eliminarOpcionConConfirmacion(element) {
     const opcionId = element.dataset.opcionId;
     
     if (!opcionId) {
@@ -411,45 +422,54 @@ function eliminarOpcionExistente(element) {
         return;
     }
     
-    console.log(`🗑️ Eliminando opción ${opcionId}`);
+    console.log(`🗑️ Eliminando opción ${opcionId} (usando función global)`);
     
-    mostrarConfirmacionElegante(
-        'Eliminar Opción',
-        '¿Estás seguro de que quieres eliminar esta opción? Esta acción no se puede deshacer.',
-        function() {
-            const loadingToast = mostrarCargando('Eliminando opción...');
-            
-            fetch(`/docente/cuestionario/eliminar-opcion/${opcionId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                loadingToast.hide();
-                if (data.success) {
-                    mostrarExito('Opción eliminada exitosamente');
-                    console.log(`✅ Opción ${opcionId} eliminada exitosamente`);
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                } else {
-                    console.error(`❌ Error al eliminar opción ${opcionId}:`, data.error);
-                    mostrarError('Error: ' + (data.error || 'Error al eliminar la opción'));
-                }
-            })
-            .catch(error => {
-                loadingToast.hide();
-                console.error('❌ Error de conexión al eliminar opción:', error);
-                mostrarError('Error de conexión al eliminar la opción');
-            });
+    // GUARDAR ESTADO DEL ACORDEÓN
+    const preguntaId = obtenerPreguntaId(element);
+    if (preguntaId) {
+        const acordeonElemento = document.getElementById(`collapse${preguntaId}`);
+        if (acordeonElemento && acordeonElemento.classList.contains('show')) {
+            localStorage.setItem('mantenerAbierto', `collapse${preguntaId}`);
         }
-    );
+    }
+    
+    // USAR LA FUNCIÓN GLOBAL DE crear_cuestionario.html
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.eliminarOpcion === 'function') {
+        window.crearCuestionario.eliminarOpcion(opcionId);
+    } else {
+        // Fallback si no está disponible
+        eliminarOpcionFallback(opcionId);
+    }
 }
 
-// Funciones de utilidad (fallbacks si no están definidas globalmente)
+// Función para agregar opción - USA LA FUNCIÓN GLOBAL
+function agregarOpcionSinCerrar(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarError('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`➕ Agregando opción usando función global a pregunta ${preguntaId}`);
+    
+    // GUARDAR ESTADO DEL ACORDEÓN
+    const acordeonElemento = document.getElementById(`collapse${preguntaId}`);
+    if (acordeonElemento && acordeonElemento.classList.contains('show')) {
+        localStorage.setItem('mantenerAbierto', `collapse${preguntaId}`);
+    }
+    
+    // USAR LA FUNCIÓN GLOBAL DE crear_cuestionario.html
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.agregarOpcionExistente === 'function') {
+        window.crearCuestionario.agregarOpcionExistente(element);
+    } else {
+        // Fallback si no está disponible
+        agregarOpcionFallback(preguntaId);
+    }
+}
+
+// ===== FUNCIONES DE UTILIDAD =====
 function obtenerPreguntaId(element) {
     let current = element;
     while (current && current !== document) {
@@ -470,7 +490,7 @@ function obtenerPreguntaId(element) {
         
         const preguntaParent = current.closest('[data-pregunta-id]');
         if (preguntaParent) {
-            return preguntaParent.dataset.preguntaId;
+            return preguntaParent.dataset.preguntaId || preguntaParent.getAttribute('data-pregunta-id');
         }
         
         current = current.parentElement;
@@ -503,7 +523,6 @@ function getCookie(name) {
 }
 
 function mostrarError(mensaje) {
-    // Usar función global si existe
     if (typeof window.crearCuestionario !== 'undefined' && 
         typeof window.crearCuestionario.mostrarError === 'function') {
         window.crearCuestionario.mostrarError(mensaje);
@@ -514,7 +533,6 @@ function mostrarError(mensaje) {
 }
 
 function mostrarExito(mensaje) {
-    // Usar función global si existe
     if (typeof window.crearCuestionario !== 'undefined' && 
         typeof window.crearCuestionario.mostrarExito === 'function') {
         window.crearCuestionario.mostrarExito(mensaje);
@@ -524,7 +542,6 @@ function mostrarExito(mensaje) {
 }
 
 function mostrarAdvertencia(mensaje) {
-    // Usar función global si existe
     if (typeof window.crearCuestionario !== 'undefined' && 
         typeof window.crearCuestionario.mostrarInfo === 'function') {
         window.crearCuestionario.mostrarInfo(mensaje);
@@ -535,7 +552,6 @@ function mostrarAdvertencia(mensaje) {
 }
 
 function mostrarCargando(mensaje) {
-    // Usar función global si existe
     if (typeof window.crearCuestionario !== 'undefined' && 
         typeof window.crearCuestionario.mostrarCargando === 'function') {
         return window.crearCuestionario.mostrarCargando(mensaje);
@@ -546,7 +562,6 @@ function mostrarCargando(mensaje) {
 }
 
 function mostrarConfirmacionElegante(titulo, mensaje, callback) {
-    // Usar función global si existe
     if (typeof window.crearCuestionario !== 'undefined' && 
         typeof window.crearCuestionario.mostrarConfirmacion === 'function') {
         window.crearCuestionario.mostrarConfirmacion(titulo, mensaje, callback);
@@ -557,7 +572,7 @@ function mostrarConfirmacionElegante(titulo, mensaje, callback) {
     }
 }
 
-// Inicializar al cargar
+// ===== INICIALIZACIÓN =====
 document.addEventListener('DOMContentLoaded', function() {
     // Aplicar estilos correctos al cargar la página
     document.querySelectorAll('.opcion-container').forEach(container => {
@@ -569,6 +584,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    console.log('✅ Plantilla opciones inicializada');
+    // RESTAURAR ACORDEÓN ABIERTO DESPUÉS DE RELOAD
+    const mantenerAbierto = localStorage.getItem('mantenerAbierto');
+    if (mantenerAbierto) {
+        setTimeout(() => {
+            const elemento = document.getElementById(mantenerAbierto);
+            if (elemento) {
+                console.log(`🔓 Restaurando acordeón abierto: ${mantenerAbierto}`);
+                const collapse = new bootstrap.Collapse(elemento, { show: true });
+            }
+            localStorage.removeItem('mantenerAbierto');
+        }, 500);
+    }
+    
+    console.log('✅ Plantilla opciones CORREGIDA inicializada');
 });
 </script>

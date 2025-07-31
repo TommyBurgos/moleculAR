@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import SDWriter
@@ -17,6 +17,7 @@ from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestion
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
+ 
 
 @csrf_exempt
 def modificar_molecula(request):
@@ -108,7 +109,7 @@ def registroExitoso(request):
                 )
                 print('***INICIO***')
                 # Si quieres asignar rol por defecto
-                rol_estudiante = Rol.objects.get(nombre='Estudiante')
+                rol_estudiante = Rol.objects.get(nombre='estudiante')
                 print(rol_estudiante)
                 user.rol = rol_estudiante
                 print(user.rol)                                
@@ -459,17 +460,18 @@ def vistaCrearCurso(request):
 
 
 
-@role_required('Estudiante')
+@role_required('estudiante')
 def inicioEstudiante(request):
     user = request.user    
     return render(request, 'estudiante/student-dashboard.html')    
 
+@role_required('docente')
 def inicioDocente(request):
     return render(request, 'docente/instructor-dashboard.html')
 
 
 
-def custom_login(request):
+"""def custom_login(request):
     print("entre a la funcion custom")
     if request.method == "POST":  
         print("Estoy en post")   
@@ -497,7 +499,121 @@ def custom_login(request):
         else:
             # Manejar error de autenticación
             return render(request, 'dashboard-adm', {'error': 'Credenciales inválidas'})
-    return redirect('inicio')
+    return redirect('inicio')"""
+
+@csrf_protect
+def custom_login(request):
+    print("🔐 Entre a la función custom_login")
+    print(f"🌐 Método de request: {request.method}")
+    
+    if request.method == "POST":
+        print("📝 Procesando login POST")
+        
+        # Debug: Ver todos los datos del POST
+        print(f"📊 Datos POST completos: {request.POST}")
+        
+        # Obtener datos del formulario
+        email = request.POST.get('email', '').strip()
+        password = request.POST.get('password', '')
+        
+        print(f"📧 Email recibido: '{email}'")
+        print(f"🔒 Password recibido: {'Sí (' + str(len(password)) + ' caracteres)' if password else 'No'}")
+        
+        # Validaciones básicas
+        if not email or not password:
+            error_msg = 'Email y contraseña son obligatorios'
+            print(f"❌ Error validación: {error_msg}")
+            return render(request, 'sign-in.html', {'error': error_msg})
+        
+        print("✅ Validaciones básicas pasadas")
+        
+        # Verificar si el usuario existe
+        try:
+            print(f"🔍 Buscando usuario con username: '{email}'")
+            user_check = User.objects.get(username=email)
+            print(f"👤 Usuario encontrado: {user_check.username}")
+            print(f"🎭 Rol ID: {user_check.rol_id}")
+            print(f"✅ Usuario activo: {user_check.is_active}")
+            print(f"🆔 ID de usuario: {user_check.id}")
+        except User.DoesNotExist:
+            error_msg = f'No existe un usuario con el email: {email}'
+            print(f"❌ Usuario no encontrado: {error_msg}")
+            
+            # DEBUG: Mostrar todos los usuarios que existen
+            print("📋 Usuarios existentes en la base de datos:")
+            all_users = User.objects.all()
+            for u in all_users:
+                print(f"   - {u.username} (rol: {u.rol_id}, activo: {u.is_active})")
+            
+            return render(request, 'sign-in.html', {'error': error_msg})
+        
+        print("🔑 Intentando autenticar usuario...")
+        
+        # Autenticar usuario
+        user = authenticate(request, username=email, password=password)
+        print(f"🔐 Resultado autenticación: {user}")
+        
+        if user is not None:
+            print("✅ Autenticación exitosa")
+            if user.is_active:
+                print("✅ Usuario está activo")
+                
+                # Login exitoso
+                try:
+                    login(request, user)
+                    print(f"✅ Login realizado para: {user.username}")
+                except Exception as e:
+                    print(f"❌ Error en login(): {e}")
+                    return render(request, 'sign-in.html', {'error': f'Error al iniciar sesión: {e}'})
+                
+                # Obtener rol y redirigir
+                rol = getattr(user, 'rol_id', None)
+                print(f"🎭 Rol obtenido: {rol} (tipo: {type(rol)})")
+                
+                if rol == 1:  # Admin/Superadministrador
+                    print("🚀 Debería redirigir a dashboard admin")
+                    try:
+                        return redirect('dashboard-adm')
+                    except Exception as e:
+                        print(f"❌ Error al redirigir a admin: {e}")
+                        return render(request, 'sign-in.html', {'error': f'Error de redirección admin: {e}'})
+                        
+                elif rol == 2:  # Estudiante
+                    print("🚀 Debería redirigir a dashboard estudiante")
+                    try:
+                        return redirect('student_dashboard')
+                    except Exception as e:
+                        print(f"❌ Error al redirigir a estudiante: {e}")
+                        return render(request, 'sign-in.html', {'error': f'Error de redirección estudiante: {e}'})
+                        
+                elif rol == 3:  # Profesor/Docente
+                    print("🚀 Debería redirigir a dashboard docente")
+                    try:
+                        return redirect('teacher_dashboard')
+                    except Exception as e:
+                        print(f"❌ Error al redirigir a docente: {e}")
+                        return render(request, 'sign-in.html', {'error': f'Error de redirección docente: {e}'})
+                else:
+                    print(f"⚠️ Rol no reconocido: {rol}")
+                    print("🚀 Redirigiendo a admin por defecto")
+                    try:
+                        return redirect('dashboard-adm')
+                    except Exception as e:
+                        print(f"❌ Error al redirigir por defecto: {e}")
+                        return render(request, 'sign-in.html', {'error': f'Error de redirección por defecto: {e}'})
+            else:
+                error_msg = 'Tu cuenta está desactivada. Contacta al administrador.'
+                print(f"❌ Usuario inactivo: {error_msg}")
+                return render(request, 'sign-in.html', {'error': error_msg})
+        else:
+            error_msg = 'Contraseña incorrecta'
+            print(f"❌ Credenciales inválidas: {error_msg}")
+            return render(request, 'sign-in.html', {'error': error_msg})
+    
+    # GET request - mostrar formulario
+    print("📄 Mostrando formulario de login (GET request)")
+    return render(request, 'sign-in.html')
+
 
 def signout(request):
     logout(request)
@@ -1321,31 +1437,41 @@ def inicializar_tipos_pregunta(request):
 @require_http_methods(["POST"])
 #@login_required
 def actualizar_pregunta(request):
-    """Función PRINCIPAL para actualizar pregunta - COMPLETAMENTE FUNCIONAL"""
+    """Función PRINCIPAL para actualizar pregunta - CORREGIDA PARA NO BORRAR CONTENIDO"""
     try:
         print("✏️ Actualizando pregunta...")
         
-        # Detectar tipo de contenido
+        # Detectar tipo de contenido y recopilar datos
+        data = {}
+        pregunta_id = None
+        tiene_archivo = False
+        
         if request.content_type and request.content_type.startswith('multipart/form-data'):
             # FormData (con archivos)
             pregunta_id = request.POST.get('pregunta_id')
-            enunciado = request.POST.get('enunciado', '').strip()
-            puntaje = request.POST.get('puntaje', 1)
-            calificacion_manual = request.POST.get('calificacion_manual') == 'true'
-            youtube_video_id = request.POST.get('youtube_video_id', '').strip()
+            data.update(dict(request.POST))
             tiene_archivo = 'archivo_multimedia' in request.FILES
+            print("📎 Datos recibidos via FormData")
         else:
             # JSON (sin archivos)
-            data = json.loads(request.body)
-            pregunta_id = data.get('pregunta_id')
-            enunciado = data.get('enunciado', '').strip()
-            puntaje = data.get('puntaje', 1)
-            calificacion_manual = data.get('calificacion_manual', False)
-            youtube_video_id = data.get('youtube_video_id', '').strip()
-            tiene_archivo = False
+            try:
+                json_data = json.loads(request.body)
+                data = json_data
+                pregunta_id = data.get('pregunta_id')
+                print("📋 Datos recibidos via JSON")
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Formato de datos inválido'
+                })
         
         print(f"📝 Actualizando pregunta ID: {pregunta_id}")
-        print(f"📝 Enunciado: {enunciado[:50]}...")
+        
+        if not pregunta_id:
+            return JsonResponse({
+                'success': False, 
+                'error': 'ID de pregunta requerido'
+            })
         
         pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
         
@@ -1357,86 +1483,186 @@ def actualizar_pregunta(request):
                 'error': 'Sin permisos'
             }, status=403)
         
-        if not enunciado:
-            return JsonResponse({
-                'success': False, 
-                'error': 'El enunciado es obligatorio'
-            })
-        
         with transaction.atomic():
-            # Actualizar campos básicos
-            pregunta.enunciado = enunciado
-            pregunta.puntaje = int(puntaje)
+            # ===== ACTUALIZAR CAMPOS BÁSICOS SOLO SI SE PROPORCIONAN =====
             
-            # Manejar multimedia
+            # Enunciado (siempre requerido)
+            enunciado = data.get('enunciado', '').strip()
+            if enunciado:
+                pregunta.enunciado = enunciado
+                print(f"📝 Enunciado actualizado: {enunciado[:50]}...")
+            elif not pregunta.enunciado:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'El enunciado es obligatorio'
+                })
+            
+            # Puntaje
+            if 'puntaje' in data:
+                try:
+                    pregunta.puntaje = int(data.get('puntaje', 1))
+                    print(f"⭐ Puntaje actualizado: {pregunta.puntaje}")
+                except (ValueError, TypeError):
+                    pregunta.puntaje = 1
+            
+            # Calificación manual
+            if 'calificacion_manual' in data:
+                pregunta.calificacion_manual = bool(data.get('calificacion_manual', False))
+                print(f"✅ Calificación manual: {pregunta.calificacion_manual}")
+            
+            # ===== MANEJAR MULTIMEDIA SOLO SI SE PROPORCIONA =====
+            
             if tiene_archivo:
                 pregunta.archivo_multimedia = request.FILES['archivo_multimedia']
                 print("📎 Archivo multimedia actualizado")
             
-            if youtube_video_id:
-                if len(youtube_video_id) == 11:
-                    pregunta.url_youtube = youtube_video_id
-                    print(f"🎥 Video YouTube: {youtube_video_id}")
+            if 'youtube_video_id' in data:
+                youtube_id = data.get('youtube_video_id', '').strip()
+                if youtube_id:
+                    if len(youtube_id) == 11:
+                        pregunta.url_youtube = youtube_id
+                        print(f"🎥 Video YouTube actualizado: {youtube_id}")
+                    else:
+                        return JsonResponse({
+                            'success': False, 
+                            'error': 'ID de YouTube inválido'
+                        })
                 else:
-                    return JsonResponse({
-                        'success': False, 
-                        'error': 'ID de YouTube inválido'
-                    })
+                    # Si se envía vacío, limpiar
+                    pregunta.url_youtube = None
+                    print("🎥 Video YouTube eliminado")
             
-            pregunta.save()
+            # ===== ACTUALIZAR CAMPOS ESPECÍFICOS POR TIPO (SOLO SI SE PROPORCIONAN) =====
             
-            # Actualizar campos específicos por tipo de pregunta
             tipo_nombre = pregunta.tipo.nombre
+            print(f"🔧 Procesando campos específicos para tipo: {tipo_nombre}")
             
             if tipo_nombre == 'respuesta_abierta':
+                # SOLO actualizar si se proporciona el campo
                 if 'respuesta_modelo' in data:
                     pregunta.respuesta_modelo = data.get('respuesta_modelo', '')
+                    print(f"📝 Respuesta modelo actualizada")
+                
                 if 'criterios_evaluacion' in data:
                     pregunta.criterios_evaluacion = data.get('criterios_evaluacion', '')
+                    print(f"📋 Criterios evaluación actualizados")
+                
                 if 'longitud_minima' in data:
-                    pregunta.longitud_minima = int(data.get('longitud_minima', 50))
+                    try:
+                        pregunta.longitud_minima = int(data.get('longitud_minima', 50))
+                        print(f"📏 Longitud mínima: {pregunta.longitud_minima}")
+                    except (ValueError, TypeError):
+                        pass
+                
                 if 'longitud_maxima' in data:
-                    pregunta.longitud_maxima = int(data.get('longitud_maxima', 1000))
-                    
+                    try:
+                        pregunta.longitud_maxima = int(data.get('longitud_maxima', 1000))
+                        print(f"📏 Longitud máxima: {pregunta.longitud_maxima}")
+                    except (ValueError, TypeError):
+                        pass
+                        
             elif tipo_nombre == 'completar':
+                # SOLO actualizar si se proporciona el campo - CRÍTICO PARA EVITAR BORRADO
                 if 'texto_completar' in data:
                     pregunta.texto_completar = data.get('texto_completar', '')
+                    print(f"📝 Texto completar actualizado")
+                
                 if 'respuestas_completar' in data:
                     pregunta.respuestas_completar = data.get('respuestas_completar', '')
+                    print(f"✅ Respuestas completar actualizadas")
+                
                 if 'sensible_mayusculas' in data:
-                    pregunta.sensible_mayusculas = data.get('sensible_mayusculas', False)
+                    pregunta.sensible_mayusculas = bool(data.get('sensible_mayusculas', False))
+                    print(f"🔤 Sensible mayúsculas: {pregunta.sensible_mayusculas}")
+                
                 if 'ignorar_espacios' in data:
-                    pregunta.ignorar_espacios = data.get('ignorar_espacios', True)
+                    pregunta.ignorar_espacios = bool(data.get('ignorar_espacios', True))
+                    print(f"🔲 Ignorar espacios: {pregunta.ignorar_espacios}")
+                
                 if 'permitir_alternativas' in data:
-                    pregunta.permitir_alternativas = data.get('permitir_alternativas', False)
+                    pregunta.permitir_alternativas = bool(data.get('permitir_alternativas', False))
+                    print(f"🔀 Permitir alternativas: {pregunta.permitir_alternativas}")
+                
                 if 'respuestas_alternativas' in data:
                     pregunta.respuestas_alternativas = data.get('respuestas_alternativas', '')
-                    
+                    print(f"📝 Respuestas alternativas actualizadas")
+                        
             elif tipo_nombre == 'unir_lineas':
+                # SOLO actualizar si se proporciona el campo - CRÍTICO PARA EVITAR BORRADO
                 if 'columna_izquierda' in data:
                     pregunta.columna_izquierda = data.get('columna_izquierda', '')
+                    print(f"📝 Columna izquierda actualizada")
+                
                 if 'columna_derecha' in data:
                     pregunta.columna_derecha = data.get('columna_derecha', '')
+                    print(f"📝 Columna derecha actualizada")
+                
                 if 'conexiones_correctas' in data:
                     pregunta.conexiones_correctas = data.get('conexiones_correctas', '')
+                    print(f"🔗 Conexiones correctas actualizadas")
+                
                 if 'mezclar_opciones' in data:
-                    pregunta.mezclar_opciones = data.get('mezclar_opciones', True)
+                    pregunta.mezclar_opciones = bool(data.get('mezclar_opciones', True))
+                    print(f"🔀 Mezclar opciones: {pregunta.mezclar_opciones}")
+                
                 if 'permitir_conexiones_multiples' in data:
-                    pregunta.permitir_conexiones_multiples = data.get('permitir_conexiones_multiples', False)
-                    
+                    pregunta.permitir_conexiones_multiples = bool(data.get('permitir_conexiones_multiples', False))
+                    print(f"🔗 Conexiones múltiples: {pregunta.permitir_conexiones_multiples}")
+                        
             elif tipo_nombre in ['simulador_2d', 'simulador_3d']:
+                # SOLO actualizar si se proporciona el campo
                 if 'smiles_objetivo' in data:
                     pregunta.smiles_objetivo = data.get('smiles_objetivo', '')
+                    print(f"🧪 SMILES objetivo actualizado: {pregunta.smiles_objetivo}")
+                
                 if 'descripcion_molecula' in data:
                     pregunta.descripcion_molecula = data.get('descripcion_molecula', '')
+                    print(f"📝 Descripción molécula actualizada")
+                
                 if 'tolerancia_similitud' in data:
-                    pregunta.tolerancia_similitud = int(data.get('tolerancia_similitud', 95))
+                    try:
+                        pregunta.tolerancia_similitud = int(data.get('tolerancia_similitud', 95))
+                        print(f"📊 Tolerancia similitud: {pregunta.tolerancia_similitud}%")
+                    except (ValueError, TypeError):
+                        pass
+                
                 if 'permitir_isomeros' in data:
-                    pregunta.permitir_isomeros = data.get('permitir_isomeros', False)
+                    pregunta.permitir_isomeros = bool(data.get('permitir_isomeros', False))
+                    print(f"🔬 Permitir isómeros: {pregunta.permitir_isomeros}")
             
-            print("✅ Pregunta actualizada")
+            # Guardar todos los cambios
+            pregunta.save()
+            print("✅ Pregunta actualizada exitosamente")
             
-            # Recalcular puntaje total
+            # ===== ACTUALIZAR OPCIONES SI SE PROPORCIONAN =====
+            
+            if 'opciones' in data and isinstance(data['opciones'], list):
+                print(f"🔧 Actualizando {len(data['opciones'])} opciones...")
+                
+                for opcion_data in data['opciones']:
+                    if 'id' in opcion_data:
+                        try:
+                            opcion = OpcionPregunta.objects.get(
+                                id=opcion_data['id'], 
+                                pregunta=pregunta
+                            )
+                            
+                            # Actualizar solo si se proporciona
+                            if 'texto' in opcion_data:
+                                opcion.texto = opcion_data['texto']
+                            
+                            if 'es_correcta' in opcion_data:
+                                opcion.es_correcta = bool(opcion_data['es_correcta'])
+                            
+                            opcion.save()
+                            print(f"✅ Opción {opcion.id} actualizada")
+                            
+                        except OpcionPregunta.DoesNotExist:
+                            print(f"⚠️ Opción {opcion_data['id']} no encontrada")
+                            continue
+            
+            # ===== RECALCULAR TOTALES =====
+            
             cuestionario = pregunta.cuestionario
             puntaje_total = cuestionario.preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
             cuestionario.puntaje_total = puntaje_total
@@ -1447,7 +1673,8 @@ def actualizar_pregunta(request):
         return JsonResponse({
             'success': True,
             'mensaje': 'Pregunta actualizada exitosamente',
-            'puntaje_total': float(puntaje_total)
+            'puntaje_total': float(puntaje_total),
+            'pregunta_id': pregunta.id
         })
         
     except Exception as e:
@@ -1457,8 +1684,9 @@ def actualizar_pregunta(request):
         
         return JsonResponse({
             'success': False, 
-            'error': str(e)
+            'error': f'Error al actualizar pregunta: {str(e)}'
         }, status=400)
+    
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -1634,7 +1862,7 @@ def finalizar_cuestionario(request):
             print(f"✅ Cuestionario {cuestionario_id} finalizado - Puntaje total: {puntaje_total}")
         
         # URL de redirección
-        redirect_url = f'/detalleCurso/{cuestionario.recurso.seccion.curso.id}/' if cuestionario.recurso.seccion else '/usAdmin/detalleCursos'
+        redirect_url = '/docente/biblioteca-cuestionarios/'
         
         return JsonResponse({
             'success': True,
@@ -1794,3 +2022,20 @@ def subir_recurso(request):
             'error': str(e)
         }, status=400)
 
+
+def biblioteca_cuestionarios(request):
+    """Vista para mostrar la biblioteca de cuestionarios"""
+    user = request.user
+    
+    # Obtener cuestionarios del usuario actual
+    cuestionarios = Cuestionario.objects.filter(
+        recurso__seccion__curso__profesor=user
+    ).select_related('recurso', 'recurso__seccion', 'recurso__seccion__curso').order_by('-id')
+    
+    context = {
+        'cuestionarios': cuestionarios,
+        'imgPerfil': user.imgPerfil,
+        'usuario': user.username,
+    }
+    
+    return render(request, 'docente/biblioteca_cuestionarios.html', context)
