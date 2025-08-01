@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>🧪 Historial de intentos</title>
+</head>
+<body>
+  <h2>📜 Historial de intentos para: {{ practica.recurso.titulo }}</h2>
+  <p>🎯 Objetivo: <strong>{{ practica.titulo_objetivo }}</strong></p>
+  <p>{{ practica.instrucciones }}</p>
+
+  {% if intentos %}
+    <table border="1" cellpadding="10">
+      <tr>
+        <th>#</th>
+        <th>SMILES enviado</th>
+        <th>Resultado</th>
+        <th>Fecha y hora</th>
+      </tr>
+      {% for intento in intentos %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><code>{{ intento.smiles }}</code></td>
+        <td>
+          {% if intento.es_correcta %}
+            ✅ Correcto
+          {% elif intento.es_correcta == False %}
+            ❌ Incorrecto
+          {% else %}
+            ⏳ Sin verificar
+          {% endif %}
+        </td>
+        <td>{{ intento.fecha_envio|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No has realizado intentos aún para esta práctica.</p>
+  {% endif %}
+
+  <a href="{% url 'resolver_practica' practica.id %}">🔁 Volver a intentar</a>
+</body>
+</html>

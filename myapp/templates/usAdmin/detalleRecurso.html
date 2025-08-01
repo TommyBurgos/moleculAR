@@ -185,7 +185,11 @@
 							<div class="position-relative">
 								<!-- Avatar -->
 								<div class="avatar avatar-xxl">
-									<img class="avatar-img rounded-circle" src="{{ recurso.imagen.url }}" alt="avatar">
+									{% if recurso.imagen %}
+									<img class="avatar-img rounded-circle" src="{{ recurso.imagen.url }}" alt="{{ recurso.seccion.titulo }}">
+									{% else %}
+										<img class="avatar-img rounded-circle" src="" alt="No cargada una imagen">
+									{% endif %}	
 								</div>
 								<a href="#" class="h5 stretched-link mt-2 mb-0 d-block">{{ recurso.seccion.titulo }}</a>
 								<p class="mb-2">Editor de MoleculAR</p>
@@ -208,7 +212,7 @@
 						<!-- Info -->
 						<p class="mt-2">{{ recurso.descripcion }}.</p>
 						{% if recurso.contenido_texto %}
-								<p class="mb-0 mb-lg-3">{{ recurso.contenido_texto }}</p>
+								<p class="mb-0 mb-lg-3">{{ html_limpio|safe }}</p>
 							{% else %}
 								<p></p>
 							{% endif %}											

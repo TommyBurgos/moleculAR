@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import user_passes_test
 
 # Verifica si el usuario es administrador
 def es_administrador(user):
+    print("Dentro de la funcion es_administrador: ")
+    print(user.is_authenticated and user.rol.nombre == 'Administrador')
     return user.is_authenticated and user.rol.nombre == 'Administrador'
 
 # Decorador para vistas protegidas
@@ -18,6 +20,10 @@ def role_required(role_name):
         @wraps(view_func)
         @login_required
         def _wrapped_view(request, *args, **kwargs):
+            print(request.user.is_authenticated)
+            print(request.user.rol)
+            print(request.user.rol.nombre == role_name)
+            print(request.user.is_authenticated and request.user.rol and request.user.rol.nombre == role_name)
             if request.user.is_authenticated and request.user.rol and request.user.rol.nombre == role_name:
                 return view_func(request, *args, **kwargs)
             else:

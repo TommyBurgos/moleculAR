@@ -21,6 +21,11 @@ class CategoriaCurso(models.Model):
     def __str__(self):
         return self.nombre
 
+import string, random
+
+def generar_codigo_aleatorio():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
 class Curso(models.Model):
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField()
@@ -28,9 +33,24 @@ class Curso(models.Model):
     profesor = models.ForeignKey('User', on_delete=models.CASCADE, related_name='cursos_creados')
     categoria = models.ForeignKey('CategoriaCurso', on_delete=models.SET_NULL, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    codigo_acceso = models.CharField(max_length=10, unique=True, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.codigo_acceso:
+            self.codigo_acceso = generar_codigo_aleatorio()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.titulo
+
+class InscripcionCurso(models.Model):
+    estudiante = models.ForeignKey('User', on_delete=models.CASCADE)
+    curso = models.ForeignKey('Curso', on_delete=models.CASCADE)
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('estudiante', 'curso')  # Para evitar inscripciones duplicadas
+
 
 class Seccion(models.Model):
     curso = models.ForeignKey('Curso', on_delete=models.CASCADE, related_name='secciones')
@@ -115,6 +135,8 @@ class Competencia(models.Model):
     codigo_acceso = models.CharField(max_length=10, unique=True)
     instrucciones = models.TextField(blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    pregunta_actual = models.ForeignKey('PreguntaCuestionario', null=True, blank=True, on_delete=models.SET_NULL, related_name='competencias_actuales')
+
 
     def __str__(self):
         return f"Competencia - {self.recurso.titulo}"
@@ -128,12 +150,15 @@ class TipoPregunta(models.Model):
 
 
 class PreguntaCuestionario(models.Model):
-    cuestionario = models.ForeignKey('Cuestionario', on_delete=models.CASCADE, related_name='preguntas')
+    cuestionario = models.ForeignKey('Cuestionario', on_delete=models.CASCADE, related_name='preguntas',null=True, blank=True)
+    competencia = models.ForeignKey('Competencia', on_delete=models.CASCADE, related_name='preguntas', null=True, blank=True)
     enunciado = models.TextField()
     tipo = models.ForeignKey('TipoPregunta', on_delete=models.PROTECT)
     orden = models.PositiveIntegerField(default=1)
     puntaje = models.PositiveIntegerField(default=1)
-    imagen = models.ImageField(upload_to='preguntas/', null=True, blank=True)
+    imagen = models.ImageField(upload_to='preguntas/', null=True, blank=True)    
+    
+    
 
     def __str__(self):
         return f"{self.orden}. {self.enunciado[:50]}"
@@ -156,6 +181,7 @@ class MoleculaEsperadaPregunta(models.Model):
 
 class RespuestaCuestionario(models.Model):
     estudiante = models.ForeignKey('User', on_delete=models.CASCADE, related_name='respuestas_cuestionarios')
+    tiempo_respuesta = models.IntegerField(null=True, blank=True)  # En segundos
     pregunta = models.ForeignKey('PreguntaCuestionario', on_delete=models.CASCADE, related_name='respuestas')
     opcion_seleccionada = models.ForeignKey('OpcionPregunta', on_delete=models.SET_NULL, null=True, blank=True)
     respuesta_abierta = models.TextField(blank=True, null=True)
@@ -166,3 +192,11 @@ class RespuestaCuestionario(models.Model):
     def __str__(self):
         return f"Resp. de {self.estudiante.username} a {self.pregunta.id}"
 
+class ProgresoUsuario(models.Model):
+    usuario = models.ForeignKey('User', on_delete=models.CASCADE)
+    recurso = models.ForeignKey('Recurso', on_delete=models.CASCADE)
+    visto = models.BooleanField(default=False)
+    fecha_visto = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario', 'recurso')

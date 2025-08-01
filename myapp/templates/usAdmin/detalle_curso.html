@@ -167,19 +167,34 @@
 
 								<!-- Aquí listamos los recursos de esta sección -->
 									{% if seccion.recursos_ordenados %}
-									{% for recurso in seccion.recursos_ordenados %}
-										<div class="mb-2">
-										<a href="{% url 'detalle_recurso' recurso.id %}" class="fw-bold text-decoration-none text-dark">
-										{{ recurso.titulo }}
-										</a><br>
+									{% for recurso in seccion.recursos_ordenados %}			
+									{% if recurso.practica %}
+									<div class="mb-2">
+											<a href="{% url 'ver_practica' recurso.id %}" class="fw-bold text-decoration-none text-dark">
+											{{ recurso.titulo }}
+											</a><br>
 										<small class="text-muted">{{ recurso.tipo.nombre|capfirst }}</small>
 										<p>{{ recurso.descripcion }}</p>
-										{% if recurso.practica %}
 										<a href="{% url 'ver_practica' recurso.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
 										{% if user.is_staff or user.es_profesor %}
 										<a href="{% url 'editar_practica' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar</a>
+									</div>
 										{% endif %}
+										{% else %}				
+										<div class="mb-2">
+											<a href="{% url 'detalle_recurso' recurso.id %}" class="fw-bold text-decoration-none text-dark">
+											{{ recurso.titulo }}
+											</a><br>
+										<small class="text-muted">{{ recurso.tipo.nombre|capfirst }}</small>
+										<p>{{ recurso.descripcion }}</p>
+										{% if recurso.tipo.nombre == 'Video' %}
+										<a href="{% url 'editar_video' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar</a>
+										{% elif recurso.tipo.nombre == 'Texto' %}
+										<a href="{% url 'editar_texto' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar texto</a>
 										{% endif %}
+
+										
+										{% endif %}	
 
 										</div>
 										<hr>
@@ -349,8 +364,13 @@
 				<!-- SI ES TEXTO -->
 				<div class="mb-3 d-none" id="textoFields">
 				<label for="contenido_texto" class="form-label">Contenido del texto</label>
-				  <textarea name="contenido_texto" id="contenido_texto" rows="8" class="form-control"></textarea>
+				  <textarea name="contenido_texto" id="contenido_texto" rows="8" class="form-control"></textarea>					
+				</div>
 
+				<!-- Solo visible si se selecciona tipo 'competencia' -->
+				<div id="campo-instrucciones-competencia" style="display:none;">
+				<label for="instrucciones_competencia">Instrucciones:</label>
+				<textarea name="instrucciones_competencia" class="form-control" rows="3"></textarea>
 				</div>
 
 				<!-- BOTÓN -->
@@ -514,6 +534,12 @@ document.getElementById("formAgregarRecurso").addEventListener("submit", functio
   });
 </script>
 
+<script>
+	document.getElementById("formRecurso").addEventListener("submit", function() {
+		tinymce.triggerSave();  // Esto actualiza el <textarea> con el contenido del editor
+	});
+</script>
+
 <!--Para capturar el id de la sección-->
 <script>
   const addTopicModal = document.getElementById('addTopic');
@@ -562,6 +588,25 @@ document.getElementById("formAgregarRecurso").addEventListener("submit", functio
     });
   });
 </script>
+
+
+
+<script>
+  // Mostrar el campo solo si se selecciona "competencia"
+  document.addEventListener("DOMContentLoaded", function () {
+    const tipoSelect = document.querySelector('select[name="tipo"]');
+    const instruccionesDiv = document.getElementById("campo-instrucciones-competencia");
+
+    function verificarTipo() {
+      const seleccionado = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
+      instruccionesDiv.style.display = seleccionado.includes("competencia") ? 'block' : 'none';
+    }
+
+    tipoSelect.addEventListener("change", verificarTipo);
+    verificarTipo();  // Llamada inicial
+  });
+</script>
+
 
 
 </body>
