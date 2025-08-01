@@ -34,6 +34,7 @@ urlpatterns = [
 
 
     #paula
+    #Profesor
     path('docente/crear_cuestionario/', views.instructorQuiz, name='crearCuestionario'),
     path('docente/crear_cuestionario/<int:seccion_id>/', views.instructorQuiz, name='crearCuestionarioSeccion'),
     path('docente/editar_cuestionario/<int:cuestionario_id>/', views.editarCuestionario, name='editarCuestionario'),
@@ -58,5 +59,16 @@ urlpatterns = [
     path('docente/cuestionario/crear-tipos/', views.crearTiposPregunta, name='crearTiposPregunta'),
     path('docente/cuestionario/inicializar-tipos/', views.inicializar_tipos_pregunta, name='inicializarTiposPregunta'),
     path('docente/biblioteca-cuestionarios/', views.biblioteca_cuestionarios, name='bibliotecaCuestionarios'),
+    path('docente/asignar-cuestionario/<int:cuestionario_id>/', views.asignar_cuestionario_seccion, name='asignarCuestionarioSeccion'),
+
+    #Estudiante
+    path('estudiante/biblioteca-cuestionarios/', views.biblioteca_cuestionarios_estudiante, name='biblioteca_cuestionarios_estudiante'),
+    path('estudiante/iniciar-cuestionario/<int:cuestionario_id>/', views.iniciar_cuestionario, name='iniciar_cuestionario'),
+    path('estudiante/realizar-cuestionario/<int:intento_id>/', views.realizar_cuestionario, name='realizar_cuestionario'),
+    path('estudiante/guardar-respuesta/', views.guardar_respuesta, name='guardar_respuesta'),
+    path('estudiante/finalizar-cuestionario/<int:intento_id>/', views.finalizar_cuestionario, name='finalizar_cuestionario'),
+    path('estudiante/resultado-cuestionario/<int:intento_id>/', views.resultado_cuestionario, name='resultado_cuestionario'),
+    path('estudiante/historial-cuestionarios/', views.historial_cuestionarios, name='historial_cuestionarios'),
+
 
 ]

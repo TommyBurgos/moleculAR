@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Eduport - Cuestionarios Disponibles</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Webestica.com">
+    <meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/choices/css/choices.min.css' %}">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+    
+    <!-- Estilos personalizados para estudiantes -->
+    <style>
+        .quiz-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .quiz-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .badge-disponible {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        .badge-no-disponible {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+        }
+        .badge-completado {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+        .badge-agotado {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+        }
+        .progress-bar-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .btn-realizar {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            border: none;
+            border-radius: 25px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-realizar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            color: white;
+        }
+        .btn-no-disponible {
+            background: #6c757d;
+            border: none;
+            border-radius: 25px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            cursor: not-allowed;
+        }
+        .intentos-info {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 0.5rem;
+            margin-top: -15px;
+            position: relative;
+            z-index: 2;
+        }
+        .tiempo-restante {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .fechas-disponibilidad {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+    <!-- Sidebar START -->
+    {% include 'estudiante/baseSideBar.html' %}
+    <!-- Sidebar END -->	
+        
+    <!-- =======================
+    Inner part START -->
+    <div class="page-content">
+
+        <!-- Top bar START -->
+        {% include 'estudiante/navBar.html' %}
+        <!-- Top bar END -->
+
+        <!-- Page main content START -->
+        <div class="page-content-wrapper border">
+            <section class="pt-0">
+                <div class="container">
+                    <div class="row">
+                        <!-- Main content START -->
+                        <div class="col-xl-12">
+                            <!-- =======================
+                            Page Banner START -->
+                            <section class="py-4">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="bg-light p-4 text-center rounded-3">
+                                                <h1 class="m-0">🎯 Cuestionarios Disponibles</h1>
+                                                <!-- Breadcrumb -->
+                                                <div class="d-flex justify-content-center">
+                                                    <nav aria-label="breadcrumb">
+                                                        <ol class="breadcrumb breadcrumb-dots mb-0">
+                                                            <li class="breadcrumb-item"><a href="{% url 'student_dashboard' %}">Dashboard</a></li>
+                                                            <li class="breadcrumb-item active" aria-current="page">Cuestionarios</li>
+                                                        </ol>
+                                                    </nav>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page Banner END -->
+                            <!-- =======================
+                            Page content START -->
+                            <section class="pt-0">
+                                <div class="container">
+
+                                    <!-- Estadísticas del Estudiante START -->
+                                    <div class="row mb-4">
+                                        <div class="col-12">
+                                            <div class="bg-primary text-white p-4 rounded-3">
+                                                <div class="row text-center">
+                                                    <div class="col-md-3">
+                                                        <h3 class="mb-0">{{ cuestionarios_disponibles|length }}</h3>
+                                                        <p class="mb-0">Cuestionarios Disponibles</p>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <h3 class="mb-0">
+                                                            {% for item in cuestionarios_disponibles %}
+                                                                {% if item.completado %}{{ forloop.counter0|add:1 }}{% endif %}
+                                                            {% empty %}0{% endfor %}
+                                                        </h3>
+                                                        <p class="mb-0">Completados</p>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <h3 class="mb-0">
+                                                            {% for item in cuestionarios_disponibles %}
+                                                                {% if not item.puede_intentar %}{{ forloop.counter0|add:1 }}{% endif %}
+                                                            {% empty %}0{% endfor %}
+                                                        </h3>
+                                                        <p class="mb-0">Intentos Agotados</p>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <h3 class="mb-0">
+                                                            {% for item in cuestionarios_disponibles %}
+                                                                {% if item.mejor_puntaje > 0 %}{{ item.mejor_puntaje|floatformat:1 }}{% endif %}
+                                                            {% empty %}0{% endfor %}
+                                                        </h3>
+                                                        <p class="mb-0">Mejor Puntaje Promedio</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Estadísticas del Estudiante END -->
+
+                                    <!-- Filter bar START -->
+                                    <form class="bg-light border p-4 rounded-3 my-4 z-index-9 position-relative">
+                                        <div class="row g-3">
+                                            <!-- Input -->
+                                            <div class="col-xl-4">
+                                                <input class="form-control me-1" type="search" placeholder="🔍 Buscar cuestionarios..." id="buscarCuestionario">
+                                            </div>
+
+                                            <!-- Select item -->
+                                            <div class="col-xl-7">
+                                                <div class="row g-3">
+                                                    <!-- Filtro por Estado -->
+                                                    <div class="col-sm-6 col-md-4 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Filtro por estado" id="filtroEstado">
+                                                            <option value="">📊 Todos los Estados</option>
+                                                            <option value="disponible">✅ Disponibles</option>
+                                                            <option value="completado">🎯 Completados</option>
+                                                            <option value="no_disponible">⏰ No Disponibles</option>
+                                                            <option value="agotado">🚫 Intentos Agotados</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Filtro por Dificultad -->
+                                                    <div class="col-sm-6 col-md-4 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Filtro por dificultad" id="filtroDificultad">
+                                                            <option value="">⭐ Todas las Dificultades</option>
+                                                            <option value="facil">🟢 Fácil (1-5 preguntas)</option>
+                                                            <option value="medio">🟡 Medio (6-15 preguntas)</option>
+                                                            <option value="dificil">🔴 Difícil (16+ preguntas)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Ordenar -->
+                                                    <div class="col-sm-6 col-md-4 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Ordenar" id="ordenar">
+                                                            <option value="reciente">📅 Más Recientes</option>
+                                                            <option value="antiguo">📅 Más Antiguos</option>
+                                                            <option value="alfabetico">🔤 A-Z</option>
+                                                            <option value="puntaje">⭐ Por Puntaje</option>
+                                                        </select>
+                                                    </div>
+                                                </div> <!-- Row END -->
+                                            </div>
+                                            <!-- Button -->
+                                            <div class="col-xl-1">
+                                                <a href="{% url 'historial_cuestionarios' %}" class="btn btn-info mb-0 rounded z-index-1 w-100" title="Ver Historial">
+                                                    <i class="fas fa-history"></i>
+                                                </a>
+                                            </div>
+                                        </div> <!-- Row END -->
+                                    </form>
+                                    <!-- Filter bar END -->
+                                     <div class="row mt-3">
+                                        <!-- Main content START -->
+                                        <div class="col-12">
+
+                                            <!-- Course Grid START -->
+                                            <div class="row g-4" id="cuestionariosGrid">
+
+                                                {% for item in cuestionarios_disponibles %}
+                                                <!-- Card item START -->
+                                                <div class="col-sm-6 col-lg-4 col-xl-3 cuestionario-item quiz-card" 
+                                                     data-estado="{% if not item.disponible %}no_disponible{% elif not item.puede_intentar %}agotado{% elif item.completado %}completado{% else %}disponible{% endif %}"
+                                                     data-dificultad="{% if item.cuestionario.preguntas.count <= 5 %}facil{% elif item.cuestionario.preguntas.count <= 15 %}medio{% else %}dificil{% endif %}"
+                                                     data-titulo="{{ item.cuestionario.recurso.titulo|lower }}"
+                                                     data-fecha="{{ item.cuestionario.recurso.fecha_creacion|date:'Y-m-d' }}"
+                                                     data-puntaje="{{ item.mejor_puntaje|floatformat:1 }}">
+                                                    
+                                                    <div class="card shadow h-100">
+                                                        <!-- Image -->
+                                                        <img src="{% static 'img/Plataforma/General/default_cuestionario.jpg' %}" class="card-img-top" alt="{{ item.cuestionario.recurso.titulo }}">
+                                                        
+                                                        <!-- Card body -->
+                                                        <div class="card-body pb-0">
+                                                            <!-- Badge de Estado -->
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                {% if not item.disponible %}
+                                                                    <span class="badge badge-no-disponible">⏰ No Disponible</span>
+                                                                {% elif not item.puede_intentar %}
+                                                                    <span class="badge badge-agotado">🚫 Sin Intentos</span>
+                                                                {% elif item.completado %}
+                                                                    <span class="badge badge-completado">✅ Completado</span>
+                                                                {% else %}
+                                                                    <span class="badge badge-disponible">🎯 Disponible</span>
+                                                                {% endif %}
+                                                                
+                                                                <!-- Indicador de Calificación -->
+                                                                {% if item.cuestionario.calificacion_automatica %}
+                                                                    <span class="text-success" title="Calificación Automática">
+                                                                        <i class="fas fa-robot"></i>
+                                                                    </span>
+                                                                {% else %}
+                                                                    <span class="text-warning" title="Calificación Manual">
+                                                                        <i class="fas fa-user-check"></i>
+                                                                    </span>
+                                                                {% endif %}
+                                                            </div>
+                                                            
+                                                            <!-- Title -->
+                                                            <h5 class="card-title mb-2">
+                                                                {{ item.cuestionario.recurso.titulo|truncatechars:40 }}
+                                                            </h5>
+                                                            
+                                                            <!-- Course Info -->
+                                                            {% if item.cuestionario.recurso.seccion %}
+                                                                <p class="text-muted small mb-2">
+                                                                    <i class="fas fa-graduation-cap me-1"></i>{{ item.cuestionario.recurso.seccion.curso.titulo|truncatechars:25 }}
+                                                                </p>
+                                                            {% else %}
+                                                                <p class="text-muted small mb-2">
+                                                                    <i class="fas fa-folder me-1"></i>Cuestionario General
+                                                                </p>
+                                                            {% endif %}
+                                                            
+                                                            <!-- Fechas de Disponibilidad -->
+                                                            {% if item.cuestionario.fecha_apertura or item.cuestionario.fecha_cierre %}
+                                                            <div class="fechas-disponibilidad">
+                                                                {% if item.cuestionario.fecha_apertura %}
+                                                                    <div class="small">
+                                                                        <i class="fas fa-calendar-check text-success me-1"></i>
+                                                                        Abre: {{ item.cuestionario.fecha_apertura|date:"d/m/Y H:i" }}
+                                                                    </div>
+                                                                {% endif %}
+                                                                {% if item.cuestionario.fecha_cierre %}
+                                                                    <div class="small">
+                                                                        <i class="fas fa-calendar-times text-danger me-1"></i>
+                                                                        Cierra: {{ item.cuestionario.fecha_cierre|date:"d/m/Y H:i" }}
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            {% endif %}
+                                                            
+                                                            <!-- Stats del Cuestionario -->
+                                                            <ul class="list-inline mb-2">
+                                                                <li class="list-inline-item me-0 small">
+                                                                    <i class="fas fa-question-circle text-info"></i> {{ item.cuestionario.preguntas.count }} preguntas
+                                                                </li>
+                                                                <li class="list-inline-item ms-2 small">
+                                                                    <i class="fas fa-star text-warning"></i> {{ item.cuestionario.puntaje_total|floatformat:0 }}pts
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                        
+                                                        <!-- Información de Intentos superpuesta -->
+                                                        <div class="intentos-info mx-3">
+                                                            <div class="row text-center small">
+                                                                <div class="col-4">
+                                                                    <strong>⏱️ {{ item.cuestionario.tiempo_limite }}min</strong>
+                                                                </div>
+                                                                <div class="col-4">
+                                                                    <strong>🔄 {{ item.intentos_realizados }}/
+                                                                    {% if item.cuestionario.intentos_permitidos == 999 %}∞{% else %}{{ item.cuestionario.intentos_permitidos }}{% endif %}
+                                                                    </strong>
+                                                                </div>
+                                                                <div class="col-4">
+                                                                    {% if item.mejor_puntaje > 0 %}
+                                                                        <strong class="text-success">📊 {{ item.mejor_puntaje|floatformat:1 }}</strong>
+                                                                    {% else %}
+                                                                        <strong class="text-muted">📊 --</strong>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Card footer -->
+                                                        <div class="card-footer pt-2 pb-3">
+                                                            
+                                                            <!-- Progreso si completado -->
+                                                            {% if item.completado and item.cuestionario.puntaje_total > 0 %}
+                                                                <div class="progress mb-2" style="height: 6px;">
+                                                                    {% widthratio item.mejor_puntaje item.cuestionario.puntaje_total 100 as porcentaje %}
+                                                                    <div class="progress-bar progress-bar-custom" role="progressbar" 
+                                                                         style="width: {{ porcentaje }}%" 
+                                                                         aria-valuenow="{{ porcentaje }}" 
+                                                                         aria-valuemin="0" 
+                                                                         aria-valuemax="100">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="text-center small text-muted mb-2">
+                                                                    {{ item.mejor_puntaje|floatformat:1 }}/{{ item.cuestionario.puntaje_total|floatformat:0 }} puntos ({{ porcentaje }}%)
+                                                                </div>
+                                                            {% endif %}
+                                                            
+                                                            <!-- Botones de Acción -->
+                                                            <div class="d-flex gap-2">
+                                                                {% if item.disponible and item.puede_intentar %}
+                                                                    <a href="{% url 'iniciar_cuestionario' item.cuestionario.id %}" class="btn btn-realizar flex-fill">
+                                                                        {% if item.completado %}
+                                                                            <i class="fas fa-redo me-1"></i>Reintentar
+                                                                        {% else %}
+                                                                            <i class="fas fa-play me-1"></i>Comenzar
+                                                                        {% endif %}
+                                                                    </a>
+                                                                {% else %}
+                                                                    <button class="btn btn-no-disponible flex-fill" disabled>
+                                                                        {% if not item.disponible %}
+                                                                            <i class="fas fa-lock me-1"></i>No Disponible
+                                                                        {% else %}
+                                                                            <i class="fas fa-ban me-1"></i>Sin Intentos
+                                                                        {% endif %}
+                                                                    </button>
+                                                                {% endif %}
+                                                                
+                                                                <!-- Botón de Ver Historial si tiene intentos -->
+                                                                {% if item.intentos_realizados > 0 %}
+                                                                    <button class="btn btn-outline-info btn-sm" onclick="verHistorialCuestionario({{ item.cuestionario.id }})" title="Ver historial">
+                                                                        <i class="fas fa-history"></i>
+                                                                    </button>
+                                                                {% endif %}
+                                                                
+                                                                <!-- Dropdown con más opciones -->
+                                                                <div class="dropdown">
+                                                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                                        <i class="fas fa-ellipsis-v"></i>
+                                                                    </button>
+                                                                    <ul class="dropdown-menu">
+                                                                        <li><a class="dropdown-item" href="#" onclick="verDetallesCuestionario({{ item.cuestionario.id }})">
+                                                                            <i class="fas fa-info-circle me-2"></i>Ver Detalles
+                                                                        </a></li>
+                                                                        {% if item.completado %}
+                                                                        <li><a class="dropdown-item" href="#" onclick="verMejorIntento({{ item.cuestionario.id }})">
+                                                                            <i class="fas fa-trophy me-2"></i>Mejor Intento
+                                                                        </a></li>
+                                                                        {% endif %}
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card item END -->
+                                                {% empty %}
+                                                <!-- No hay cuestionarios -->
+                                                <div class="col-12">
+                                                    <div class="text-center py-5">
+                                                        <div class="mb-4">
+                                                            <i class="fas fa-clipboard-list text-muted" style="font-size: 4rem;"></i>
+                                                        </div>
+                                                        <h4 class="text-muted mb-3">No hay cuestionarios disponibles</h4>
+                                                        <p class="text-muted mb-4">Aún no tienes cuestionarios asignados para realizar</p>
+                                                        <a href="{% url 'student_dashboard' %}" class="btn btn-primary">
+                                                            <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+
+                                            </div>
+                                            <!-- Course Grid END -->
+
+                                            <!-- Pagination START -->
+                                            <div class="col-12">
+                                                <nav class="mt-4 d-flex justify-content-center" aria-label="navigation">
+                                                    <ul class="pagination pagination-primary-soft d-inline-block d-md-flex rounded mb-0">
+                                                        <li class="page-item mb-0"><a class="page-link" href="#" tabindex="-1"><i class="fas fa-angle-double-left"></i></a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">1</a></li>
+                                                        <li class="page-item mb-0 active"><a class="page-link" href="#">2</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">..</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">6</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#"><i class="fas fa-angle-double-right"></i></a></li>
+                                                    </ul>
+                                                </nav>
+                                            </div>
+                                            <!-- Pagination END -->
+                                        </div>
+                                        <!-- Main content END -->
+                                    </div><!-- Row END -->
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page content END -->
+
+                        </div>
+                        <!-- Main content END -->
+                    </div><!-- Row END -->
+                </div>
+            </section>
+        </div>
+    </div>
+    <!-- =======================
+    Inner part END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Modal de Detalles del Cuestionario START -->
+<div class="modal fade" id="modalDetallesCuestionario" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalDetallesLabel">
+                    <i class="fas fa-info-circle me-2"></i>Información del Cuestionario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalDetallesContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando información...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Detalles END -->
+
+<!-- Modal de Confirmación para Iniciar Cuestionario START -->
+<div class="modal fade" id="modalConfirmarInicio" tabindex="-1" aria-labelledby="modalConfirmarLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalConfirmarLabel">
+                    <i class="fas fa-play-circle me-2"></i>¿Comenzar Cuestionario?
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
+                    <h6>⚠️ Antes de comenzar, ten en cuenta:</h6>
+                    <ul class="list-unstyled mt-3">
+                        <li class="mb-2">⏱️ <strong>Tiempo límite:</strong> <span id="tiempoLimite">--</span> minutos</li>
+                        <li class="mb-2">🔄 <strong>Intentos restantes:</strong> <span id="intentosRestantes">--</span></li>
+                        <li class="mb-2">💾 <strong>Guardado automático:</strong> Tus respuestas se guardan automáticamente</li>
+                        <li class="mb-2">🚫 <strong>No podrás pausar</strong> una vez iniciado</li>
+                    </ul>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Consejo:</strong> Asegúrate de tener buena conexión a internet y tiempo suficiente.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <a href="#" id="btnConfirmarInicio" class="btn btn-success">
+                    <i class="fas fa-play me-1"></i>¡Comenzar Ahora!
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Confirmación END -->
+
+<!-- Scripts -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'assets/vendor/choices/js/choices.min.js' %}"></script>
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+<!-- JavaScript para Funcionalidades de Estudiante -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 Biblioteca de Cuestionarios para Estudiante cargada');
+    
+    // Referencias a elementos
+    const buscarInput = document.getElementById('buscarCuestionario');
+    const filtroEstado = document.getElementById('filtroEstado');
+    const filtroDificultad = document.getElementById('filtroDificultad');
+    const ordenarSelect = document.getElementById('ordenar');
+    
+    // Función de búsqueda y filtrado
+    function filtrarCuestionarios() {
+        const textoBusqueda = buscarInput.value.toLowerCase();
+        const estadoSeleccionado = filtroEstado.value;
+        const dificultadSeleccionada = filtroDificultad.value;
+        const items = document.querySelectorAll('.cuestionario-item');
+        
+        let itemsVisibles = 0;
+        
+        items.forEach(item => {
+            const titulo = item.dataset.titulo;
+            const estado = item.dataset.estado;
+            const dificultad = item.dataset.dificultad;
+            
+            let mostrar = true;
+            
+            // Filtro por texto
+            if (textoBusqueda && !titulo.includes(textoBusqueda)) {
+                mostrar = false;
+            }
+            
+            // Filtro por estado
+            if (estadoSeleccionado && estado !== estadoSeleccionado) {
+                mostrar = false;
+            }
+            
+            // Filtro por dificultad
+            if (dificultadSeleccionada && dificultad !== dificultadSeleccionada) {
+                mostrar = false;
+            }
+            
+            if (mostrar) {
+                item.style.display = 'block';
+                itemsVisibles++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        console.log(`📊 Mostrando ${itemsVisibles} de ${items.length} cuestionarios`);
+        
+        // Mostrar mensaje si no hay resultados
+        mostrarMensajeSinResultados(itemsVisibles === 0);
+    }
+    
+    // Función de ordenamiento
+    function ordenarCuestionarios() {
+        const criterio = ordenarSelect.value;
+        const items = Array.from(document.querySelectorAll('.cuestionario-item'));
+        
+        items.sort((a, b) => {
+            switch(criterio) {
+                case 'reciente':
+                    return new Date(b.dataset.fecha) - new Date(a.dataset.fecha);
+                case 'antiguo':
+                    return new Date(a.dataset.fecha) - new Date(b.dataset.fecha);
+                case 'alfabetico':
+                    return a.dataset.titulo.localeCompare(b.dataset.titulo);
+                case 'puntaje':
+                    return parseFloat(b.dataset.puntaje || 0) - parseFloat(a.dataset.puntaje || 0);
+                default:
+                    return 0;
+            }
+        });
+        
+        // Reordenar en el DOM
+        const parent = items[0]?.parentNode;
+        if (parent) {
+            items.forEach(item => parent.appendChild(item));
+        }
+    }
+    
+    // Mostrar mensaje sin resultados
+    function mostrarMensajeSinResultados(mostrar) {
+        let mensajeExistente = document.getElementById('mensajeSinResultados');
+        
+        if (mostrar && !mensajeExistente) {
+            const mensaje = document.createElement('div');
+            mensaje.id = 'mensajeSinResultados';
+            mensaje.className = 'col-12';
+            mensaje.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-search text-muted" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-muted mb-3">No se encontraron cuestionarios</h5>
+                    <p class="text-muted">Intenta ajustar los filtros de búsqueda</p>
+                    <button class="btn btn-outline-primary" onclick="limpiarFiltros()">
+                        <i class="fas fa-times me-1"></i>Limpiar Filtros
+                    </button>
+                </div>
+            `;
+            document.getElementById('cuestionariosGrid').appendChild(mensaje);
+        } else if (!mostrar && mensajeExistente) {
+            mensajeExistente.remove();
+        }
+    }
+    
+    // Event listeners para filtros
+    if (buscarInput) buscarInput.addEventListener('input', filtrarCuestionarios);
+    if (filtroEstado) filtroEstado.addEventListener('change', filtrarCuestionarios);
+    if (filtroDificultad) filtroDificultad.addEventListener('change', filtrarCuestionarios);
+    if (ordenarSelect) ordenarSelect.addEventListener('change', ordenarCuestionarios);
+    
+    // Función para limpiar filtros
+    window.limpiarFiltros = function() {
+        buscarInput.value = '';
+        filtroEstado.value = '';
+        filtroDificultad.value = '';
+        ordenarSelect.value = 'reciente';
+        filtrarCuestionarios();
+        ordenarCuestionarios();
+    };
+    
+    // Efectos visuales para las cards
+    document.querySelectorAll('.quiz-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 12px 30px rgba(0,0,0,0.2)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        });
+    });
+    
+    // Inicializar ordenamiento por defecto
+    ordenarCuestionarios();
+    
+    console.log('✅ Biblioteca de Cuestionarios para Estudiante inicializada');
+});
+
+// Función para ver detalles del cuestionario
+function verDetallesCuestionario(cuestionarioId) {
+    console.log('📋 Viendo detalles del cuestionario:', cuestionarioId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalDetallesCuestionario'));
+    modal.show();
+    
+    // Simular carga de contenido
+    setTimeout(() => {
+        document.getElementById('modalDetallesContent').innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Información del Cuestionario
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>ID:</strong> ${cuestionarioId}</div>
+                        <div class="mb-2"><strong>Tipo:</strong> Evaluación</div>
+                        <div class="mb-2"><strong>Modalidad:</strong> Individual</div>
+                        <div class="mb-0"><strong>Disponibilidad:</strong> <span class="badge bg-success">Activo</span></div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success mb-3">
+                        <i class="fas fa-chart-line me-2"></i>Tus Estadísticas
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>Intentos realizados:</strong> 0</div>
+                        <div class="mb-2"><strong>Mejor puntaje:</strong> --</div>
+                        <div class="mb-2"><strong>Promedio:</strong> --</div>
+                        <div class="mb-0"><strong>Estado:</strong> Pendiente</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h6 class="text-info mb-3">
+                <i class="fas fa-list me-2"></i>Instrucciones
+            </h6>
+            <div class="alert alert-info">
+                <p class="mb-2">📖 <strong>Instrucciones generales:</strong></p>
+                <ul class="mb-0">
+                    <li>Lee cuidadosamente cada pregunta</li>
+                    <li>Puedes navegar entre preguntas libremente</li>
+                    <li>Tus respuestas se guardan automáticamente</li>
+                    <li>Al finalizar, revisa tus respuestas antes de enviar</li>
+                </ul>
+            </div>
+        `;
+    }, 500);
+}
+
+// Función para ver historial de un cuestionario específico
+function verHistorialCuestionario(cuestionarioId) {
+    console.log('📊 Viendo historial del cuestionario:', cuestionarioId);
+    // Redirigir al historial filtrado por este cuestionario
+    window.location.href = `/estudiante/historial-cuestionarios/?cuestionario=${cuestionarioId}`;
+}
+
+// Función para ver el mejor intento
+function verMejorIntento(cuestionarioId) {
+    console.log('🏆 Viendo mejor intento del cuestionario:', cuestionarioId);
+    alert('Funcionalidad de ver mejor intento en desarrollo');
+}
+
+// Función mejorada para confirmar inicio de cuestionario
+function confirmarIniciarCuestionario(cuestionarioId, tiempoLimite, intentosRestantes) {
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmarInicio'));
+    
+    // Actualizar información en el modal
+    document.getElementById('tiempoLimite').textContent = tiempoLimite;
+    document.getElementById('intentosRestantes').textContent = intentosRestantes;
+    document.getElementById('btnConfirmarInicio').href = `/estudiante/iniciar-cuestionario/${cuestionarioId}/`;
+    
+    modal.show();
+}
+
+// Interceptar clics en botones "Comenzar" para mostrar confirmación
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-realizar')) {
+        e.preventDefault();
+        const btn = e.target.closest('.btn-realizar');
+        const href = btn.getAttribute('href');
+        
+        // CORRIGE ESTA PARTE:
+        const card = btn.closest('.cuestionario-item');
+        const tiempoElement = Array.from(card.querySelectorAll('strong')).find(el => el.textContent.includes('⏱️'));
+        const tiempoLimite = tiempoElement ? tiempoElement.textContent.replace('⏱️', '').trim() : '--';
+        
+        const intentosElement = Array.from(card.querySelectorAll('strong')).find(el => el.textContent.includes('🔄'));
+        const intentosInfo = intentosElement ? intentosElement.textContent.replace('🔄', '').trim() : '--';
+        
+        // Extraer ID del cuestionario de la URL
+        const match = href.match(/\/iniciar-cuestionario\/(\d+)\//);
+        if (match) {
+            const cuestionarioId = match[1];
+            confirmarIniciarCuestionario(cuestionarioId, tiempoLimite, intentosInfo);
+        } else {
+            window.location.href = href;
+        }
+    }
+});
+
+// Función para calcular tiempo restante si hay fechas de cierre
+function actualizarTiemposRestantes() {
+    document.querySelectorAll('[data-fecha-cierre]').forEach(elemento => {
+        const fechaCierre = new Date(elemento.dataset.fechaCierre);
+        const ahora = new Date();
+        const diferencia = fechaCierre - ahora;
+        
+        if (diferencia > 0) {
+            const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+            const horas = Math.floor((diferencia % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            
+            let texto = '';
+            if (dias > 0) {
+                texto = `${dias}d ${horas}h`;
+            } else if (horas > 0) {
+                texto = `${horas}h`;
+            } else {
+                texto = 'Cerrando pronto';
+            }
+            
+            elemento.querySelector('.tiempo-restante').textContent = texto;
+        }
+    });
+}
+
+// Actualizar tiempos cada minuto
+setInterval(actualizarTiemposRestantes, 60000);
+actualizarTiemposRestantes();
+</script>
+
+</body>
+</html>
+
+                                  

@@ -13,10 +13,11 @@ import tempfile
 import json
 
 
-from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, PreguntaCuestionario, OpcionPregunta, TipoPregunta
+from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, PreguntaCuestionario, OpcionPregunta, TipoPregunta, IntentoCuestionario, RespuestaEstudiante
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
+from django.db.models import Q, Sum  
  
 
 @csrf_exempt
@@ -663,11 +664,12 @@ def procesar_molecula(request):
 
 #Paula
 
+###########   Docente   ###############
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Sum, Max
-from datetime import datetime
+from datetime import datetime,timedelta
 
 @login_required
 def instructorQuiz(request, seccion_id=None):
@@ -840,7 +842,8 @@ def guardar_cuestionario(request):
                 tipo=tipo_cuestionario,
                 titulo=titulo,
                 descripcion=descripcion,
-                orden=seccion.recursos.count() + 1 if seccion else 1
+                orden=seccion.recursos.count() + 1 if seccion else 1,
+                creado_por=request.user
             )
             
             print(f"✅ Recurso creado con ID: {recurso.id}")
@@ -2023,14 +2026,21 @@ def subir_recurso(request):
         }, status=400)
 
 
+@login_required
 def biblioteca_cuestionarios(request):
     """Vista para mostrar la biblioteca de cuestionarios"""
     user = request.user
     
-    # Obtener cuestionarios del usuario actual
+    # ✅ CAMBIAR ESTA CONSULTA:
     cuestionarios = Cuestionario.objects.filter(
-        recurso__seccion__curso__profesor=user
+        Q(recurso__seccion__curso__profesor=user) |  # Con sección del usuario
+        Q(recurso__seccion__isnull=True)              # Sin sección (biblioteca)
     ).select_related('recurso', 'recurso__seccion', 'recurso__seccion__curso').order_by('-id')
+    
+    # O MÁS SIMPLE, mostrar TODOS:
+    # cuestionarios = Cuestionario.objects.all().order_by('-id')
+    
+    print(f"🔍 Total encontrados: {cuestionarios.count()}")  # Para debug
     
     context = {
         'cuestionarios': cuestionarios,
@@ -2039,3 +2049,328 @@ def biblioteca_cuestionarios(request):
     }
     
     return render(request, 'docente/biblioteca_cuestionarios.html', context)
+
+
+@login_required
+def asignar_cuestionario_seccion(request, cuestionario_id):
+    """Asignar un cuestionario de biblioteca a una sección específica"""
+    cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
+    
+    # Verificar que sea del profesor
+    if cuestionario.recurso.creado_por != request.user:
+        return redirect('bibliotecaCuestionarios')
+    
+    if request.method == 'POST':
+        seccion_id = request.POST.get('seccion_id')
+        seccion = get_object_or_404(Seccion, id=seccion_id, curso__profesor=request.user)
+        
+        # Asignar el cuestionario a la sección
+        cuestionario.recurso.seccion = seccion
+        cuestionario.recurso.orden = seccion.recursos.count() + 1
+        cuestionario.recurso.save()
+        
+        messages.success(request, f'Cuestionario "{cuestionario.recurso.titulo}" asignado a {seccion.titulo}')
+        return redirect('bibliotecaCuestionarios')
+    
+    # Obtener cursos y secciones del profesor
+    cursos = request.user.cursos_creados.all()
+    
+    return render(request, 'docente/asignar_cuestionario.html', {
+        'cuestionario': cuestionario,
+        'cursos': cursos
+    })
+
+
+
+############ Estudiante ############
+
+def biblioteca_cuestionarios_estudiante(request):
+    """Vista de biblioteca de cuestionarios para estudiantes"""
+    user = request.user
+    
+    # Obtener cuestionarios disponibles (todos por ahora, luego filtrar por curso)
+    cuestionarios_disponibles = []
+    
+    for cuestionario in Cuestionario.objects.all():
+        # Verificar disponibilidad por fechas
+        disponible = cuestionario.esta_disponible()
+        
+        # Contar intentos del estudiante
+        intentos_realizados = IntentoCuestionario.objects.filter(
+            estudiante=user, 
+            cuestionario=cuestionario
+        ).count()
+        
+        # Verificar si puede hacer más intentos
+        puede_intentar = (cuestionario.intentos_permitidos == 999 or 
+                         intentos_realizados < cuestionario.intentos_permitidos)
+        
+        # Obtener mejor puntaje
+        mejor_intento = IntentoCuestionario.objects.filter(
+            estudiante=user, 
+            cuestionario=cuestionario,
+            completado=True
+        ).order_by('-puntaje_obtenido').first()
+        
+        cuestionarios_disponibles.append({
+            'cuestionario': cuestionario,
+            'disponible': disponible,
+            'intentos_realizados': intentos_realizados,
+            'puede_intentar': puede_intentar,
+            'mejor_puntaje': mejor_intento.puntaje_obtenido if mejor_intento else 0,
+            'completado': mejor_intento is not None
+        })
+    
+    context = {
+        'cuestionarios_disponibles': cuestionarios_disponibles,
+        'imgPerfil': user.imgPerfil,
+        'usuario': user.username,
+    }
+    
+    return render(request, 'estudiante/biblioteca_cuestionarios.html', context)
+
+@role_required('estudiante')
+@login_required
+def iniciar_cuestionario(request, cuestionario_id):
+    """Iniciar un nuevo intento de cuestionario"""
+    cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
+    user = request.user
+    
+    print(f"🚀 Iniciando cuestionario {cuestionario_id} para {user.username}")
+    
+    # Verificar disponibilidad
+    if not cuestionario.esta_disponible():
+        messages.error(request, 'Este cuestionario no está disponible en este momento.')
+        return redirect('biblioteca_cuestionarios_estudiante')
+    
+    # Verificar intentos
+    intentos_realizados = IntentoCuestionario.objects.filter(
+        estudiante=user, 
+        cuestionario=cuestionario
+    ).count()
+    
+    if (cuestionario.intentos_permitidos != 999 and 
+        intentos_realizados >= cuestionario.intentos_permitidos):
+        messages.error(request, 'Has agotado todos los intentos para este cuestionario.')
+        return redirect('biblioteca_cuestionarios_estudiante')
+    
+    # Crear nuevo intento
+    intento = IntentoCuestionario.objects.create(
+        estudiante=user,
+        cuestionario=cuestionario,
+        numero_intento=intentos_realizados + 1
+    )
+    
+    print(f"✅ Intento creado: {intento.id}")
+    
+    return redirect('realizar_cuestionario', intento_id=intento.id)
+
+@role_required('estudiante')
+@login_required
+def realizar_cuestionario(request, intento_id):
+    """Interfaz para realizar el cuestionario"""
+    intento = get_object_or_404(IntentoCuestionario, id=intento_id, estudiante=request.user)
+    
+    print(f"📝 Realizando cuestionario - Intento: {intento_id}")
+    
+    if intento.completado:
+        return redirect('resultado_cuestionario', intento_id=intento.id)
+    
+    # Obtener preguntas
+    preguntas = intento.cuestionario.preguntas.all().order_by('orden')
+    
+    # Calcular tiempo restante
+    tiempo_limite_segundos = intento.cuestionario.tiempo_limite * 60
+    tiempo_transcurrido = (timezone.now() - intento.fecha_inicio).total_seconds()
+    tiempo_restante = max(0, tiempo_limite_segundos - tiempo_transcurrido)
+    
+    if tiempo_restante <= 0:
+        # Tiempo agotado, finalizar automáticamente
+        print("⏰ Tiempo agotado, finalizando automáticamente")
+        return redirect('finalizar_cuestionario_estudiante', intento_id=intento.id)
+    
+    # Obtener respuestas existentes
+    respuestas_existentes = {}
+    for respuesta in intento.respuestas.all():
+        respuestas_existentes[respuesta.pregunta.id] = respuesta
+    
+    context = {
+        'intento': intento,
+        'cuestionario': intento.cuestionario,
+        'preguntas': preguntas,
+        'tiempo_restante': int(tiempo_restante),
+        'respuestas_existentes': respuestas_existentes,
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'estudiante/realizar_cuestionario.html', context)
+
+@role_required('estudiante')
+@login_required
+@csrf_exempt
+def guardar_respuesta(request):
+    """Guardar respuesta de una pregunta vía AJAX"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            intento_id = data.get('intento_id')
+            pregunta_id = data.get('pregunta_id')
+            respuesta = data.get('respuesta')
+            
+            print(f"💾 Guardando respuesta - Pregunta: {pregunta_id}, Respuesta: {respuesta}")
+            
+            intento = get_object_or_404(IntentoCuestionario, id=intento_id, estudiante=request.user)
+            pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+            
+            # Crear o actualizar respuesta
+            respuesta_obj, created = RespuestaEstudiante.objects.get_or_create(
+                intento=intento,
+                pregunta=pregunta,
+                defaults={'fecha_respuesta': timezone.now()}
+            )
+            
+            # Procesar según tipo de pregunta
+            if pregunta.tipo.nombre in ['opcion_unica', 'falso_verdadero']:
+                if respuesta:
+                    opcion = get_object_or_404(OpcionPregunta, id=respuesta)
+                    respuesta_obj.opcion_seleccionada = opcion
+                    respuesta_obj.es_correcta = opcion.es_correcta
+                    respuesta_obj.puntaje_obtenido = pregunta.puntaje if opcion.es_correcta else 0
+                else:
+                    respuesta_obj.opcion_seleccionada = None
+                    respuesta_obj.es_correcta = False
+                    respuesta_obj.puntaje_obtenido = 0
+            
+            elif pregunta.tipo.nombre == 'opcion_multiple':
+                if isinstance(respuesta, list) and respuesta:
+                    respuesta_obj.opciones_multiples = ','.join(map(str, respuesta))
+                    # Calcular puntaje para opción múltiple
+                    opciones_correctas = set(str(op.id) for op in pregunta.opciones.filter(es_correcta=True))
+                    opciones_seleccionadas = set(map(str, respuesta))
+                    
+                    if opciones_seleccionadas == opciones_correctas:
+                        respuesta_obj.es_correcta = True
+                        respuesta_obj.puntaje_obtenido = pregunta.puntaje
+                    else:
+                        respuesta_obj.es_correcta = False
+                        respuesta_obj.puntaje_obtenido = 0
+                else:
+                    respuesta_obj.opciones_multiples = ''
+                    respuesta_obj.es_correcta = False
+                    respuesta_obj.puntaje_obtenido = 0
+            
+            elif pregunta.tipo.nombre == 'respuesta_abierta':
+                respuesta_obj.respuesta_texto = respuesta or ''
+                respuesta_obj.es_correcta = None  # Requiere calificación manual
+                respuesta_obj.puntaje_obtenido = 0  # Se califica después
+            
+            elif pregunta.tipo.nombre == 'completar':
+                respuesta_obj.respuestas_completar = respuesta or ''
+                # Calcular puntaje automáticamente
+                respuesta_obj.calcular_puntaje_automatico()
+            
+            elif pregunta.tipo.nombre == 'unir_lineas':
+                respuesta_obj.conexiones_realizadas = json.dumps(respuesta) if respuesta else ''
+                # Calcular puntaje automáticamente
+                respuesta_obj.calcular_puntaje_automatico()
+            
+            elif pregunta.tipo.nombre in ['simulador_2d', 'simulador_3d']:
+                respuesta_obj.respuesta_smiles = respuesta or ''
+                respuesta_obj.es_correcta = None  # Requiere validación
+                respuesta_obj.puntaje_obtenido = 0
+            
+            respuesta_obj.save()
+            
+            print(f"✅ Respuesta guardada - Puntaje: {respuesta_obj.puntaje_obtenido}")
+            
+            return JsonResponse({
+                'success': True,
+                'puntaje_obtenido': float(respuesta_obj.puntaje_obtenido)
+            })
+            
+        except Exception as e:
+            print(f"❌ Error al guardar respuesta: {str(e)}")
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+@role_required('estudiante')
+@login_required
+def finalizar_cuestionario_estudiante(request, intento_id):
+    """Finalizar el cuestionario y calcular puntaje"""
+    intento = get_object_or_404(IntentoCuestionario, id=intento_id, estudiante=request.user)
+    
+    print(f"🏁 Finalizando cuestionario - Intento: {intento_id}")
+    
+    if not intento.completado:
+        # Calcular puntaje total
+        puntaje_total = 0
+        for respuesta in intento.respuestas.all():
+            puntaje_total += respuesta.puntaje_obtenido
+        
+        # Finalizar intento
+        intento.puntaje_obtenido = puntaje_total
+        intento.completado = True
+        intento.fecha_finalizacion = timezone.now()
+        intento.tiempo_empleado = (intento.fecha_finalizacion - intento.fecha_inicio).total_seconds()
+        intento.save()
+        
+        print(f"✅ Cuestionario finalizado - Puntaje: {puntaje_total}")
+    
+    return redirect('resultado_cuestionario', intento_id=intento.id)
+
+@role_required('estudiante')
+@login_required
+def resultado_cuestionario(request, intento_id):
+    """Mostrar resultados del cuestionario"""
+    intento = get_object_or_404(IntentoCuestionario, id=intento_id, estudiante=request.user)
+    
+    # Obtener todas las respuestas con detalles
+    respuestas = intento.respuestas.select_related(
+        'pregunta', 'opcion_seleccionada'
+    ).prefetch_related('pregunta__opciones').all()
+    
+    # Calcular porcentaje
+    puntaje_porcentaje = 0
+    if intento.cuestionario.puntaje_total > 0:
+        puntaje_porcentaje = (intento.puntaje_obtenido / intento.cuestionario.puntaje_total * 100)
+    
+    context = {
+        'intento': intento,
+        'respuestas': respuestas,
+        'cuestionario': intento.cuestionario,
+        'puntaje_porcentaje': puntaje_porcentaje,
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'estudiante/resultado_cuestionario.html', context)
+
+@role_required('estudiante')
+@login_required
+def historial_cuestionarios(request):
+    """Historial de intentos del estudiante"""
+    user = request.user
+    
+    # Filtro opcional por cuestionario específico
+    cuestionario_id = request.GET.get('cuestionario')
+    
+    intentos = IntentoCuestionario.objects.filter(
+        estudiante=user,
+        completado=True
+    ).select_related(
+        'cuestionario', 'cuestionario__recurso'
+    ).order_by('-fecha_finalizacion')
+    
+    if cuestionario_id:
+        intentos = intentos.filter(cuestionario_id=cuestionario_id)
+    
+    context = {
+        'intentos': intentos,
+        'cuestionario_filtro': cuestionario_id,
+        'imgPerfil': user.imgPerfil,
+        'usuario': user.username,
+    }
+    
+    return render(request, 'estudiante/historial_cuestionarios.html', context)
