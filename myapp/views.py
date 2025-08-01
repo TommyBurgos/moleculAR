@@ -669,7 +669,7 @@ from django.db import transaction
 from django.db.models import Sum, Max
 from datetime import datetime
 
-#@login_required
+@login_required
 def instructorQuiz(request, seccion_id=None):
     """Vista principal para crear cuestionarios - COMPLETAMENTE FUNCIONAL"""
     print(f"🎯 instructorQuiz llamada con seccion_id: {seccion_id}")
@@ -727,7 +727,7 @@ def crear_tipos_pregunta_basicos():
 # VISTA PARA EDITAR CUESTIONARIOS EXISTENTES - CORREGIDA
 # =====================================================
 
-#@login_required
+@login_required
 def editarCuestionario(request, cuestionario_id):
     """Vista para editar un cuestionario existente - COMPLETAMENTE FUNCIONAL"""
     print(f"✏️ editarCuestionario llamada con ID: {cuestionario_id}")
@@ -772,7 +772,7 @@ def editarCuestionario(request, cuestionario_id):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def guardar_cuestionario(request):
     """Guardar cuestionario básico - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -886,7 +886,7 @@ def guardar_cuestionario(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def actualizarConfiguracion(request):
     """Actualizar configuración del cuestionario - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -989,7 +989,7 @@ def actualizarConfiguracion(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def agregarPregunta(request):
     """Agregar una nueva pregunta al cuestionario - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -1077,7 +1077,7 @@ def agregarPregunta(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def cambiarTipoPregunta(request):
     """Cambiar el tipo de una pregunta existente - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -1156,7 +1156,7 @@ def cambiarTipoPregunta(request):
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
-#@login_required
+@login_required
 def eliminarPregunta(request, pregunta_id):
     """Eliminar una pregunta completa - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -1213,7 +1213,7 @@ def eliminarPregunta(request, pregunta_id):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def agregarOpcion(request):
     """Agregar una nueva opción a una pregunta - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -1270,7 +1270,7 @@ def agregarOpcion(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def actualizarOpcion(request):
     """Actualizar una opción existente - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -1317,7 +1317,7 @@ def actualizarOpcion(request):
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
-#@login_required
+@login_required
 def eliminarOpcion(request, opcion_id):
     """Eliminar una opción - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -1366,7 +1366,7 @@ def eliminarOpcion(request, opcion_id):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def crearTiposPregunta(request):
     """Crear tipos de pregunta automáticamente - COMPLETAMENTE FUNCIONAL"""
     try:
@@ -1435,7 +1435,7 @@ def inicializar_tipos_pregunta(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def actualizar_pregunta(request):
     """Función PRINCIPAL para actualizar pregunta - CORREGIDA PARA NO BORRAR CONTENIDO"""
     try:
@@ -1690,7 +1690,7 @@ def actualizar_pregunta(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def eliminar_recurso_pregunta(request):
     """Eliminar recurso multimedia de una pregunta - FUNCIONAL"""
     try:
@@ -1739,7 +1739,7 @@ def eliminar_recurso_pregunta(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def actualizar_configuracion_pregunta(request):
     """Actualizar configuración específica de pregunta según su tipo - FUNCIONAL"""
     try:
@@ -1779,7 +1779,7 @@ def actualizar_configuracion_pregunta(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-#@login_required
+@login_required
 def actualizarCuestionarioExistente(request, cuestionario_id):
     """Actualizar un cuestionario existente - FUNCIONAL"""
     try:

@@ -1,4 +1,4 @@
-<!-- plantillas/plantilla_opciones.html - CORREGIDA COMPLETAMENTE -->
+<!-- plantillas/plantilla_opciones.html - VERSIÓN LIMPIA SIN DUPLICACIÓN -->
 <div class="opciones-container">
     <label class="form-label fw-bold">
         <i class="fas fa-list me-2 text-success"></i>
@@ -48,16 +48,14 @@
                    value="{{ opcion.texto }}"
                    placeholder="Escriba el texto de la opción..."
                    data-opcion-id="{{ opcion.id }}"
-                   data-field="texto_opcion"
-                   onchange="actualizarTextoOpcion(this)">
+                   data-field="texto_opcion">
             
-            <!-- Botón eliminar opción - CUADRADO Y CON STOP PROPAGATION -->
+            <!-- Botón eliminar opción - SIEMPRE VISIBLE SI HAY MÁS DE 2 -->
             {% if pregunta.opciones.count > 2 %}
             <button type="button" 
                     class="btn btn-eliminar-opcion btn-eliminar-cuadrado" 
                     title="Eliminar esta opción"
-                    data-opcion-id="{{ opcion.id }}"
-                    onclick="event.stopPropagation(); eliminarOpcionConConfirmacion(this);">
+                    data-opcion-id="{{ opcion.id }}">
                 <i class="fas fa-times"></i>
             </button>
             {% endif %}
@@ -67,22 +65,21 @@
         <div class="alert alert-warning">
             <i class="fas fa-exclamation-triangle me-2"></i>
             No hay opciones definidas para esta pregunta. 
-            <button type="button" class="btn btn-sm btn-primary ms-2" 
-                    onclick="event.stopPropagation(); agregarOpcionSinCerrar(this);">
+            <button type="button" class="btn btn-sm btn-primary ms-2 btn-agregar-opcion"
+                    data-pregunta-id="{{ pregunta.id }}">
                 <i class="fas fa-plus me-1"></i>Agregar primera opción
             </button>
         </div>
         {% endfor %}
     </div>
     
-    <!-- Botón agregar nueva opción - CON STOP PROPAGATION -->
+    <!-- Botón agregar nueva opción -->
     {% if pregunta.tipo.nombre != 'falso_verdadero' %}
     <div class="agregar-opcion-container mt-3">
         <button type="button" 
                 class="btn-agregar-opcion btn-cuadrado-agregar" 
                 title="Agregar nueva opción"
-                data-pregunta-id="{{ pregunta.id }}"
-                onclick="event.stopPropagation(); agregarOpcionSinCerrar(this);">
+                data-pregunta-id="{{ pregunta.id }}">
             <i class="fas fa-plus"></i>
         </button>
         <span class="ms-2 text-muted">Agregar nueva opción</span>
@@ -104,7 +101,7 @@
     </div>
 </div>
 
-<!-- Estilos corregidos -->
+<!-- SOLO ESTILOS - SIN JAVASCRIPT -->
 <style>
 .opciones-container {
     background-color: #ffffff;
@@ -175,7 +172,7 @@
 .btn-agregar-opcion {
     width: 32px;
     height: 32px;
-    border-radius: 4px !important; /* CUADRADO EN LUGAR DE CÍRCULO */
+    border-radius: 4px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -221,7 +218,7 @@
     border: none;
     width: 24px;
     height: 24px;
-    border-radius: 4px !important; /* CUADRADO EN LUGAR DE CÍRCULO */
+    border-radius: 4px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -279,324 +276,3 @@
     }
 }
 </style>
-
-<!-- JavaScript corregido para funcionalidad -->
-<script>
-// ===== FUNCIONES PRINCIPALES CORREGIDAS =====
-
-// Función para manejar cambio de opción correcta
-function manejarCambioOpcionCorrecta(element) {
-    const opcionId = element.dataset.opcionId;
-    const preguntaId = element.dataset.preguntaId;
-    const esCorrecta = element.checked;
-    
-    console.log(`🔘 Cambiando opción ${opcionId} a ${esCorrecta ? 'correcta' : 'incorrecta'}`);
-    
-    // Actualizar estilos visuales inmediatamente
-    const container = element.closest('.opcion-container');
-    if (container) {
-        if (esCorrecta) {
-            container.classList.add('opcion-correcta');
-        } else {
-            container.classList.remove('opcion-correcta');
-        }
-    }
-    
-    // Para radio buttons, quitar la clase de otros contenedores
-    if (element.type === 'radio') {
-        const preguntaElement = element.closest('[data-pregunta-id]');
-        if (preguntaElement) {
-            preguntaElement.querySelectorAll('.opcion-container').forEach(cont => {
-                if (cont !== container) {
-                    cont.classList.remove('opcion-correcta');
-                }
-            });
-        }
-    }
-    
-    // Obtener texto actual
-    const textoInput = container.querySelector('.opcion-input');
-    const textoActual = textoInput ? textoInput.value.trim() : '';
-    
-    // Enviar actualización al servidor
-    actualizarOpcionEnServidor(opcionId, textoActual, esCorrecta);
-}
-
-// Función para actualizar texto de opción
-function actualizarTextoOpcion(element) {
-    const opcionId = element.dataset.opcionId;
-    const nuevoTexto = element.value.trim();
-    
-    if (!nuevoTexto) {
-        mostrarAdvertencia('El texto de la opción no puede estar vacío');
-        return;
-    }
-    
-    console.log(`✏️ Actualizando texto de opción ${opcionId}: ${nuevoTexto}`);
-    
-    // Verificar si la opción está marcada como correcta
-    const container = element.closest('.opcion-container');
-    const checkbox = container.querySelector('input[type="checkbox"], input[type="radio"]');
-    const esCorrecta = checkbox ? checkbox.checked : false;
-    
-    // Enviar actualización al servidor
-    actualizarOpcionEnServidor(opcionId, nuevoTexto, esCorrecta);
-}
-
-// Función para enviar actualización al servidor
-function actualizarOpcionEnServidor(opcionId, texto, esCorrecta) {
-    fetch('/docente/cuestionario/actualizar-opcion/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({
-            opcion_id: opcionId,
-            texto: texto,
-            es_correcta: esCorrecta
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log(`✅ Opción ${opcionId} actualizada correctamente`);
-        } else {
-            console.error(`❌ Error al actualizar opción ${opcionId}:`, data.error);
-            mostrarError('Error: ' + (data.error || 'Error al actualizar la opción'));
-        }
-    })
-    .catch(error => {
-        console.error('❌ Error de conexión al actualizar opción:', error);
-        mostrarError('Error de conexión al actualizar la opción');
-    });
-}
-
-// Funciones fallback (solo se usan si el sistema principal no está disponible)
-function eliminarOpcionFallback(opcionId) {
-    if (confirm('¿Eliminar esta opción?')) {
-        fetch(`/docente/cuestionario/eliminar-opcion/${opcionId}/`, {
-            method: 'DELETE',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Opción eliminada');
-                location.reload();
-            } else {
-                alert('Error al eliminar');
-            }
-        });
-    }
-}
-
-function agregarOpcionFallback(preguntaId) {
-    fetch('/docente/cuestionario/agregar-opcion/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify({ pregunta_id: preguntaId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Opción agregada');
-            location.reload();
-        } else {
-            alert('Error al agregar');
-        }
-    });
-}
-
-// ===== FUNCIONES CORREGIDAS SIN DUPLICACIÓN =====
-
-// Función para eliminar opción - USA LA FUNCIÓN GLOBAL
-function eliminarOpcionConConfirmacion(element) {
-    const opcionId = element.dataset.opcionId;
-    
-    if (!opcionId) {
-        mostrarError('No se pudo obtener el ID de opción');
-        return;
-    }
-    
-    console.log(`🗑️ Eliminando opción ${opcionId} (usando función global)`);
-    
-    // GUARDAR ESTADO DEL ACORDEÓN
-    const preguntaId = obtenerPreguntaId(element);
-    if (preguntaId) {
-        const acordeonElemento = document.getElementById(`collapse${preguntaId}`);
-        if (acordeonElemento && acordeonElemento.classList.contains('show')) {
-            localStorage.setItem('mantenerAbierto', `collapse${preguntaId}`);
-        }
-    }
-    
-    // USAR LA FUNCIÓN GLOBAL DE crear_cuestionario.html
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.eliminarOpcion === 'function') {
-        window.crearCuestionario.eliminarOpcion(opcionId);
-    } else {
-        // Fallback si no está disponible
-        eliminarOpcionFallback(opcionId);
-    }
-}
-
-// Función para agregar opción - USA LA FUNCIÓN GLOBAL
-function agregarOpcionSinCerrar(element) {
-    const preguntaId = obtenerPreguntaId(element);
-    if (!preguntaId) {
-        mostrarError('No se pudo obtener el ID de pregunta');
-        return;
-    }
-    
-    console.log(`➕ Agregando opción usando función global a pregunta ${preguntaId}`);
-    
-    // GUARDAR ESTADO DEL ACORDEÓN
-    const acordeonElemento = document.getElementById(`collapse${preguntaId}`);
-    if (acordeonElemento && acordeonElemento.classList.contains('show')) {
-        localStorage.setItem('mantenerAbierto', `collapse${preguntaId}`);
-    }
-    
-    // USAR LA FUNCIÓN GLOBAL DE crear_cuestionario.html
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.agregarOpcionExistente === 'function') {
-        window.crearCuestionario.agregarOpcionExistente(element);
-    } else {
-        // Fallback si no está disponible
-        agregarOpcionFallback(preguntaId);
-    }
-}
-
-// ===== FUNCIONES DE UTILIDAD =====
-function obtenerPreguntaId(element) {
-    let current = element;
-    while (current && current !== document) {
-        if (current.dataset && current.dataset.preguntaId) {
-            return current.dataset.preguntaId;
-        }
-        
-        if (current.getAttribute && current.getAttribute('data-pregunta-id')) {
-            return current.getAttribute('data-pregunta-id');
-        }
-        
-        if (current.id) {
-            const match = current.id.match(/_(\d+)$/);
-            if (match) {
-                return match[1];
-            }
-        }
-        
-        const preguntaParent = current.closest('[data-pregunta-id]');
-        if (preguntaParent) {
-            return preguntaParent.dataset.preguntaId || preguntaParent.getAttribute('data-pregunta-id');
-        }
-        
-        current = current.parentElement;
-    }
-    
-    console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
-    return null;
-}
-
-function getCookie(name) {
-    // Usar función global si existe
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.getCookie === 'function') {
-        return window.crearCuestionario.getCookie(name);
-    }
-    
-    // Fallback local
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-function mostrarError(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarError === 'function') {
-        window.crearCuestionario.mostrarError(mensaje);
-    } else {
-        console.error('❌ ' + mensaje);
-        alert('Error: ' + mensaje);
-    }
-}
-
-function mostrarExito(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarExito === 'function') {
-        window.crearCuestionario.mostrarExito(mensaje);
-    } else {
-        console.log('✅ ' + mensaje);
-    }
-}
-
-function mostrarAdvertencia(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarInfo === 'function') {
-        window.crearCuestionario.mostrarInfo(mensaje);
-    } else {
-        console.warn('⚠️ ' + mensaje);
-        alert('Advertencia: ' + mensaje);
-    }
-}
-
-function mostrarCargando(mensaje) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarCargando === 'function') {
-        return window.crearCuestionario.mostrarCargando(mensaje);
-    } else {
-        console.log('⏳ ' + mensaje);
-        return { hide: () => {} };
-    }
-}
-
-function mostrarConfirmacionElegante(titulo, mensaje, callback) {
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarConfirmacion === 'function') {
-        window.crearCuestionario.mostrarConfirmacion(titulo, mensaje, callback);
-    } else {
-        if (confirm(mensaje)) {
-            callback();
-        }
-    }
-}
-
-// ===== INICIALIZACIÓN =====
-document.addEventListener('DOMContentLoaded', function() {
-    // Aplicar estilos correctos al cargar la página
-    document.querySelectorAll('.opcion-container').forEach(container => {
-        const radio = container.querySelector('input[type="radio"], input[type="checkbox"]');
-        if (radio && radio.checked) {
-            container.classList.add('opcion-correcta');
-        } else {
-            container.classList.remove('opcion-correcta');
-        }
-    });
-    
-    // RESTAURAR ACORDEÓN ABIERTO DESPUÉS DE RELOAD
-    const mantenerAbierto = localStorage.getItem('mantenerAbierto');
-    if (mantenerAbierto) {
-        setTimeout(() => {
-            const elemento = document.getElementById(mantenerAbierto);
-            if (elemento) {
-                console.log(`🔓 Restaurando acordeón abierto: ${mantenerAbierto}`);
-                const collapse = new bootstrap.Collapse(elemento, { show: true });
-            }
-            localStorage.removeItem('mantenerAbierto');
-        }, 500);
-    }
-    
-    console.log('✅ Plantilla opciones CORREGIDA inicializada');
-});
-</script>

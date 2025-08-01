@@ -1,4 +1,4 @@
-<!-- plantilla_pregunta_adaptada.html - VERSIÓN LIMPIA SIN DUPLICACIÓN -->
+<!-- plantilla_pregunta_adaptada.html - VERSIÓN OPTIMIZADA SIN DUPLICACIÓN -->
 <div class="plantilla-pregunta" data-tipo="{{ pregunta.tipo.nombre }}" data-pregunta-id="{{ pregunta.id }}">
     
     <!-- Encabezado común de la pregunta -->
@@ -51,16 +51,14 @@
         </div>
     </div>
 
-    <!-- SECCIÓN DE RECURSOS MULTIMEDIA -->
+    <!-- SECCIÓN DE RECURSOS MULTIMEDIA - SIN SCROLL, CON POP-UPS -->
     <div class="recursos-multimedia-section">
-        <!-- Toggle button -->
         <button type="button" class="recursos-apoyo-toggle" 
                 data-bs-toggle="collapse" 
                 data-bs-target="#recursos-{{ pregunta.id }}" 
-                aria-expanded="false"
-                onclick="toggleRecursosApoyo(this)">
+                aria-expanded="false">
             <i class="fas fa-paperclip me-2"></i>
-            <span>Recursos de apoyo (opcional)</span>
+            <span>Recursos de apoyo</span>
             <i class="fas fa-chevron-down ms-auto toggle-icon"></i>
         </button>
         
@@ -70,11 +68,11 @@
                 <div class="recursos-header">
                     <h6 class="mb-3">
                         <i class="fas fa-layer-group me-2 text-primary"></i>
-                        Tipo de recurso multimedia
+                        Agregar recurso multimedia
                     </h6>
                 </div>
                 
-                <!-- Botones de recursos - USA FUNCIONES GLOBALES DE crear_cuestionario.js -->
+                <!-- Botones de recursos - CON POP-UP MODAL -->
                 <div class="row g-3 mb-4">
                     <div class="col-lg-2 col-md-3 col-sm-4 col-6">
                         <div class="recurso-card" onclick="abrirModalRecurso('imagen', {{ pregunta.id }})">
@@ -125,24 +123,21 @@
                             <div class="recurso-subtitle">MP3, WAV</div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Consejos -->
-                <div class="recursos-tips">
-                    <div class="alert alert-info border-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Consejos para recursos efectivos:</strong>
-                        <ul class="mb-0 mt-2">
-                            <li>Las imágenes deben ser claras y relevantes al contenido</li>
-                            <li>Los videos de YouTube deben estar relacionados con la pregunta</li>
-                            <li>Los documentos PDF deben ser legibles y no muy extensos</li>
-                        </ul>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" onclick="abrirModalRecurso('simulador', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-atom"></i>
+                            </div>
+                            <div class="recurso-title">Simulador</div>
+                            <div class="recurso-subtitle">Molecular 2D/3D</div>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Recursos cargados -->
+                {% if pregunta.archivo_multimedia or pregunta.url_youtube %}
                 <div class="recursos-actuales" id="recursos-actuales-{{ pregunta.id }}">
-                    {% if pregunta.archivo_multimedia or pregunta.url_youtube %}
                     <h6 class="mb-3">
                         <i class="fas fa-check-circle me-2 text-success"></i>
                         Recursos cargados
@@ -155,7 +150,7 @@
                                 <span>{{ pregunta.archivo_multimedia.name|default:"Archivo multimedia" }}</span>
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    onclick="eliminarRecursoMultimedia('archivo', {{ pregunta.id }})">
+                                    onclick="eliminarRecursoExistente('archivo', {{ pregunta.id }})">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -168,13 +163,27 @@
                                 <span>Video de YouTube: {{ pregunta.url_youtube }}</span>
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    onclick="eliminarRecursoMultimedia('youtube', {{ pregunta.id }})">
+                                    onclick="eliminarRecursoExistente('youtube', {{ pregunta.id }})">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
                         {% endif %}
                     </div>
-                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Consejos -->
+                <div class="recursos-tips">
+                    <div class="alert alert-info border-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Consejos para recursos efectivos:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Las imágenes deben ser claras y relevantes al contenido</li>
+                            <li>Los videos de YouTube deben estar relacionados con la pregunta</li>
+                            <li>Los documentos PDF deben ser legibles y no muy extensos</li>
+                            <li>Los simuladores permiten interacción con moléculas en 2D/3D</li>
+                        </ul>
+                    </div>
                 </div>
                 
                 <!-- Limitaciones -->
@@ -211,29 +220,33 @@
         {% endif %}
     </div>
     
-    <!-- Acciones de la pregunta - USA CLASES QUE EL SCRIPT PRINCIPAL DETECTA -->
+    <!-- Acciones de la pregunta -->
     <div class="pregunta-actions">
         <button type="button" class="btn btn-success btn-sm action-btn btn-guardar-pregunta" 
                 data-pregunta-id="{{ pregunta.id }}"
-                title="Guardar todos los cambios realizados">
+                title="Guardar todos los cambios realizados"
+                onclick="guardarPregunta(this)">
             <i class="fas fa-save me-1"></i>Guardar cambios
         </button>
         
         <button type="button" class="btn btn-warning btn-sm action-btn btn-cambiar-tipo" 
                 data-pregunta-id="{{ pregunta.id }}"
-                title="Cambiar el tipo de esta pregunta">
+                title="Cambiar el tipo de esta pregunta"
+                onclick="iniciarCambioTipo({{ pregunta.id }})">
             <i class="fas fa-exchange-alt me-1"></i>Cambiar tipo
         </button>
         
         <button type="button" class="btn btn-info btn-sm action-btn btn-duplicar-pregunta" 
                 data-pregunta-id="{{ pregunta.id }}"
-                title="Crear una copia de esta pregunta">
+                title="Crear una copia de esta pregunta"
+                onclick="duplicarPregunta({{ pregunta.id }})">
             <i class="fas fa-copy me-1"></i>Duplicar
         </button>
         
         <button type="button" class="btn btn-danger btn-sm action-btn btn-eliminar-pregunta" 
                 data-pregunta-id="{{ pregunta.id }}"
-                title="Eliminar esta pregunta permanentemente">
+                title="Eliminar esta pregunta permanentemente"
+                onclick="eliminarPreguntaExistente(this)">
             <i class="fas fa-trash me-1"></i>Eliminar
         </button>
         
@@ -252,7 +265,7 @@
     </div>
 </div>
 
-<!-- ESTILOS CSS PARA PLANTILLA PREGUNTA - SOLO CSS, SIN JS -->
+<!-- ESTILOS CSS ÚNICOS PARA LA PLANTILLA -->
 <style>
 /* ===== ESTILOS BASE PARA LA PLANTILLA ===== */
 .plantilla-pregunta {
@@ -338,7 +351,7 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.recursos-apoyo-toggle.active {
+.recursos-apoyo-toggle[aria-expanded="true"] {
     background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     border-color: #0066cc;
     color: #0066cc;
@@ -601,210 +614,3 @@
     }
 }
 </style>
-
-<!-- JAVASCRIPT MÍNIMO - SOLO LO ESPECÍFICO DE LA PLANTILLA -->
-<script>
-// =====================================================
-// FUNCIONES ESPECÍFICAS DE LA PLANTILLA (SIN DUPLICACIÓN)
-// =====================================================
-
-/**
- * Toggle para recursos de apoyo - ESPECÍFICO DE LA PLANTILLA
- */
-function toggleRecursosApoyo(element) {
-    const icon = element.querySelector('.toggle-icon');
-    const isExpanded = element.getAttribute('aria-expanded') === 'true';
-    
-    if (isExpanded) {
-        element.classList.add('active');
-    } else {
-        element.classList.remove('active');
-    }
-    
-    console.log(`📎 Recursos de apoyo ${isExpanded ? 'expandidos' : 'colapsados'}`);
-}
-
-/**
- * Eliminar recurso multimedia específico - DELEGADO AL SISTEMA PRINCIPAL
- */
-function eliminarRecursoMultimedia(tipo, preguntaId) {
-    console.log(`🗑️ Eliminando recurso ${tipo} de pregunta ${preguntaId}`);
-    
-    // Verificar si el sistema principal está disponible
-    if (typeof window.crearCuestionario !== 'undefined' && 
-        typeof window.crearCuestionario.mostrarConfirmacion === 'function') {
-        
-        window.crearCuestionario.mostrarConfirmacion(
-            'Eliminar Recurso',
-            `¿Estás seguro de que quieres eliminar este ${tipo}?`,
-            function() {
-                const loadingToast = window.crearCuestionario.mostrarCargando('Eliminando recurso...');
-                
-                fetch('/docente/cuestionario/eliminar-recurso-pregunta/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': window.crearCuestionario.getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({
-                        pregunta_id: preguntaId,
-                        tipo: tipo
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    loadingToast.hide();
-                    
-                    if (data.success) {
-                        window.crearCuestionario.mostrarExito('Recurso eliminado exitosamente');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        window.crearCuestionario.mostrarError('Error: ' + (data.error || 'Error al eliminar recurso'));
-                    }
-                })
-                .catch(error => {
-                    loadingToast.hide();
-                    console.error('Error:', error);
-                    window.crearCuestionario.mostrarError('Error de conexión al eliminar recurso');
-                });
-            }
-        );
-    } else {
-        // Fallback básico si el sistema principal no está disponible
-        if (confirm(`¿Estás seguro de que quieres eliminar este ${tipo}?`)) {
-            console.log('⚠️ Sistema principal no disponible, usando confirmación básica');
-            
-            fetch('/eliminar-recurso-pregunta/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfTokenFallback()
-                },
-                body: JSON.stringify({
-                    pregunta_id: preguntaId,
-                    tipo: tipo
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Recurso eliminado exitosamente');
-                    window.location.reload();
-                } else {
-                    alert('Error: ' + (data.error || 'Error al eliminar recurso'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error de conexión al eliminar recurso');
-            });
-        }
-    }
-}
-
-/**
- * Función fallback para obtener CSRF token
- */
-function getCsrfTokenFallback() {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, 'csrftoken'.length + 1) === ('csrftoken' + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring('csrftoken'.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// =====================================================
-// VERIFICACIÓN E INICIALIZACIÓN
-// =====================================================
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📋 Plantilla pregunta LIMPIA cargada (sin duplicación)');
-    
-    // Verificar que las funciones globales estén disponibles
-    if (typeof window.crearCuestionario !== 'undefined') {
-        console.log('✅ Sistema principal detectado y conectado');
-        console.log('🔗 Funciones disponibles:', Object.keys(window.crearCuestionario));
-    } else {
-        console.warn('⚠️ Sistema principal no detectado');
-        console.warn('⚠️ Algunas funciones pueden no estar disponibles');
-        console.warn('⚠️ Asegúrate de que crear_cuestionario.js se carga primero');
-    }
-    
-    // Verificar que las funciones críticas estén disponibles
-    const funcionesCriticas = [
-        'abrirModalRecurso',
-        'mostrarConfirmacion', 
-        'mostrarCargando',
-        'mostrarExito',
-        'mostrarError',
-        'getCookie'
-    ];
-    
-    let funcionesFaltantes = [];
-    funcionesCriticas.forEach(funcion => {
-        if (typeof window.crearCuestionario === 'undefined' || 
-            typeof window.crearCuestionario[funcion] !== 'function') {
-            funcionesFaltantes.push(funcion);
-        }
-    });
-    
-    if (funcionesFaltantes.length > 0) {
-        console.warn('⚠️ Funciones faltantes del sistema principal:', funcionesFaltantes);
-    } else {
-        console.log('✅ Todas las funciones críticas están disponibles');
-    }
-    
-    // Verificar que los botones tengan las clases correctas para el sistema principal
-    const botones = {
-        '.btn-guardar-pregunta': 'Guardar pregunta',
-        '.btn-eliminar-pregunta': 'Eliminar pregunta', 
-        '.btn-duplicar-pregunta': 'Duplicar pregunta',
-        '.btn-cambiar-tipo': 'Cambiar tipo'
-    };
-    
-    Object.entries(botones).forEach(([selector, nombre]) => {
-        const elementos = document.querySelectorAll(selector);
-        if (elementos.length > 0) {
-            console.log(`✅ ${nombre}: ${elementos.length} botón(es) encontrado(s)`);
-        } else {
-            console.warn(`⚠️ ${nombre}: No se encontraron botones con clase ${selector}`);
-        }
-    });
-    
-    // Log de estado final
-    console.log('📋 Plantilla pregunta inicializada:');
-    console.log('  - HTML: ✅ Cargado');
-    console.log('  - CSS: ✅ Aplicado');
-    console.log('  - JS Mínimo: ✅ Ejecutado');
-    console.log('  - Sistema Principal: ' + (typeof window.crearCuestionario !== 'undefined' ? '✅ Conectado' : '❌ No detectado'));
-    console.log('  - Modo: 🧹 SIN DUPLICACIÓN DE CÓDIGO');
-});
-
-// =====================================================
-// EXPOSICIÓN MÍNIMA DE FUNCIONES
-// =====================================================
-
-// Solo exponer funciones específicas de esta plantilla
-window.plantillaPregunta = {
-    toggleRecursosApoyo: toggleRecursosApoyo,
-    eliminarRecursoMultimedia: eliminarRecursoMultimedia,
-    version: 'limpia-sin-duplicacion',
-    sistemaConectado: function() {
-        return typeof window.crearCuestionario !== 'undefined';
-    }
-};
-
-console.log('✨ Plantilla pregunta LIMPIA completamente cargada');
-console.log('🎯 Todas las funciones principales delegadas al sistema global');
-console.log('🚀 Lista para usar con crear_cuestionario.js');
-
-</script>
