@@ -1,0 +1,185 @@
+<!-- plantillas/plantilla_completar.html - COMPLETAMENTE FUNCIONAL -->
+<div class="completar-container">
+    <label class="form-label fw-bold">Configuración - Completar texto</label>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-edit me-2"></i>
+        Los estudiantes llenarán espacios en blanco en un texto. Use _____ (5 guiones bajos) para marcar cada espacio.
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Texto con espacios en blanco</label>
+        <textarea class="form-control" rows="4" 
+                  placeholder="El agua tiene la fórmula química _____ y es fundamental para la _____."
+                  title="Use _____ para marcar los espacios en blanco"
+                  data-field="texto_completar"
+                  data-pregunta-id="{{ pregunta.id }}"
+                  id="texto_completar_{{ pregunta.id }}"
+                  onchange="analizarEspacios(this)">{{ pregunta.texto_completar|default:"" }}</textarea>
+        <small class="text-muted">Use _____ (5 guiones bajos) para marcar cada espacio en blanco</small>
+    </div>
+    
+    <div class="mb-3">
+        <div class="row">
+            <div class="col-md-8">
+                <label class="form-label">Respuestas correctas</label>
+                <input type="text" class="form-control" 
+                       placeholder="H2O, vida, células"
+                       title="Escriba las respuestas en el orden que aparecen los espacios"
+                       data-field="respuestas_completar"
+                       data-pregunta-id="{{ pregunta.id }}"
+                       id="respuestas_{{ pregunta.id }}"
+                       value="{{ pregunta.respuestas_completar|default:"" }}">
+                <small class="text-muted">Separar con comas, en el orden de aparición</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Espacios detectados</label>
+                <div id="contador_espacios_{{ pregunta.id }}" class="form-control bg-light text-center">
+                    0 espacios
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" 
+                       id="sensible-mayusculas-{{ pregunta.id }}"
+                       data-field="sensible_mayusculas"
+                       {% if pregunta.sensible_mayusculas %}checked{% endif %}>
+                <label class="form-check-label" for="sensible-mayusculas-{{ pregunta.id }}">
+                    Sensible a mayúsculas
+                </label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" 
+                       id="ignorar-espacios-{{ pregunta.id }}"
+                       data-field="ignorar_espacios"
+                       {% if pregunta.ignorar_espacios %}checked{% endif %}>
+                <label class="form-check-label" for="ignorar-espacios-{{ pregunta.id }}">
+                    Ignorar espacios extra
+                </label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" 
+                       id="respuestas-alternativas-{{ pregunta.id }}"
+                       data-field="permitir_alternativas"
+                       {% if pregunta.permitir_alternativas %}checked{% endif %}>
+                <label class="form-check-label" for="respuestas-alternativas-{{ pregunta.id }}">
+                    Permitir sinónimos
+                </label>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Vista previa del texto -->
+    <div class="mt-4">
+        <h6>Vista Previa:</h6>
+        <div class="card bg-light">
+            <div class="card-body">
+                <div id="vista_previa_texto_{{ pregunta.id }}" class="fs-5">
+                    Escriba el texto arriba para ver la vista previa...
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Respuestas alternativas -->
+    <div class="mt-3" id="alternativas_container_{{ pregunta.id }}" style="display: none;">
+        <label class="form-label">Respuestas alternativas (opcional)</label>
+        <textarea class="form-control" rows="3" 
+                  placeholder="Para el primer espacio: agua,H2O,dihidróxido de hidrógeno&#10;Para el segundo espacio: vida,supervivencia"
+                  data-field="respuestas_alternativas">{{ pregunta.respuestas_alternativas|default:"" }}</textarea>
+        <small class="text-muted">Una línea por espacio. Separar alternativas con comas.</small>
+    </div>
+</div>
+
+<script>
+// Scripts específicos para completar texto
+function analizarEspacios(element) {
+    analizarEspaciosElement(element);
+}
+
+function analizarEspaciosElement(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const textoTextarea = document.getElementById(`texto_completar_${preguntaId}`);
+    const contadorDiv = document.getElementById(`contador_espacios_${preguntaId}`);
+    const vistaDiv = document.getElementById(`vista_previa_texto_${preguntaId}`);
+    const respuestasInput = document.getElementById(`respuestas_${preguntaId}`);
+    
+    if (!textoTextarea || !contadorDiv || !vistaDiv) return;
+    
+    const texto = textoTextarea.value;
+    const espacios = (texto.match(/_____/g) || []).length;
+    
+    contadorDiv.textContent = `${espacios} espacios`;
+    
+    // Actualizar vista previa
+    const vistaPrevia = texto.replace(/_____/g, '<span class="bg-warning px-2 mx-1">[____]</span>');
+    vistaDiv.innerHTML = vistaPrevia || 'Escriba el texto arriba para ver la vista previa...';
+    
+    // Validar respuestas
+    if (respuestasInput) {
+        const respuestas = respuestasInput.value.split(',').map(r => r.trim()).filter(r => r);
+        if (respuestas.length !== espacios && espacios > 0) {
+            console.warn(`Se detectaron ${espacios} espacios pero ${respuestas.length} respuestas`);
+        }
+    }
+}
+
+// Función para obtener ID de pregunta (reutilizada)
+function obtenerPreguntaId(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        current = current.parentElement;
+    }
+    return null;
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar vista previa para completar texto
+    document.querySelectorAll('[id^="texto_completar_"]').forEach(textarea => {
+        const preguntaId = textarea.dataset.preguntaId;
+        if (preguntaId) {
+            analizarEspaciosElement(textarea);
+        }
+    });
+    
+    // Manejar cambios en permitir alternativas
+    document.querySelectorAll('[data-field="permitir_alternativas"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const preguntaId = this.id.split('-').pop();
+            const container = document.getElementById(`alternativas_container_${preguntaId}`);
+            if (container) {
+                container.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+        
+        // Inicializar estado
+        if (checkbox.checked) {
+            const preguntaId = checkbox.id.split('-').pop();
+            const container = document.getElementById(`alternativas_container_${preguntaId}`);
+            if (container) {
+                container.style.display = 'block';
+            }
+        }
+    });
+});
+</script>

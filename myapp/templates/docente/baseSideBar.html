@@ -1,0 +1,116 @@
+{% load static %}
+<nav class="navbar sidebar navbar-expand-xl navbar-dark bg-dark">
+
+	<!-- Navbar brand for xl START -->
+	<div class="d-flex align-items-center">
+		<a class="navbar-brand" href="/usAdmin/">
+			<img class="navbar-brand-item" src="{% static 'img/Plataforma/General/logo_blanco.png' %}" alt="">
+		</a>
+	</div>
+	<!-- Navbar brand for xl END -->
+	
+	<div class="offcanvas offcanvas-start flex-row custom-scrollbar h-100" data-bs-backdrop="true" tabindex="-1" id="offcanvasSidebar">
+		<div class="offcanvas-body sidebar-content d-flex flex-column bg-dark">
+
+			<!-- Sidebar menu START -->
+             <ul class="navbar-nav flex-column" id="navbar-sidebar">
+				
+				<!-- Menu item 1 -->
+				<li class="nav-item"><a href="/usAdmin/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
+				
+				<!-- Title -->
+				<li class="nav-item ms-2 my-2">Pages</li>
+
+				<!-- menu item 2 -->
+				<li class="nav-item">
+					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
+						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Mis Cursos
+					</a>
+					<!-- Submenu -->
+					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Todos los cursos</a></li>
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Curso</a></li>
+					</ul>
+				</li>
+
+				<!-- menu item 3 -->
+				<li class="nav-item">
+					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
+						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Cuestionarios
+					</a>
+					<!-- Submenu -->
+					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Biblioteca Cuestionarios</a></li>
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Cuestionario</a></li>
+					</ul>
+				</li>
+
+				<!-- menu item 4 -->
+				<li class="nav-item">
+					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
+						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Prácticas
+					</a>
+					<!-- Submenu -->
+					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Biblioteca Prácticas</a></li>
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Práctica</a></li>
+					</ul>
+				</li>
+
+				<!-- menu item 5 -->
+				<li class="nav-item">
+					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
+						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Competencias
+					</a>
+					<!-- Submenu -->
+					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Biblioteca Competencias</a></li>
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Competencia</a></li>
+					</ul>
+				</li>
+
+				<!-- Menu item 7 -->
+				<li class="nav-item"> <a class="nav-link" href="admin-setting.html"><img src="{% static 'img/Plataforma/General/gestion-de-equipos.png' %}" class="fa-fw me-2" alt="">Configuración de usuario</a></li>
+				
+
+				<!-- Title -->
+				<li class="nav-item ms-2 my-2">Experimentación</li>
+
+				<!-- Menu item 8 -->
+				<li class="nav-item">
+					<a class="nav-link" data-bs-toggle="collapse" href="#collapseauthentication" role="button" aria-expanded="false" aria-controls="collapseauthentication">
+						<img src="{% static 'img/Plataforma/General/molecula.png' %}" class="fa-fw me-2" alt="">                        Modelos
+					</a>
+					<!-- Submenu -->
+					<ul class="nav collapse flex-column" id="collapseauthentication" data-bs-parent="#navbar-sidebar">
+						<li class="nav-item"> <a class="nav-link" href="sign-up.html">
+                            <img src="{% static 'img/Plataforma/General/molecula2D.png' %}" class="fa-fw me-2" alt="">2D</a></li>
+						<li class="nav-item"> <a class="nav-link" href="sign-in.html">
+                            <img src="{% static 'img/Plataforma/General/ciencia.png' %}" class="fa-fw me-2" alt="">3D</a></li>
+						<li class="nav-item"> <a class="nav-link" href="forgot-password.html">Experimentos</a></li>						
+					</ul>
+				</li>
+				<!-- Menu item 9 -->
+				<li class="nav-item"> <a class="nav-link" href="docs/index.html"><img src="{% static 'img/Plataforma/General/manual.png' %}" class="fa-fw me-2" alt="">Instructivo y politicas</a></li>				
+			</ul>			
+			<!-- Sidebar menu end -->
+
+			<!-- Sidebar footer START -->
+			<div class="px-3 mt-auto pt-3">
+				<div class="d-flex align-items-center justify-content-between text-primary-hover">
+						<a class="h5 mb-0 text-body" href="admin-setting.html" data-bs-toggle="tooltip" data-bs-placement="top" title="Settings">
+							<i class="bi bi-gear-fill"></i>
+						</a>
+						<a class="h5 mb-0 text-body" href="index.html" data-bs-toggle="tooltip" data-bs-placement="top" title="Home">
+							<i class="bi bi-globe"></i>
+						</a>
+						<a class="h5 mb-0 text-body" href="/logout/" data-bs-toggle="tooltip" data-bs-placement="top" title="Sign out">
+							<i class="bi bi-power"></i>
+						</a>
+				</div>
+			</div>
+			<!-- Sidebar footer END -->
+		</div>
+	</div>
+</nav>
+

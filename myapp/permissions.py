@@ -1,20 +1,20 @@
 from django.contrib.auth.decorators import user_passes_test
-
+ 
 # Verifica si el usuario es administrador
 def es_administrador(user):
     print("Dentro de la funcion es_administrador: ")
     print(user.is_authenticated and user.rol.nombre == 'Administrador')
     return user.is_authenticated and user.rol.nombre == 'Administrador'
-
+ 
 # Decorador para vistas protegidas
 def administrador_required(view_func):
     decorated_view_func = user_passes_test(es_administrador)(view_func)
     return decorated_view_func
-
+ 
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from functools import wraps
-
+ 
 def role_required(role_name):
     def decorator(view_func):
         @wraps(view_func)

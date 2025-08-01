@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Eduport - Biblioteca de Cuestionarios</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Webestica.com">
+    <meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/choices/css/choices.min.css' %}">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+    
+</head>
+
+<body>
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+    <!-- Sidebar START -->
+    {% include 'docente/baseSideBar.html' %}
+    <!-- Sidebar END -->	
+        
+    <!-- =======================
+    Inner part START -->
+    <div class="page-content">
+
+        <!-- Top bar START -->
+        {% include 'docente/navBar.html' %}
+        <!-- Top bar END -->
+
+        <!-- Page main content START -->
+        <div class="page-content-wrapper border">
+            <section class="pt-0">
+                <div class="container">
+                    <div class="row">
+                        <!-- Main content START -->
+                        <div class="col-xl-12">
+                            <!-- =======================
+                            Page Banner START -->
+                            <section class="py-4">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="bg-light p-4 text-center rounded-3">
+                                                <h1 class="m-0">📚 Biblioteca de Cuestionarios</h1>
+                                                <!-- Breadcrumb -->
+                                                <div class="d-flex justify-content-center">
+                                                    <nav aria-label="breadcrumb">
+                                                        <ol class="breadcrumb breadcrumb-dots mb-0">
+                                                            <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+                                                            <li class="breadcrumb-item active" aria-current="page">Biblioteca</li>
+                                                        </ol>
+                                                    </nav>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page Banner END -->
+                        <!-- =======================
+                            Page content START -->
+                            <section class="pt-0">
+                                <div class="container">
+
+                                    <!-- Filter bar START -->
+                                    <form class="bg-light border p-4 rounded-3 my-4 z-index-9 position-relative">
+                                        <div class="row g-3">
+                                            <!-- Input -->
+                                            <div class="col-xl-3">
+                                                <input class="form-control me-1" type="search" placeholder="Buscar cuestionarios..." id="buscarCuestionario">
+                                            </div>
+
+                                            <!-- Select item -->
+                                            <div class="col-xl-8">
+                                                <div class="row g-3">
+                                                    <!-- Select items -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Filtro por curso" id="filtroCurso">
+                                                            <option value="">Todos los Cursos</option>
+                                                            {% regroup cuestionarios by recurso.seccion.curso.titulo as cursos_agrupados %}
+                                                            {% for curso in cursos_agrupados %}
+                                                                {% if curso.grouper %}
+                                                                    <option value="{{ curso.grouper }}">{{ curso.grouper }}</option>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Search item -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Tipo de calificación" id="filtroTipo">
+                                                            <option value="">Tipo Calificación</option>
+                                                            <option value="automatica">Automática</option>
+                                                            <option value="manual">Manual</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Search item -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Estado">
+                                                            <option value="">Estado</option>
+                                                            <option value="biblioteca">En Biblioteca</option>
+                                                            <option value="asignado">Asignado</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Search item -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Ordenar" id="ordenar">
+                                                            <option value="reciente">Más Recientes</option>
+                                                            <option value="antiguo">Más Antiguos</option>
+                                                            <option value="alfabetico">A-Z</option>
+                                                        </select>
+                                                    </div>
+                                                </div> <!-- Row END -->
+                                            </div>
+                                            <!-- Button -->
+                                            <div class="col-xl-1">
+                                                <a href="{% url 'crearCuestionario' %}" class="btn btn-primary mb-0 rounded z-index-1 w-100" title="Crear Nuevo Cuestionario">
+                                                    <i class="fas fa-plus"></i>
+                                                </a>
+                                            </div>
+                                        </div> <!-- Row END -->
+                                    </form>
+                                    <!-- Filter bar END -->
+                                     <div class="row mt-3">
+                                        <!-- Main content START -->
+                                        <div class="col-12">
+
+                                            <!-- Course Grid START -->
+                                            <div class="row g-4">
+
+                                                {% for cuestionario in cuestionarios %}
+                                                <!-- Card item START -->
+                                                <div class="col-sm-6 col-lg-4 col-xl-3 cuestionario-item" 
+                                                     data-curso="{% if cuestionario.recurso.seccion %}{{ cuestionario.recurso.seccion.curso.titulo }}{% else %}Sin Curso{% endif %}"
+                                                     data-tipo="{% if cuestionario.calificacion_automatica %}automatica{% else %}manual{% endif %}"
+                                                     data-titulo="{{ cuestionario.recurso.titulo|lower }}"
+                                                     data-fecha="{{ cuestionario.recurso.fecha_creacion|date:'Y-m-d' }}">
+                                                    
+                                                    <div class="card shadow h-100">
+                                                        <!-- Image -->
+                                                        <img src="{% static 'img/Plataforma/General/default_cuestionario.jpg' %}" class="card-img-top" alt="{{ cuestionario.recurso.titulo }}">
+                                                        <!-- Card body -->
+                                                        <div class="card-body pb-0">
+                                                            <!-- Badge and favorite -->
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                {% if cuestionario.calificacion_automatica %}
+                                                                    <a href="#" class="badge bg-success bg-opacity-10 text-success">Automática</a>
+                                                                {% else %}
+                                                                    <a href="#" class="badge bg-warning bg-opacity-10 text-warning">Manual</a>
+                                                                {% endif %}
+                                                                
+                                                                {% if cuestionario.recurso.seccion %}
+                                                                    <a href="#" class="h6 fw-light mb-0 text-info" title="Asignado a curso">
+                                                                        <i class="fas fa-link"></i>
+                                                                    </a>
+                                                                {% else %}
+                                                                    <a href="#" class="h6 fw-light mb-0 text-secondary" title="En biblioteca">
+                                                                        <i class="fas fa-book"></i>
+                                                                    </a>
+                                                                {% endif %}
+                                                            </div>
+                                                            <!-- Title -->
+                                                            <h5 class="card-title">
+                                                                <a href="{% url 'editarCuestionario' cuestionario.id %}">{{ cuestionario.recurso.titulo|truncatechars:40 }}</a>
+                                                            </h5>
+                                                            
+                                                            <!-- Course Info -->
+                                                            {% if cuestionario.recurso.seccion %}
+                                                                <p class="text-muted small mb-2">
+                                                                    <i class="fas fa-graduation-cap me-1"></i>{{ cuestionario.recurso.seccion.curso.titulo|truncatechars:30 }}
+                                                                </p>
+                                                            {% else %}
+                                                                <p class="text-muted small mb-2">
+                                                                    <i class="fas fa-folder me-1"></i>En Biblioteca - Sin asignar
+                                                                </p>
+                                                            {% endif %}
+                                                            
+                                                            <!-- Rating star -->
+                                                            <ul class="list-inline mb-0">
+                                                                <li class="list-inline-item me-0 small"><i class="fas fa-star text-warning"></i></li>
+                                                                <li class="list-inline-item me-0 small"><i class="fas fa-star text-warning"></i></li>
+                                                                <li class="list-inline-item me-0 small"><i class="fas fa-star text-warning"></i></li>
+                                                                <li class="list-inline-item me-0 small"><i class="fas fa-star text-warning"></i></li>
+                                                                <li class="list-inline-item me-0 small"><i class="far fa-star text-warning"></i></li>
+                                                                <li class="list-inline-item ms-2 h6 fw-light mb-0">{{ cuestionario.puntaje_total|floatformat:0 }}pts</li>
+                                                            </ul>
+                                                        </div>
+                                                        <!-- Card footer -->
+                                                        <div class="card-footer pt-0 pb-3">
+                                                            <hr>
+                                                            <div class="d-flex justify-content-between">
+                                                                <span class="h6 fw-light mb-0"><i class="far fa-clock text-danger me-2"></i>{{ cuestionario.tiempo_limite }}min</span>
+                                                                <span class="h6 fw-light mb-0"><i class="fas fa-table text-orange me-2"></i>{{ cuestionario.preguntas.count }} preguntas</span>
+                                                            </div>
+                                                            
+                                                            <!-- Botones de acción -->
+                                                            <div class="d-flex gap-1 mt-2">
+                                                                <a href="{% url 'editarCuestionario' cuestionario.id %}" class="btn btn-primary btn-sm flex-fill">
+                                                                    <i class="fas fa-edit me-1"></i>Editar
+                                                                </a>
+                                                                {% if not cuestionario.recurso.seccion %}
+                                                                    <button class="btn btn-success btn-sm" onclick="asignarACurso({{ cuestionario.id }})" title="Asignar a curso">
+                                                                        <i class="fas fa-plus"></i>
+                                                                    </button>
+                                                                {% endif %}
+                                                                <button class="btn btn-outline-info btn-sm" onclick="verDetalles({{ cuestionario.id }})" title="Ver detalles">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card item END -->
+                                                {% empty %}
+                                                <!-- No hay cuestionarios -->
+                                                <div class="col-12">
+                                                    <div class="text-center py-5">
+                                                        <div class="mb-4">
+                                                            <i class="fas fa-clipboard-list text-muted" style="font-size: 4rem;"></i>
+                                                        </div>
+                                                        <h4 class="text-muted mb-3">No tienes cuestionarios creados</h4>
+                                                        <p class="text-muted mb-4">Crea tu primer cuestionario para comenzar a evaluar a tus estudiantes</p>
+                                                        <a href="{% url 'crearCuestionario' %}" class="btn btn-primary">
+                                                            <i class="fas fa-plus me-2"></i>Crear Mi Primer Cuestionario
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+
+                                            </div>
+                                            <!-- Course Grid END -->
+
+                                            <!-- Pagination START -->
+                                            <div class="col-12">
+                                                <nav class="mt-4 d-flex justify-content-center" aria-label="navigation">
+                                                    <ul class="pagination pagination-primary-soft d-inline-block d-md-flex rounded mb-0">
+                                                        <li class="page-item mb-0"><a class="page-link" href="#" tabindex="-1"><i class="fas fa-angle-double-left"></i></a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">1</a></li>
+                                                        <li class="page-item mb-0 active"><a class="page-link" href="#">2</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">..</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">6</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#"><i class="fas fa-angle-double-right"></i></a></li>
+                                                    </ul>
+                                                </nav>
+                                            </div>
+                                            <!-- Pagination END -->
+                                        </div>
+                                        <!-- Main content END -->
+                                    </div><!-- Row END -->
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page content END -->
+
+                        </div>
+                        <!-- Main content END -->
+                    </div><!-- Row END -->
+                </div>
+            </section>
+        </div>
+    </div>
+    <!-- =======================
+    Inner part END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Modal de Detalles START -->
+<div class="modal fade" id="modalDetallesCuestionario" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalDetallesLabel">
+                    <i class="fas fa-clipboard-list me-2"></i>Detalles del Cuestionario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalDetallesContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando detalles...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+                <button type="button" class="btn btn-primary" id="btnEditarDesdeModal">
+                    <i class="fas fa-edit me-1"></i>Editar Cuestionario
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Detalles END -->
+
+<!-- Scripts -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'assets/vendor/choices/js/choices.min.js' %}"></script>
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+<!-- JavaScript para Funcionalidades -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📚 Biblioteca de Cuestionarios cargada');
+    
+    // Referencias a elementos
+    const buscarInput = document.getElementById('buscarCuestionario');
+    const filtroCurso = document.getElementById('filtroCurso');
+    const filtroTipo = document.getElementById('filtroTipo');
+    const ordenarSelect = document.getElementById('ordenar');
+    
+    // Función de búsqueda y filtrado
+    function filtrarCuestionarios() {
+        const textoBusqueda = buscarInput.value.toLowerCase();
+        const cursoSeleccionado = filtroCurso.value;
+        const tipoSeleccionado = filtroTipo.value;
+        const items = document.querySelectorAll('.cuestionario-item');
+        
+        let itemsVisibles = 0;
+        
+        items.forEach(item => {
+            const titulo = item.dataset.titulo;
+            const curso = item.dataset.curso;
+            const tipo = item.dataset.tipo;
+            
+            let mostrar = true;
+            
+            // Filtro por texto
+            if (textoBusqueda && !titulo.includes(textoBusqueda)) {
+                mostrar = false;
+            }
+            
+            // Filtro por curso
+            if (cursoSeleccionado && curso !== cursoSeleccionado) {
+                mostrar = false;
+            }
+            
+            // Filtro por tipo
+            if (tipoSeleccionado && tipo !== tipoSeleccionado) {
+                mostrar = false;
+            }
+            
+            if (mostrar) {
+                item.style.display = 'block';
+                itemsVisibles++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        console.log(`Mostrando ${itemsVisibles} de ${items.length} cuestionarios`);
+    }
+    
+    // Event listeners para filtros
+    if (buscarInput) buscarInput.addEventListener('input', filtrarCuestionarios);
+    if (filtroCurso) filtroCurso.addEventListener('change', filtrarCuestionarios);
+    if (filtroTipo) filtroTipo.addEventListener('change', filtrarCuestionarios);
+    
+    console.log('✅ Filtros de biblioteca inicializados');
+});
+
+// Función para ver detalles del cuestionario
+function verDetalles(cuestionarioId) {
+    console.log('👀 Viendo detalles del cuestionario:', cuestionarioId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalDetallesCuestionario'));
+    modal.show();
+    
+    setTimeout(() => {
+        document.getElementById('modalDetallesContent').innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Información General
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>ID:</strong> ${cuestionarioId}</div>
+                        <div class="mb-2"><strong>Estado:</strong> <span class="badge bg-success">Activo</span></div>
+                        <div class="mb-0"><strong>Última modificación:</strong> Reciente</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>Estadísticas
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>Estudiantes:</strong> 0</div>
+                        <div class="mb-2"><strong>Promedio:</strong> N/A</div>
+                        <div class="mb-0"><strong>Completados:</strong> 0</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('btnEditarDesdeModal').onclick = function() {
+            window.location.href = `/docente/editar_cuestionario/${cuestionarioId}/`;
+        };
+    }, 500);
+}
+
+// Función para asignar cuestionario a curso
+function asignarACurso(cuestionarioId) {
+    console.log('🔗 Asignando cuestionario a curso:', cuestionarioId);
+    alert('Funcionalidad de asignar a curso en desarrollo');
+    // window.location.href = `/docente/asignar-cuestionario/${cuestionarioId}/`;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!-- plantilla_pregunta_adaptada.html - VERSIÓN OPTIMIZADA SIN DUPLICACIÓN -->
+<div class="plantilla-pregunta" data-tipo="{{ pregunta.tipo.nombre }}" data-pregunta-id="{{ pregunta.id }}">
+    
+    <!-- Encabezado común de la pregunta -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <label class="form-label fw-bold">
+                <i class="fas fa-question-circle me-2 text-primary"></i>
+                Enunciado de la pregunta
+            </label>
+            <textarea class="form-control" rows="3" 
+                      placeholder="Escribe el enunciado de tu pregunta aquí..."
+                      data-field="enunciado"
+                      data-pregunta-id="{{ pregunta.id }}">{{ pregunta.enunciado|default:"" }}</textarea>
+            <small class="text-muted">
+                <i class="fas fa-lightbulb me-1"></i>
+                Escribe una pregunta clara y específica que los estudiantes puedan entender fácilmente.
+            </small>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="col-6">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-star me-2 text-warning"></i>
+                        Puntaje
+                    </label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" value="{{ pregunta.puntaje|default:1 }}" 
+                               min="1" step="1" data-field="puntaje" data-pregunta-id="{{ pregunta.id }}">
+                        <span class="input-group-text">pts</span>
+                    </div>
+                    <small class="text-muted">Puntos que vale esta pregunta</small>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-user-check me-2 text-info"></i>
+                        Calificación
+                    </label>
+                    <div class="calificacion-manual">
+                        <input type="checkbox" id="calificacion-manual-{{ pregunta.id }}" 
+                               data-field="calificacion_manual"
+                               data-pregunta-id="{{ pregunta.id }}"
+                               {% if pregunta.calificacion_manual %}checked{% endif %}>
+                        <label for="calificacion-manual-{{ pregunta.id }}" class="small">
+                            Manual
+                        </label>
+                    </div>
+                    <small class="text-muted d-block">Marcar si requiere revisión manual</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN DE RECURSOS MULTIMEDIA - SIN SCROLL, CON POP-UPS -->
+    <div class="recursos-multimedia-section">
+        <button type="button" class="recursos-apoyo-toggle" 
+                data-bs-toggle="collapse" 
+                data-bs-target="#recursos-{{ pregunta.id }}" 
+                aria-expanded="false">
+            <i class="fas fa-paperclip me-2"></i>
+            <span>Recursos de apoyo</span>
+            <i class="fas fa-chevron-down ms-auto toggle-icon"></i>
+        </button>
+        
+        <!-- Contenido de recursos (colapsable) -->
+        <div class="collapse" id="recursos-{{ pregunta.id }}">
+            <div class="recursos-content">
+                <div class="recursos-header">
+                    <h6 class="mb-3">
+                        <i class="fas fa-layer-group me-2 text-primary"></i>
+                        Agregar recurso multimedia
+                    </h6>
+                </div>
+                
+                <!-- Botones de recursos - CON POP-UP MODAL -->
+                <div class="row g-3 mb-4">
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" onclick="abrirModalRecurso('imagen', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="recurso-title">Imagen</div>
+                            <div class="recurso-subtitle">JPG, PNG, GIF</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" onclick="abrirModalRecurso('video', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <div class="recurso-title">Video</div>
+                            <div class="recurso-subtitle">MP4, WebM</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" onclick="abrirModalRecurso('youtube', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fab fa-youtube"></i>
+                            </div>
+                            <div class="recurso-title">YouTube</div>
+                            <div class="recurso-subtitle">URL de video</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" onclick="abrirModalRecurso('documento', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="recurso-title">Documento</div>
+                            <div class="recurso-subtitle">PDF, DOC, PPT</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" onclick="abrirModalRecurso('audio', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-volume-up"></i>
+                            </div>
+                            <div class="recurso-title">Audio</div>
+                            <div class="recurso-subtitle">MP3, WAV</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <div class="recurso-card" onclick="abrirModalRecurso('simulador', {{ pregunta.id }})">
+                            <div class="recurso-icon">
+                                <i class="fas fa-atom"></i>
+                            </div>
+                            <div class="recurso-title">Simulador</div>
+                            <div class="recurso-subtitle">Molecular 2D/3D</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recursos cargados -->
+                {% if pregunta.archivo_multimedia or pregunta.url_youtube %}
+                <div class="recursos-actuales" id="recursos-actuales-{{ pregunta.id }}">
+                    <h6 class="mb-3">
+                        <i class="fas fa-check-circle me-2 text-success"></i>
+                        Recursos cargados
+                    </h6>
+                    <div class="recursos-lista">
+                        {% if pregunta.archivo_multimedia %}
+                        <div class="recurso-item">
+                            <div class="recurso-info">
+                                <i class="fas fa-file me-2"></i>
+                                <span>{{ pregunta.archivo_multimedia.name|default:"Archivo multimedia" }}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="eliminarRecursoExistente('archivo', {{ pregunta.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                        
+                        {% if pregunta.url_youtube %}
+                        <div class="recurso-item">
+                            <div class="recurso-info">
+                                <i class="fab fa-youtube me-2 text-danger"></i>
+                                <span>Video de YouTube: {{ pregunta.url_youtube }}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="eliminarRecursoExistente('youtube', {{ pregunta.id }})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Consejos -->
+                <div class="recursos-tips">
+                    <div class="alert alert-info border-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Consejos para recursos efectivos:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Las imágenes deben ser claras y relevantes al contenido</li>
+                            <li>Los videos de YouTube deben estar relacionados con la pregunta</li>
+                            <li>Los documentos PDF deben ser legibles y no muy extensos</li>
+                            <li>Los simuladores permiten interacción con moléculas en 2D/3D</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Limitaciones -->
+                <div class="recursos-limitaciones">
+                    <small class="text-muted">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Límites: 10MB imágenes, 50MB videos, 25MB documentos
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENIDO ESPECÍFICO POR TIPO DE PREGUNTA -->
+    <div class="tipo-pregunta-content">
+        {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' or pregunta.tipo.nombre == 'falso_verdadero' %}
+            {% include 'docente/plantillas/plantilla_opciones.html' %}
+        {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
+            {% include 'docente/plantillas/plantilla_respuesta_abierta.html' %}
+        {% elif pregunta.tipo.nombre == 'simulador_2d' or pregunta.tipo.nombre == 'simulador_3d' %}
+            {% include 'docente/plantillas/plantilla_simuladores.html' %}
+        {% elif pregunta.tipo.nombre == 'unir_lineas' %}
+            {% include 'docente/plantillas/plantilla_unir_lineas.html' %}
+        {% elif pregunta.tipo.nombre == 'completar' %}
+            {% include 'docente/plantillas/plantilla_completar.html' %}
+        {% else %}
+            <div class="tipo-desconocido-container">
+                <div class="alert alert-warning border-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Tipo de pregunta "{{ pregunta.tipo.nombre }}" no está configurado aún.</strong>
+                    <br><small>Contacta al administrador para agregar soporte para este tipo.</small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Acciones de la pregunta -->
+    <div class="pregunta-actions">
+        <button type="button" class="btn btn-success btn-sm action-btn btn-guardar-pregunta" 
+                data-pregunta-id="{{ pregunta.id }}"
+                title="Guardar todos los cambios realizados"
+                onclick="guardarPregunta(this)">
+            <i class="fas fa-save me-1"></i>Guardar cambios
+        </button>
+        
+        <button type="button" class="btn btn-warning btn-sm action-btn btn-cambiar-tipo" 
+                data-pregunta-id="{{ pregunta.id }}"
+                title="Cambiar el tipo de esta pregunta"
+                onclick="iniciarCambioTipo({{ pregunta.id }})">
+            <i class="fas fa-exchange-alt me-1"></i>Cambiar tipo
+        </button>
+        
+        <button type="button" class="btn btn-info btn-sm action-btn btn-duplicar-pregunta" 
+                data-pregunta-id="{{ pregunta.id }}"
+                title="Crear una copia de esta pregunta"
+                onclick="duplicarPregunta({{ pregunta.id }})">
+            <i class="fas fa-copy me-1"></i>Duplicar
+        </button>
+        
+        <button type="button" class="btn btn-danger btn-sm action-btn btn-eliminar-pregunta" 
+                data-pregunta-id="{{ pregunta.id }}"
+                title="Eliminar esta pregunta permanentemente"
+                onclick="eliminarPreguntaExistente(this)">
+            <i class="fas fa-trash me-1"></i>Eliminar
+        </button>
+        
+        <!-- Información adicional -->
+        <div class="ms-auto d-flex align-items-center">
+            <span class="pregunta-info">
+                <i class="fas fa-info-circle me-1"></i>
+                <strong>{{ pregunta.tipo.descripcion|title }}</strong> | 
+                Orden: {{ pregunta.orden }} | 
+                Puntos: {{ pregunta.puntaje }}
+                {% if pregunta.fecha_creacion %}
+                | {{ pregunta.fecha_creacion|date:"d/m/Y" }}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ESTILOS CSS ÚNICOS PARA LA PLANTILLA -->
+<style>
+/* ===== ESTILOS BASE PARA LA PLANTILLA ===== */
+.plantilla-pregunta {
+    border: 1px solid #e8ecef;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.plantilla-pregunta:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    border-color: #0066cc;
+}
+
+.plantilla-pregunta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, #0066cc, #004499);
+    border-radius: 12px 0 0 12px;
+}
+
+/* ===== CAMPOS DE FORMULARIO MEJORADOS ===== */
+.form-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    display: flex;
+    align-items: center;
+}
+
+.form-control {
+    font-size: 1rem;
+    padding: 12px 16px;
+    border: 1px solid #dde2e6;
+    border-radius: 8px;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.1);
+    background-color: #ffffff;
+}
+
+.form-control:hover {
+    border-color: #b8c5d1;
+}
+
+/* ===== SECCIÓN DE RECURSOS MULTIMEDIA ===== */
+.recursos-multimedia-section {
+    margin: 20px 0;
+    border-top: 1px solid #f0f3f6;
+    padding-top: 20px;
+}
+
+.recursos-apoyo-toggle {
+    width: 100%;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    color: #495057;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.recursos-apoyo-toggle:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    color: #212529;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.recursos-apoyo-toggle[aria-expanded="true"] {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-color: #0066cc;
+    color: #0066cc;
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+}
+
+.recursos-apoyo-toggle[aria-expanded="true"] .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.recursos-content {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 12px;
+}
+
+.recursos-header h6 {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* ===== TARJETAS DE RECURSOS ===== */
+.recurso-card {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 16px 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.recurso-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #0066cc, #004499);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.recurso-card:hover {
+    border-color: #0066cc;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 102, 204, 0.15);
+}
+
+.recurso-card:hover::before {
+    width: 100%;
+}
+
+.recurso-icon {
+    font-size: 24px;
+    color: #6c757d;
+    margin-bottom: 8px;
+    transition: color 0.3s ease;
+}
+
+.recurso-card:hover .recurso-icon {
+    color: #0066cc;
+}
+
+.recurso-title {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.recurso-subtitle {
+    font-size: 0.75rem;
+    color: #6c757d;
+    line-height: 1.2;
+}
+
+/* ===== TIPS Y ALERTAS ===== */
+.recursos-tips .alert {
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+    border-left: 4px solid #0066cc;
+    color: #2c3e50;
+}
+
+.recursos-tips ul {
+    padding-left: 20px;
+    font-size: 0.9rem;
+}
+
+.recursos-tips li {
+    margin-bottom: 4px;
+}
+
+/* ===== RECURSOS ACTUALES ===== */
+.recursos-actuales h6 {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.recurso-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.recurso-info {
+    display: flex;
+    align-items: center;
+    color: #495057;
+    font-weight: 500;
+}
+
+/* ===== CALIFICACIÓN MANUAL ===== */
+.calificacion-manual {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffeaa7 100%);
+    border: 1px solid #f39c12;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+}
+
+.calificacion-manual input[type="checkbox"] {
+    margin: 0;
+    transform: scale(1.2);
+    accent-color: #f39c12;
+}
+
+.calificacion-manual label {
+    margin: 0;
+    font-weight: 600;
+    cursor: pointer;
+    color: #856404;
+}
+
+/* ===== ACCIONES DE PREGUNTA ===== */
+.pregunta-actions {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f3f6;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    border: none;
+    font-size: 0.9rem;
+    padding: 8px 16px;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.pregunta-info {
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* ===== LIMITACIONES ===== */
+.recursos-limitaciones {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #f0f3f6;
+    text-align: center;
+}
+
+/* ===== TIPO DESCONOCIDO ===== */
+.tipo-desconocido-container .alert {
+    border-left: 4px solid #dc3545;
+    background: linear-gradient(135deg, #fdf2f2 0%, #fce4ec 100%);
+    color: #721c24;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .plantilla-pregunta {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+    
+    .pregunta-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .action-btn {
+        margin-bottom: 8px;
+        width: 100%;
+    }
+    
+    .pregunta-actions .ms-auto {
+        margin-left: 0 !important;
+        margin-top: 12px;
+    }
+    
+    .calificacion-manual {
+        min-height: 36px;
+        padding: 6px 10px;
+    }
+    
+    .recurso-card {
+        height: 100px;
+        padding: 12px 8px;
+    }
+    
+    .recurso-icon {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+    
+    .recurso-title {
+        font-size: 0.8rem;
+    }
+    
+    .recurso-subtitle {
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .recursos-content {
+        padding: 15px;
+    }
+    
+    .recursos-apoyo-toggle {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+}
+</style>

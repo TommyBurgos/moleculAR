@@ -1,0 +1,278 @@
+<!-- plantillas/plantilla_opciones.html - VERSIÓN LIMPIA SIN DUPLICACIÓN -->
+<div class="opciones-container">
+    <label class="form-label fw-bold">
+        <i class="fas fa-list me-2 text-success"></i>
+        Opciones de respuesta
+    </label>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        {% if pregunta.tipo.nombre == 'opcion_unica' %}
+        Los estudiantes podrán seleccionar <strong>una sola</strong> opción como respuesta correcta.
+        {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+        Los estudiantes podrán seleccionar <strong>múltiples</strong> opciones como respuestas correctas.
+        {% elif pregunta.tipo.nombre == 'falso_verdadero' %}
+        Los estudiantes elegirán entre <strong>Verdadero</strong> o <strong>Falso</strong>.
+        {% endif %}
+    </div>
+    
+    <!-- Lista de opciones existentes -->
+    <div class="opciones-lista" id="opciones-lista-{{ pregunta.id }}">
+        {% for opcion in pregunta.opciones.all %}
+        <div class="opcion-container {% if opcion.es_correcta %}opcion-correcta{% endif %}" 
+             data-opcion-id="{{ opcion.id }}">
+            
+            <!-- Radio button o checkbox según el tipo -->
+            {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'falso_verdadero' %}
+            <input type="radio" 
+                   class="form-check-input opcion-radio" 
+                   name="correcta_{{ pregunta.id }}" 
+                   id="opcion_{{ opcion.id }}"
+                   {% if opcion.es_correcta %}checked{% endif %}
+                   onchange="manejarCambioOpcionCorrecta(this)"
+                   data-opcion-id="{{ opcion.id }}"
+                   data-pregunta-id="{{ pregunta.id }}">
+            {% else %}
+            <input type="checkbox" 
+                   class="form-check-input opcion-checkbox" 
+                   id="opcion_{{ opcion.id }}"
+                   {% if opcion.es_correcta %}checked{% endif %}
+                   onchange="manejarCambioOpcionCorrecta(this)"
+                   data-opcion-id="{{ opcion.id }}"
+                   data-pregunta-id="{{ pregunta.id }}">
+            {% endif %}
+            
+            <!-- Input para el texto de la opción -->
+            <input type="text" 
+                   class="form-control opcion-input" 
+                   value="{{ opcion.texto }}"
+                   placeholder="Escriba el texto de la opción..."
+                   data-opcion-id="{{ opcion.id }}"
+                   data-field="texto_opcion">
+            
+            <!-- Botón eliminar opción - SIEMPRE VISIBLE SI HAY MÁS DE 2 -->
+            {% if pregunta.opciones.count > 2 %}
+            <button type="button" 
+                    class="btn btn-eliminar-opcion btn-eliminar-cuadrado" 
+                    title="Eliminar esta opción"
+                    data-opcion-id="{{ opcion.id }}">
+                <i class="fas fa-times"></i>
+            </button>
+            {% endif %}
+        </div>
+        {% empty %}
+        <!-- Si no hay opciones, mostrar mensaje -->
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No hay opciones definidas para esta pregunta. 
+            <button type="button" class="btn btn-sm btn-primary ms-2 btn-agregar-opcion"
+                    data-pregunta-id="{{ pregunta.id }}">
+                <i class="fas fa-plus me-1"></i>Agregar primera opción
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Botón agregar nueva opción -->
+    {% if pregunta.tipo.nombre != 'falso_verdadero' %}
+    <div class="agregar-opcion-container mt-3">
+        <button type="button" 
+                class="btn-agregar-opcion btn-cuadrado-agregar" 
+                title="Agregar nueva opción"
+                data-pregunta-id="{{ pregunta.id }}">
+            <i class="fas fa-plus"></i>
+        </button>
+        <span class="ms-2 text-muted">Agregar nueva opción</span>
+    </div>
+    {% endif %}
+    
+    <!-- Información sobre la respuesta correcta -->
+    <div class="respuesta-info mt-3">
+        <small class="text-muted">
+            <i class="fas fa-lightbulb me-1"></i>
+            {% if pregunta.tipo.nombre == 'opcion_unica' %}
+            Marque la opción que será la respuesta correcta.
+            {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+            Marque todas las opciones que serán correctas (puede ser más de una).
+            {% elif pregunta.tipo.nombre == 'falso_verdadero' %}
+            Marque si la afirmación es verdadera o falsa.
+            {% endif %}
+        </small>
+    </div>
+</div>
+
+<!-- SOLO ESTILOS - SIN JAVASCRIPT -->
+<style>
+.opciones-container {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.opciones-lista {
+    margin: 15px 0;
+}
+
+.opcion-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 15px;
+    padding: 18px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: 2px solid #f8f9fa;
+    background-color: #ffffff;
+    position: relative;
+}
+
+.opcion-container.opcion-correcta {
+    background: linear-gradient(135deg, #d5f4e6 0%, #e8f5e8 100%);
+    border: 2px solid #27ae60;
+    border-left: 5px solid #27ae60;
+}
+
+.opcion-container:not(.opcion-correcta) {
+    background-color: #fafbfc;
+    border: 2px solid #e9ecef;
+}
+
+.opcion-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-color: #3498db;
+}
+
+.opcion-input {
+    flex: 1;
+    font-size: 1.05rem;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+}
+
+.opcion-input:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.15rem rgba(52,152,219,0.15);
+    outline: none;
+}
+
+/* Radio buttons y checkboxes más grandes */
+.opcion-container input[type="radio"],
+.opcion-container input[type="checkbox"] {
+    transform: scale(1.4);
+    margin-right: 8px;
+    accent-color: #27ae60;
+}
+
+/* Botón agregar opción - CUADRADO */
+.btn-agregar-opcion {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    border: 2px dashed #3498db;
+    background: transparent;
+    color: #3498db;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cuadrado-agregar {
+    border-radius: 4px !important;
+}
+
+.btn-agregar-opcion:hover {
+    background-color: #3498db;
+    color: white;
+    transform: scale(1.05);
+    border-style: solid;
+}
+
+.agregar-opcion-container {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.agregar-opcion-container:hover {
+    border-color: #3498db;
+    background-color: #e3f2fd;
+}
+
+/* Botón eliminar opción - CUADRADO */
+.btn-eliminar-opcion {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-eliminar-cuadrado {
+    border-radius: 4px !important;
+}
+
+.btn-eliminar-opcion:hover {
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.btn-eliminar-opcion:active {
+    transform: scale(0.95);
+}
+
+/* Información de respuesta */
+.respuesta-info {
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0f8ff 100%);
+    border-left: 4px solid #3498db;
+    padding: 12px 15px;
+    border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .opcion-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 15px;
+    }
+    
+    .opcion-container input[type="radio"],
+    .opcion-container input[type="checkbox"] {
+        transform: scale(1.2);
+        margin-bottom: 8px;
+    }
+    
+    .btn-eliminar-opcion {
+        align-self: flex-end;
+        margin-top: 8px;
+    }
+    
+    .agregar-opcion-container {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+}
+</style>

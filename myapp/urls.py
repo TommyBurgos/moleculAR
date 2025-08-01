@@ -6,7 +6,8 @@ urlpatterns = [
     path('login/', views.vistaLogin, name='inicio'),
     path("logout/", views.signout, name="logout"),
     path('registro/', views.registroUser),
-    path('inicio/',views.custom_login),
+    #path('inicio/',views.custom_login),
+    path('inicio/', views.custom_login, name='custom_login'), #cambio de Paula
     path('usAdmin/', views.inicioAdmin, name="dashboard-adm"),
     path('usAdmin/detalleCursos', views.vistaAllCursos, name="detalleCursos-adm"),
     path('detalleCurso/<int:curso_id>/', views.detalle_curso, name='detalle_curso'),
@@ -52,6 +53,44 @@ urlpatterns = [
     path('editor-dibujo/', views.editor_dibujo, name='editor_dibujo'),
     path('procesar-molecula/', views.procesar_molecula, name='procesar_molecula'),
     path('registroExitoso/',views.registroExitoso),
+
+
+    #paula
+    #Profesor
+    path('docente/crear_cuestionario/', views.instructorQuiz, name='crearCuestionario'),
+    path('docente/crear_cuestionario/<int:seccion_id>/', views.instructorQuiz, name='crearCuestionarioSeccion'),
+    path('docente/editar_cuestionario/<int:cuestionario_id>/', views.editarCuestionario, name='editarCuestionario'),
+    
+    path('docente/cuestionario/guardar-cuestionario/', views.guardar_cuestionario, name='guardarCuestionario'),
+    path('docente/cuestionario/actualizar-cuestionario/<int:cuestionario_id>/', views.actualizarCuestionarioExistente, name='actualizarCuestionarioExistente'),
+    path('docente/cuestionario/actualizar-configuracion/', views.actualizarConfiguracion, name='actualizarConfiguracion'),
+    path('docente/cuestionario/finalizar/', views.finalizar_cuestionario, name='finalizarCuestionario'),
+    
+    path('docente/cuestionario/agregar-pregunta/', views.agregarPregunta, name='agregarPregunta'),
+    path('docente/cuestionario/actualizar-pregunta/', views.actualizar_pregunta, name='actualizarPregunta'),
+    path('docente/cuestionario/eliminar-pregunta/<int:pregunta_id>/', views.eliminarPregunta, name='eliminarPregunta'),
+    path('docente/cuestionario/cambiar-tipo-pregunta/', views.cambiarTipoPregunta, name='cambiarTipoPregunta'),
+    path('docente/cuestionario/duplicar-pregunta/', views.duplicar_pregunta, name='duplicarPregunta'),
+    
+    path('docente/cuestionario/agregar-opcion/', views.agregarOpcion, name='agregarOpcion'),
+    path('docente/cuestionario/actualizar-opcion/', views.actualizarOpcion, name='actualizarOpcion'),
+    path('docente/cuestionario/eliminar-opcion/<int:opcion_id>/', views.eliminarOpcion, name='eliminarOpcion'),
+    
+    path('docente/cuestionario/subir-recurso/', views.subir_recurso, name='subirRecurso'),
+    path('docente/cuestionario/eliminar-recurso-pregunta/', views.eliminar_recurso_pregunta, name='eliminarRecursoPregunta'),
+    path('docente/cuestionario/crear-tipos/', views.crearTiposPregunta, name='crearTiposPregunta'),
+    path('docente/cuestionario/inicializar-tipos/', views.inicializar_tipos_pregunta, name='inicializarTiposPregunta'),
+    path('docente/biblioteca-cuestionarios/', views.biblioteca_cuestionarios, name='bibliotecaCuestionarios'),
+    path('docente/asignar-cuestionario/<int:cuestionario_id>/', views.asignar_cuestionario_seccion, name='asignarCuestionarioSeccion'),
+
+    #Estudiante
+    path('estudiante/biblioteca-cuestionarios/', views.biblioteca_cuestionarios_estudiante, name='biblioteca_cuestionarios_estudiante'),
+    path('estudiante/iniciar-cuestionario/<int:cuestionario_id>/', views.iniciar_cuestionario, name='iniciar_cuestionario'),
+    path('estudiante/realizar-cuestionario/<int:intento_id>/', views.realizar_cuestionario, name='realizar_cuestionario'),
+    path('estudiante/guardar-respuesta/', views.guardar_respuesta, name='guardar_respuesta'),
+    path('estudiante/finalizar-cuestionario/<int:intento_id>/', views.finalizar_cuestionario, name='finalizar_cuestionario'),
+    path('estudiante/resultado-cuestionario/<int:intento_id>/', views.resultado_cuestionario, name='resultado_cuestionario'),
+    path('estudiante/historial-cuestionarios/', views.historial_cuestionarios, name='historial_cuestionarios'),
 
 
 ]

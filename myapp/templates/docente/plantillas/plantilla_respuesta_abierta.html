@@ -1,0 +1,253 @@
+<!-- plantillas/plantilla_respuesta_abierta.html - COMPLETAMENTE FUNCIONAL -->
+<div class="respuesta-abierta-container">
+    <label class="form-label fw-bold">Configuración de respuesta abierta</label>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Esta pregunta será evaluada manualmente. Los estudiantes podrán escribir su respuesta en un campo de texto.
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Respuesta modelo (opcional)</label>
+        <textarea class="form-control" rows="4" 
+                  placeholder="Escribe una respuesta modelo para guiar la evaluación..."
+                  data-field="respuesta_modelo"
+                  data-pregunta-id="{{ pregunta.id }}">{{ pregunta.respuesta_modelo|default:"" }}</textarea>
+        <small class="text-muted">Esta respuesta servirá como guía para la calificación manual</small>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Criterios de evaluación (opcional)</label>
+        <textarea class="form-control" rows="3" 
+                  placeholder="Describe los criterios que se deben considerar al evaluar esta respuesta..."
+                  data-field="criterios_evaluacion"
+                  data-pregunta-id="{{ pregunta.id }}">{{ pregunta.criterios_evaluacion|default:"" }}</textarea>
+        <small class="text-muted">Estos criterios ayudarán a mantener consistencia en la calificación</small>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <label class="form-label">Longitud mínima de respuesta</label>
+            <div class="input-group">
+                <input type="number" class="form-control" 
+                       value="{{ pregunta.longitud_minima|default:50 }}" 
+                       min="10" max="1000"
+                       data-field="longitud_minima"
+                       data-pregunta-id="{{ pregunta.id }}"
+                       onchange="validarLongitudes(this)">
+                <span class="input-group-text">caracteres</span>
+            </div>
+            <small class="text-muted">Número mínimo de caracteres requeridos</small>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Longitud máxima de respuesta</label>
+            <div class="input-group">
+                <input type="number" class="form-control" 
+                       value="{{ pregunta.longitud_maxima|default:1000 }}" 
+                       min="50" max="5000"
+                       data-field="longitud_maxima"
+                       data-pregunta-id="{{ pregunta.id }}"
+                       onchange="validarLongitudes(this)">
+                <span class="input-group-text">caracteres</span>
+            </div>
+            <small class="text-muted">Número máximo de caracteres permitidos</small>
+        </div>
+    </div>
+    
+    <!-- Vista previa de la configuración -->
+    <div class="mt-4">
+        <h6>Vista Previa:</h6>
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Pregunta de ejemplo:</label>
+                    <p class="mb-2">{{ pregunta.enunciado|default:"Escriba el enunciado de la pregunta arriba..." }}</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tu respuesta:</label>
+                    <textarea class="form-control" rows="4" 
+                              placeholder="Los estudiantes escribirán aquí su respuesta..."
+                              readonly></textarea>
+                    <small class="text-muted">
+                        <span id="info-longitud-{{ pregunta.id }}">
+                            Longitud: {{ pregunta.longitud_minima|default:50 }} - {{ pregunta.longitud_maxima|default:1000 }} caracteres
+                        </span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información adicional -->
+    <div class="mt-3">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>Nota importante:</strong> Las preguntas de respuesta abierta requieren calificación manual. 
+            Esto significa que deberás revisar y calificar cada respuesta individualmente.
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos específicos para respuesta abierta */
+.respuesta-abierta-container {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 15px;
+}
+
+.respuesta-abierta-container .alert {
+    border-left: 4px solid #17a2b8;
+    background-color: #d1ecf1;
+}
+
+.respuesta-abierta-container .form-control {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1.05rem;
+}
+
+.respuesta-abierta-container .form-control:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25);
+}
+
+.respuesta-abierta-container .input-group {
+    margin-bottom: 10px;
+}
+
+/* Indicadores visuales para campos requeridos */
+.respuesta-abierta-container .form-label::after {
+    content: " *";
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .respuesta-abierta-container {
+        padding: 15px;
+    }
+    
+    .respuesta-abierta-container .row {
+        flex-direction: column;
+    }
+    
+    .respuesta-abierta-container .col-md-6 {
+        margin-bottom: 15px;
+    }
+}
+</style>
+
+<script>
+// Scripts específicos para respuesta abierta
+function validarLongitudes(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) return;
+    
+    const minimaInput = document.querySelector(`[data-pregunta-id="${preguntaId}"][data-field="longitud_minima"]`);
+    const maximaInput = document.querySelector(`[data-pregunta-id="${preguntaId}"][data-field="longitud_maxima"]`);
+    const infoLongitud = document.getElementById(`info-longitud-${preguntaId}`);
+    
+    if (!minimaInput || !maximaInput) return;
+    
+    const minima = parseInt(minimaInput.value) || 50;
+    const maxima = parseInt(maximaInput.value) || 1000;
+    
+    // Validar que mínima sea menor que máxima
+    if (minima >= maxima) {
+        if (element.dataset.field === 'longitud_minima') {
+            maximaInput.value = minima + 50;
+        } else {
+            minimaInput.value = Math.max(10, maxima - 50);
+        }
+        
+        if (typeof mostrarAdvertencia === 'function') {
+            mostrarAdvertencia('La longitud mínima debe ser menor que la máxima');
+        }
+    }
+    
+    // Actualizar vista previa
+    if (infoLongitud) {
+        infoLongitud.textContent = `Longitud: ${minimaInput.value} - ${maximaInput.value} caracteres`;
+    }
+    
+    console.log(`📏 Longitudes actualizadas para pregunta ${preguntaId}: ${minimaInput.value} - ${maximaInput.value}`);
+}
+
+function obtenerPreguntaId(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        
+        if (current.getAttribute && current.getAttribute('data-pregunta-id')) {
+            return current.getAttribute('data-pregunta-id');
+        }
+        
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        
+        const preguntaParent = current.closest('[data-pregunta-id]');
+        if (preguntaParent) {
+            return preguntaParent.dataset.preguntaId;
+        }
+        
+        current = current.parentElement;
+    }
+    
+    console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
+    return null;
+}
+
+function mostrarAdvertencia(mensaje) {
+    // Función de fallback si no existe la función global
+    console.warn('⚠️ ' + mensaje);
+    
+    // Intentar usar la función global si existe
+    if (typeof window.crearCuestionario !== 'undefined' && 
+        typeof window.crearCuestionario.mostrarInfo === 'function') {
+        window.crearCuestionario.mostrarInfo(mensaje);
+    }
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // Validar longitudes iniciales
+    document.querySelectorAll('[data-field="longitud_minima"], [data-field="longitud_maxima"]').forEach(input => {
+        if (input.closest('.respuesta-abierta-container')) {
+            validarLongitudes(input);
+        }
+    });
+    
+    // Configurar validación para campos numéricos
+    document.querySelectorAll('.respuesta-abierta-container input[type="number"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const min = parseInt(this.getAttribute('min'));
+            const max = parseInt(this.getAttribute('max'));
+            const value = parseInt(this.value);
+            
+            if (min && value < min) {
+                this.value = min;
+                mostrarAdvertencia(`Valor mínimo permitido: ${min}`);
+            }
+            if (max && value > max) {
+                this.value = max;
+                mostrarAdvertencia(`Valor máximo permitido: ${max}`);
+            }
+            
+            // Validar longitudes después del cambio
+            validarLongitudes(this);
+        });
+    });
+    
+    console.log('✅ Plantilla respuesta abierta inicializada');
+});
+</script>
