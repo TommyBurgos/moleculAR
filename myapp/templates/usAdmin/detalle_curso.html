@@ -149,12 +149,12 @@
 										<a href="#" class="btn btn-sm btn-primary-soft mb-0" data-bs-toggle="modal" data-bs-target="#addLecture"><i class="bi bi-plus-circle me-2"></i>Agregar sección</a>
 										
 									</div>
-			
+									{% if secciones %}
+									{% for seccion in secciones %}
 									<!-- Edit lecture START -->
 									<div class="accordion accordion-icon accordion-bg-light" id="accordionExample2">
 										<!-- Item START -->
-									{% if secciones %}
-									{% for seccion in secciones %}
+									
 						<div class="accordion-item mb-3">
 							<h6 class="accordion-header font-base" id="heading-{{ forloop.counter }}">
 							<button class="accordion-button fw-bold rounded d-inline-block collapsed d-block pe-5" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse-{{ forloop.counter }}">
@@ -166,7 +166,7 @@
 							<div class="accordion-body mt-3">
 
 								<!-- Aquí listamos los recursos de esta sección -->
-									{% if seccion.recursos_ordenados %}
+								{% if seccion.recursos_ordenados %}
 									{% for recurso in seccion.recursos_ordenados %}			
 									{% if recurso.practica %}
 									<div class="mb-2">
@@ -178,13 +178,24 @@
 										<a href="{% url 'ver_practica' recurso.id %}" class="btn btn-sm btn-outline-primary">Ver</a>
 										{% if user.is_staff or user.es_profesor %}
 										<a href="{% url 'editar_practica' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar</a>
-									</div>
 										{% endif %}
-										{% else %}				
+									</div>	
+									{% elif recurso.tipo.nombre == 'cuestionario' %}								
 										<div class="mb-2">
-											<a href="{% url 'detalle_recurso' recurso.id %}" class="fw-bold text-decoration-none text-dark">
+											<a href="{% url 'editar_cuestionario' recurso.id %}" class="fw-bold text-decoration-none text-dark">
 											{{ recurso.titulo }}
 											</a><br>
+											<small class="text-muted">{{ recurso.tipo.nombre|capfirst }}</small>
+											<p>{{ recurso.descripcion }}</p>
+											{% if user.is_staff or user.es_profesor %}
+											<a href="{% url 'editar_cuestionario' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar</a>
+											{% endif %}
+										</div>
+									{% else %}				
+									<div class="mb-2">
+										<a href="{% url 'detalle_recurso' recurso.id %}" class="fw-bold text-decoration-none text-dark">
+											{{ recurso.titulo }}
+										</a><br>
 										<small class="text-muted">{{ recurso.tipo.nombre|capfirst }}</small>
 										<p>{{ recurso.descripcion }}</p>
 										{% if recurso.tipo.nombre == 'Video' %}
@@ -199,14 +210,14 @@
 										</div>
 										<hr>
 									{% endfor %}
-										{% else %}
-										<p class="text-muted">No hay recursos en esta sección.</p>
-										{% endif %}
+									{% else %}
+									<p class="text-muted">No hay recursos en esta sección.</p>
+									{% endif %}
 
 										<!-- Botón para agregar recurso -->
-										<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic" data-seccion-id="{{ seccion.id }}">
+									<a href="#" class="btn btn-sm btn-dark mb-0" data-bs-toggle="modal" data-bs-target="#addTopic" data-seccion-id="{{ seccion.id }}">
 										<i class="bi bi-plus-circle me-2"></i>Añadir recurso
-										</a>
+									</a>
 
 									</div>
 									</div>

@@ -14,8 +14,6 @@ from django.contrib import messages
 import tempfile
 import json
 
-
-
 from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante
 
 from django.contrib.auth import login, logout, authenticate
@@ -146,7 +144,7 @@ def inicioAdmin(request):
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 def vistaAllCursos(request):
     user = request.user    
     imgPerfil=user.imgPerfil 
@@ -159,7 +157,7 @@ def vistaAllCursos(request):
     return render(request,'usAdmin/detalleCursos.html',context)
 from django.db.models import Prefetch
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 @login_required
 def detalle_curso(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
@@ -209,6 +207,7 @@ def filtrar_estilos(style_str):
 
 import bleach
 
+
 @login_required
 def detalle_recurso(request, recurso_id):
     print("He ingresado al detalle del recurso")
@@ -242,7 +241,7 @@ def detalle_recurso(request, recurso_id):
         'html_limpio': html_limpio
     })
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 @login_required
 def editar_video(request, recurso_id):
     print("Acabo de ingresar a editar texto")
@@ -261,7 +260,7 @@ def editar_video(request, recurso_id):
     return render(request, 'usAdmin/editar_video.html', {'recurso': recurso})
 
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 @login_required
 def editar_texto(request, recurso_id):
     print("Acabo de ingresar a editar texto")
@@ -276,7 +275,6 @@ def editar_texto(request, recurso_id):
         return redirect('detalle_curso', curso_id=recurso.seccion.curso.id)
 
     return render(request, 'usAdmin/editar_texto.html', {'recurso': recurso})
-
 
 
 def crear_modulo(request, curso_id):
@@ -473,9 +471,14 @@ def crear_recurso(request, seccion_id):
                 recurso.save()
             else:
                 print("⚠️ No se recibió la URL del video desde el formulario.")
-
-
-        elif 'cuestionario' in nombre_tipo:
+              
+        elif tipo.nombre.lower() == 'practica':
+            # Por ahora NO creamos la práctica. Solo dejamos el recurso creado.
+            # Luego redirigiremos a una vista donde se edita ese recurso.
+            print("Se creo el recurso practica")
+            return redirect('editar_practica', recurso.id)  
+        
+        elif tipo.nombre.lower() == 'cuestionario':
             print("Dentro del if cuestionario")
             instrucciones = request.POST.get('nombre_cuestionario')
             tiempo_limite = request.POST.get('descripcion_cuestionario')
@@ -483,12 +486,11 @@ def crear_recurso(request, seccion_id):
                 recurso=recurso,
                 instrucciones=instrucciones,
                 tiempo_limite=tiempo_limite
-            )        
-        elif tipo.nombre.lower() == 'practica':
+            )  
             # Por ahora NO creamos la práctica. Solo dejamos el recurso creado.
             # Luego redirigiremos a una vista donde se edita ese recurso.
             print("Se creo el recurso practica")
-            return redirect('editar_practica', recurso.id)  
+            return redirect('editar_cuestionario', recurso.id)  
         
         elif tipo.nombre.lower() == 'competencia':
             print("Dentro del if competencia")
@@ -507,7 +509,7 @@ def crear_recurso(request, seccion_id):
 
         return redirect('detalle_recurso',recurso.id)
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 def detalleUsuarios(request):
     user = request.user
     usuarios2 = User.objects.all().order_by('-date_joined')
@@ -571,7 +573,7 @@ def detalleUsuarios(request):
     }
     return render(request, 'usAdmin/detalle_usuarios.html', context)
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 def editar_usuario(request, user_id):
     usuario = get_object_or_404(User, id=user_id)
     cursos_inscritos = InscripcionCurso.objects.filter(estudiante=usuario).select_related('curso')
@@ -672,12 +674,9 @@ def obtener_presigned_url(request):
         })
 
 
-
-
-
 from .forms import CursoForm
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 def vistaCrearCurso(request):
     user = request.user    
     imgPerfil=user.imgPerfil 
@@ -775,7 +774,7 @@ def enviar_pregunta(request, pregunta_id):
 
 ##HASTA AQU[I]
 
-@role_required('estudiante')
+@role_required('Estudiante')
 def inicioEstudiante(request):
     usuario = request.user
     imgPerfil=usuario.imgPerfil
@@ -817,8 +816,6 @@ def listar_cursos(request):
         'usuario': usuario,
         'imgPerfil': usuario.imgPerfil
     })
-
-
 
 def detalle_cursoEstudiante(request, curso_id):
     print("Ingrese al detalle del curso estudiante")
@@ -910,7 +907,7 @@ def biblioteca_practicas(request):
     return render(request, 'estudiante/biblioteca_practicas.html', context)
 
 
-@role_required('docente')
+@role_required('Docente')
 def inicioDocente(request):
     return render(request, 'docente/instructor-dashboard.html')
 
@@ -963,7 +960,7 @@ def custom_login(request):
         
         print(f"📧 Email recibido: '{email}'")
         print(f"🔒 Password recibido: {'Sí (' + str(len(password)) + ' caracteres)' if password else 'No'}")
-        
+        print(password)  
         # Validaciones básicas
         if not email or not password:
             error_msg = 'Email y contraseña son obligatorios'
@@ -980,6 +977,7 @@ def custom_login(request):
             print(f"🎭 Rol ID: {user_check.rol_id}")
             print(f"✅ Usuario activo: {user_check.is_active}")
             print(f"🆔 ID de usuario: {user_check.id}")
+            print(f"🆔 Contraseña de usuario: {user_check.password}")
         except User.DoesNotExist:
             error_msg = f'No existe un usuario con el email: {email}'
             print(f"❌ Usuario no encontrado: {error_msg}")
@@ -995,7 +993,9 @@ def custom_login(request):
         print("🔑 Intentando autenticar usuario...")
         
         # Autenticar usuario
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=request.POST['email'], password= request.POST
+        ['password'])
+        print(password==request.POST['password'])        
         print(f"🔐 Resultado autenticación: {user}")
         
         if user is not None:
@@ -1212,6 +1212,47 @@ def editarCuestionario(request, cuestionario_id):
     
     return render(request, 'docente/crear_cuestionario.html', context)
 
+
+
+@login_required
+def editar_cuestionario(request, recurso_id):
+    """Vista para editar un cuestionario existente - AHORA USA RECURSO_ID"""
+    print(f"✏️ editarCuestionario llamada con Recurso ID: {recurso_id}")
+    
+    recurso = get_object_or_404(Recurso, id=recurso_id)
+    cuestionario = get_object_or_404(Cuestionario, recurso=recurso)
+    print(f"📋 Cuestionario encontrado: {cuestionario.recurso.titulo}")
+    
+    # Verificar permisos
+    if (cuestionario.recurso.seccion and 
+        cuestionario.recurso.seccion.curso.profesor != request.user):
+        print("❌ Usuario sin permisos para editar")
+        return redirect('dashboard-adm')
+    
+    # Obtener preguntas y tipos
+    preguntas = cuestionario.preguntas.all().order_by('orden')
+    tipos_pregunta = TipoPregunta.objects.all()
+    
+    # Calcular datos dinámicos
+    puntaje_calculado = preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+    tiene_preguntas_manuales = preguntas.filter(
+        tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
+    ).exists()
+    
+    print(f"📊 Preguntas: {preguntas.count()}, Puntaje: {puntaje_calculado}")
+    
+    context = {
+        'cuestionario': cuestionario,
+        'preguntas': preguntas,
+        'tipos_pregunta': tipos_pregunta,
+        'puntaje_calculado': puntaje_calculado,
+        'tiene_preguntas_manuales': tiene_preguntas_manuales,
+        'calificacion_mixta': tiene_preguntas_manuales and preguntas.exclude(
+            tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
+        ).exists()
+    }
+    
+    return render(request, 'docente/crear_cuestionario.html', context)
 # =====================================================
 # GUARDAR CUESTIONARIO BÁSICO - CORREGIDA
 # =====================================================

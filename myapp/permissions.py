@@ -1,33 +1,34 @@
-from django.contrib.auth.decorators import user_passes_test
- 
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import user_passes_test, login_required
+from functools import wraps
+
 # Verifica si el usuario es administrador
 def es_administrador(user):
     print("Dentro de la funcion es_administrador: ")
     print(user.is_authenticated and user.rol.nombre == 'Administrador')
     return user.is_authenticated and user.rol.nombre == 'Administrador'
- 
-# Decorador para vistas protegidas
+
+# Decorador para vistas protegidas (solo administrador)
 def administrador_required(view_func):
     decorated_view_func = user_passes_test(es_administrador)(view_func)
     return decorated_view_func
- 
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
-from functools import wraps
- 
-def role_required(role_name):
+
+# Decorador para uno o más roles permitidos
+def role_required(role_names):
+    if isinstance(role_names, str):
+        print(role_names)        
+        role_names = [role_names]
+        print(f"el rol name ahora es: {role_names}")
+
     def decorator(view_func):
-        @wraps(view_func)
-        @login_required
+        print("Entré al decorator")
+        @wraps(view_func)        
         def _wrapped_view(request, *args, **kwargs):
-            print(request.user.is_authenticated)
-            print(request.user.rol)
-            print(request.user.rol.nombre == role_name)
-            print(request.user.is_authenticated and request.user.rol and request.user.rol.nombre == role_name)
-            if request.user.is_authenticated and request.user.rol and request.user.rol.nombre == role_name:
+            print(f"el rol name ahora es: {role_names}")
+            print(request.user.is_authenticated and request.user.rol.nombre in role_names)
+            print(request.user.is_authenticated)            
+            if request.user.is_authenticated and request.user.rol.nombre in role_names:
                 return view_func(request, *args, **kwargs)
-            else:
-                # Aquí puedes redirigir a una página de acceso denegado o al home
-                return redirect('accesoDenegado')  # O cualquier página que tú definas
+            return redirect('no_autorizado')  # cambia esto si tienes otra vista de acceso denegado
         return _wrapped_view
     return decorator

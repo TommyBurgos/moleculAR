@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% load static %}
+	<title>Eduport- LMS, Education and Course Theme</title>
+
+	<!-- Meta Tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="author" content="Webestica.com">
+	<meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+	<!-- Dark mode -->
+	<script>
+		const storedTheme = localStorage.getItem('theme')
+ 
+		const getPreferredTheme = () => {
+			if (storedTheme) {
+				return storedTheme
+			}
+			return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'light'
+		}
+
+		const setTheme = function (theme) {
+			if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.setAttribute('data-bs-theme', 'dark')
+			} else {
+				document.documentElement.setAttribute('data-bs-theme', theme)
+			}
+		}
+
+		setTheme(getPreferredTheme())
+
+		window.addEventListener('DOMContentLoaded', () => {
+		    var el = document.querySelector('.theme-icon-active');
+			if(el != 'undefined' && el != null) {
+				const showActiveTheme = theme => {
+				const activeThemeIcon = document.querySelector('.theme-icon-active use')
+				const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+				const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+				document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+					element.classList.remove('active')
+				})
+
+				btnToActive.classList.add('active')
+				activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+			}
+
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				if (storedTheme !== 'light' || storedTheme !== 'dark') {
+					setTheme(getPreferredTheme())
+				}
+			})
+
+			showActiveTheme(getPreferredTheme())
+
+			document.querySelectorAll('[data-bs-theme-value]')
+				.forEach(toggle => {
+					toggle.addEventListener('click', () => {
+						const theme = toggle.getAttribute('data-bs-theme-value')
+						localStorage.setItem('theme', theme)
+						setTheme(theme)
+						showActiveTheme(theme)
+					})
+				})
+
+			}
+		})
+		
+	</script>
+
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+	<!-- Google Font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+	<!-- Plugins CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/apexcharts/css/apexcharts.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/overlay-scrollbar/css/overlayscrollbars.min.css' %} ">
+
+	<!-- Theme CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+</head>
+
+<body>
+
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+	
+<!-- Sidebar START -->
+{% include 'usAdmin/baseSideBar.html' %}
+<!-- Sidebar END -->
+
+<!-- Page content START -->
+<div class="page-content">
+
+	<!-- Top bar START -->
+	{% include 'usAdmin/navBar.html' %}
+	<!-- Top bar END -->
+
+	<!-- Page main content START -->
+	<div class="page-content-wrapper border">
+        <div class="container mt-4">
+        <h3 class="mb-4">Editar Usuario</h3>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label">Nombres</label>
+                <input type="text" name="first_name" class="form-control" value="{{ usuario.first_name }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Apellidos</label>
+                <input type="text" name="last_name" class="form-control" value="{{ usuario.last_name }}">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Correo electrónico</label>
+                <input type="email" name="email" class="form-control" value="{{ usuario.email }}">
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" name="is_active" id="activoCheck" {% if usuario.is_active %}checked{% endif %}>
+                <label class="form-check-label" for="activoCheck">Usuario Activo</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            <a href="{% url 'detalleUsuarios-adm' %}" class="btn btn-secondary">Cancelar</a>
+            <a href="{% url 'eliminar_usuario' usuario.id %}" class="btn btn-danger float-end">Eliminar usuario</a>
+        </form>
+
+        <hr class="my-4">
+
+        <h5>Actividad del usuario</h5>
+        <p><strong>Último inicio de sesión:</strong> {{ usuario.last_login }}</p>
+        <p><strong>Fecha de registro:</strong> {{ usuario.date_joined }}</p>
+
+        {% if cursos_inscritos %}
+        <hr class="my-4">
+        <h5>Cursos inscritos</h5>
+        <ul class="list-group">
+            {% for inscripcion in cursos_inscritos %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ inscripcion.curso.titulo }}
+                <span class="badge bg-success">Inscrito</span>
+            </li>
+            {% endfor %}
+        </ul>
+        <hr class="my-4">
+        <h5>Progreso académico</h5>
+        <p>Recursos completados: {{ recursos_vistos }} de {{ recursos_totales }}</p>
+
+            <div class="progress">
+            <div class="progress-bar" role="progressbar" style="width: {{ progreso|stringformat:'d' }} %;"
+aria-valuenow="{{ progreso }}" aria-valuemin="0" aria-valuemax="100">
+                {{ progreso }}%
+            </div>
+            </div>
+
+        {% endif %}
+    </div>
+    </div>
+</div>
+</main>
+</body>
+</html>

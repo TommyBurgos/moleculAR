@@ -60,10 +60,13 @@ urlpatterns = [
     path('docente/crear_cuestionario/', views.instructorQuiz, name='crearCuestionario'),
     path('docente/crear_cuestionario/<int:seccion_id>/', views.instructorQuiz, name='crearCuestionarioSeccion'),
     path('docente/editar_cuestionario/<int:cuestionario_id>/', views.editarCuestionario, name='editarCuestionario'),
+    path('docente/editarCuestionario/<int:recurso_id>/', views.editar_cuestionario, name='editar_cuestionario'), #TOMMY> MI VERSION PARA QUE FUNCIONE AL AGREGAR RECURSO
+
     
-    path('docente/cuestionario/guardar-cuestionario/', views.guardar_cuestionario, name='guardarCuestionario'),
+    
+    path('docente/cuestionario/guardar-cuestionario/', views.guardar_cuestionario, name='guardarCuestionario'),#NOTA TOMMY: ME SALE QUE NO FUNCIONA ETA RUTA.
     path('docente/cuestionario/actualizar-cuestionario/<int:cuestionario_id>/', views.actualizarCuestionarioExistente, name='actualizarCuestionarioExistente'),
-    path('docente/cuestionario/actualizar-configuracion/', views.actualizarConfiguracion, name='actualizarConfiguracion'),
+    path('docente/cuestionario/actualizar-configuracion/', views.actualizarConfiguracion, name='actualizarConfiguracion'),#NOTA TOMMY: ME SALE QUE NO FUNCIONA ETA RUTA. al parecer por el required post.
     path('docente/cuestionario/finalizar/', views.finalizar_cuestionario, name='finalizarCuestionario'),
     
     path('docente/cuestionario/agregar-pregunta/', views.agregarPregunta, name='agregarPregunta'),
