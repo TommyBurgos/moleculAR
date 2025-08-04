@@ -1058,7 +1058,7 @@ def signout(request):
     rotate_token(request)  # Gira el token CSRF para la nueva sesión
     return redirect('inicio')
 
-from rdkit.Chem import AllChem, SDWriter
+#from rdkit.Chem import AllChem, SDWriter
 import tempfile
 
 @csrf_exempt
