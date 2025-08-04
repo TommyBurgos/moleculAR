@@ -5,9 +5,9 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from rdkit import Chem
-from rdkit.Chem import AllChem
-from rdkit.Chem import SDWriter
+#from rdkit import Chem
+#from rdkit.Chem import AllChem
+#from rdkit.Chem import SDWriter
 from django.middleware.csrf import rotate_token
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -22,59 +22,52 @@ from .permissions import role_required
 from django.db.models import Q, Sum  
  
 
+import requests
+
+API_RDKit_URL = "https://rdkit-api-l1d9.onrender.com"
+
+def llamar_api_rdkit(endpoint, datos):
+    try:
+        response = requests.post(f"{API_RDKit_URL}{endpoint}", json=datos)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Error al comunicarse con la API externa"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @csrf_exempt
 def modificar_molecula(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        smiles = data.get("smiles")
-        atomo_idx = int(data.get("atomo_idx"))
-        grupo = data.get("grupo")
-
-        mol = Chem.MolFromSmiles(smiles)
-        mol = Chem.AddHs(mol)
-        edmol = Chem.RWMol(mol)
-
         try:
-            # Remover un hidrógeno unido al átomo objetivo
-            h_idx = None
-            for vecino in edmol.GetAtomWithIdx(atomo_idx).GetNeighbors():
-                if vecino.GetAtomicNum() == 1:
-                    h_idx = vecino.GetIdx()
-                    break
+            data = json.loads(request.body)
+            smiles = data.get("smiles")
+            atomo_idx = data.get("atomo_idx")  # ya no convertimos a int aquí
+            grupo = data.get("grupo")
 
-            if h_idx is not None:
-                edmol.RemoveAtom(h_idx)
+            if not smiles or atomo_idx is None or not grupo:
+                return JsonResponse({"error": "Faltan datos requeridos"}, status=400)
 
-            if grupo == "CH3":
-                c = Chem.Atom(6)
-                h1 = Chem.Atom(1)
-                h2 = Chem.Atom(1)
-                h3 = Chem.Atom(1)
-                c_idx = edmol.AddAtom(c)
-                edmol.AddBond(atomo_idx, c_idx, Chem.rdchem.BondType.SINGLE)
-                edmol.AddBond(c_idx, edmol.AddAtom(h1), Chem.rdchem.BondType.SINGLE)
-                edmol.AddBond(c_idx, edmol.AddAtom(h2), Chem.rdchem.BondType.SINGLE)
-                edmol.AddBond(c_idx, edmol.AddAtom(h3), Chem.rdchem.BondType.SINGLE)
+            # Enviar a la API externa con la lógica RDKit
+            payload = {
+                "smiles": smiles,
+                "atomo_idx": atomo_idx,
+                "grupo": grupo
+            }
 
-            mol_final = edmol.GetMol()
-            Chem.SanitizeMol(mol_final)
-            mol_final.UpdatePropertyCache(strict=False)
-            AllChem.EmbedMolecule(mol_final)
-            AllChem.UFFOptimizeMolecule(mol_final)
+            resultado = llamar_api_rdkit("/modificar", payload)
 
-            # Guardar SDF temporal
-            with tempfile.NamedTemporaryFile(suffix=".sdf", delete=False) as temp:
-                writer = SDWriter(temp.name)
-                writer.write(mol_final)
-                writer.close()
-                with open(temp.name, "r") as f:
-                    sdf_data = f.read()
+            if "error" in resultado:
+                return JsonResponse({"error": resultado["error"]}, status=400)
 
-            return JsonResponse({"sdf": sdf_data})
+            return JsonResponse({"sdf": resultado["sdf"]})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Error en el formato JSON recibido."}, status=400)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-    # ✅ Manejo para GET
     return JsonResponse({"message": "Usa POST para modificar la molécula."})
 
 def vista_modificador(request):
@@ -1065,7 +1058,6 @@ def signout(request):
     rotate_token(request)  # Gira el token CSRF para la nueva sesión
     return redirect('inicio')
 
-from rdkit import Chem
 from rdkit.Chem import AllChem, SDWriter
 import tempfile
 
@@ -1080,31 +1072,26 @@ def procesar_molecula(request):
         tipo = request.POST.get('tipo')  # "smiles" o "mol"
 
         try:
-            if tipo == 'smiles':
-                mol = Chem.MolFromSmiles(entrada)
-                mol = Chem.AddHs(mol)
-            elif tipo == 'mol':
-                mol = Chem.MolFromMolBlock(entrada)
+            response = requests.post(
+                f"{settings.RDKit_API_URL}/procesar",
+                json={"entrada": entrada, "tipo": tipo},
+                timeout=10
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                sdf_data = data.get("sdf")
+                return render(request, 'visor_3d.html', {'sdf_data': sdf_data})
             else:
-                return JsonResponse({'error': 'Formato no válido'}, status=400)
-
-            AllChem.EmbedMolecule(mol)
-            AllChem.UFFOptimizeMolecule(mol)
-
-            with tempfile.NamedTemporaryFile(suffix=".sdf", delete=False) as temp:
-                writer = SDWriter(temp.name)
-                writer.write(mol)
-                writer.close()
-                with open(temp.name, "r") as f:
-                    sdf_data = f.read()
-
-            return render(request, 'visor_3d.html', {'sdf_data': sdf_data})
+                return JsonResponse(
+                    {"error": response.json().get("error", "Error desconocido")},
+                    status=response.status_code
+                )
 
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'message': 'Usa POST con SMILES o MOL'})
-
 
 #Paula
 
