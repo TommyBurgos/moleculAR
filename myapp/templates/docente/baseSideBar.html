@@ -16,7 +16,11 @@
              <ul class="navbar-nav flex-column" id="navbar-sidebar">
 				
 				<!-- Menu item 1 -->
+				{% if request.user.rol.nombre == "Admin" %}
 				<li class="nav-item"><a href="/usAdmin/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
+				{% elif request.user.rol.nombre == "Docente" %}
+				<li class="nav-item"><a href="/usDocente/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
+				{% endif %}
 				
 				<!-- Title -->
 				<li class="nav-item ms-2 my-2">Pages</li>
@@ -24,50 +28,37 @@
 				<!-- menu item 2 -->
 				<li class="nav-item">
 					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
-						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Mis Cursos
+						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">     Cursos
 					</a>
 					<!-- Submenu -->
 					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
 						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Todos los cursos</a></li>
 						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Curso</a></li>
+						<li class="nav-item"> <a class="nav-link" href="admin-course-detail.html">Course Detail</a></li>
 					</ul>
 				</li>
 
-				<!-- menu item 3 -->
-				<li class="nav-item">
-					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
-						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Cuestionarios
-					</a>
-					<!-- Submenu -->
-					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Biblioteca Cuestionarios</a></li>
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Cuestionario</a></li>
-					</ul>
-				</li>
+				<!-- Menu item 3 -->				
 
-				<!-- menu item 4 -->
+				<!-- Menu item 4 -->
 				<li class="nav-item">
-					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
-						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Prácticas
+					<a class="nav-link" data-bs-toggle="collapse" href="#collapseinstructors" role="button" aria-expanded="false" aria-controls="collapseinstructors">
+						<img src="{% static 'img/Plataforma/General/seguidores.png' %}" class="fa-fw me-2" alt="">Gestión de usuarios
 					</a>
 					<!-- Submenu -->
-					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Biblioteca Prácticas</a></li>
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Práctica</a></li>
+					<ul class="nav collapse flex-column" id="collapseinstructors" data-bs-parent="#navbar-sidebar">
+						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleUsuarios">Usuarios</a></li>
+						<li class="nav-item"> <a class="nav-link" href="admin-instructor-detail.html">Instructor Detail</a></li>
+						<li class="nav-item"> 
+							<a class="nav-link" href="admin-instructor-request.html">Instructor requests
+								<span class="badge text-bg-success rounded-circle ms-2">2</span>
+							</a>
+						</li>
 					</ul>
 				</li>
-
-				<!-- menu item 5 -->
-				<li class="nav-item">
-					<a class="nav-link" data-bs-toggle="collapse" href="#collapsepage" role="button" aria-expanded="false" aria-controls="collapsepage">
-						<img src="{% static 'img/Plataforma/General/elearning.png' %}" class="fa-fw me-2" alt="">   Competencias
-					</a>
-					<!-- Submenu -->
-					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Biblioteca Competencias</a></li>
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Competencia</a></li>
-					</ul>
-				</li>
+				
+				<!-- Menu item 5 -->
+				<li class="nav-item"> <a class="nav-link" href="admin-review.html"><img src="{% static 'img/Plataforma/General/opciones.png' %}" class="fa-fw me-2" alt="">Competencias</a></li>				
 
 				<!-- Menu item 7 -->
 				<li class="nav-item"> <a class="nav-link" href="admin-setting.html"><img src="{% static 'img/Plataforma/General/gestion-de-equipos.png' %}" class="fa-fw me-2" alt="">Configuración de usuario</a></li>

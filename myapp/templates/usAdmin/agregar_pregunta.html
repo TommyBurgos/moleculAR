@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% load static %}
+	<title>Eduport- LMS, Education and Course Theme</title>
+
+	<!-- Meta Tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="author" content="Webestica.com">
+	<meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+	<!-- Dark mode -->
+	<script>
+		const storedTheme = localStorage.getItem('theme')
+ 
+		const getPreferredTheme = () => {
+			if (storedTheme) {
+				return storedTheme
+			}
+			return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'light'
+		}
+
+		const setTheme = function (theme) {
+			if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.setAttribute('data-bs-theme', 'dark')
+			} else {
+				document.documentElement.setAttribute('data-bs-theme', theme)
+			}
+		}
+
+		setTheme(getPreferredTheme())
+
+		window.addEventListener('DOMContentLoaded', () => {
+		    var el = document.querySelector('.theme-icon-active');
+			if(el != 'undefined' && el != null) {
+				const showActiveTheme = theme => {
+				const activeThemeIcon = document.querySelector('.theme-icon-active use')
+				const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+				const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+				document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+					element.classList.remove('active')
+				})
+
+				btnToActive.classList.add('active')
+				activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+			}
+
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				if (storedTheme !== 'light' || storedTheme !== 'dark') {
+					setTheme(getPreferredTheme())
+				}
+			})
+
+			showActiveTheme(getPreferredTheme())
+
+			document.querySelectorAll('[data-bs-theme-value]')
+				.forEach(toggle => {
+					toggle.addEventListener('click', () => {
+						const theme = toggle.getAttribute('data-bs-theme-value')
+						localStorage.setItem('theme', theme)
+						setTheme(theme)
+						showActiveTheme(theme)
+					})
+				})
+
+			}
+		})
+		
+	</script>
+
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+	<!-- Google Font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+	<!-- Plugins CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/apexcharts/css/apexcharts.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/overlay-scrollbar/css/overlayscrollbars.min.css' %} ">
+
+	<!-- Theme CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+</head>
+
+<body>
+
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+	
+<!-- Sidebar START -->
+{% include 'usAdmin/baseSideBar.html' %}
+<!-- Sidebar END -->
+
+<!-- Page content START -->
+<div class="page-content">
+
+	<!-- Top bar START -->
+	{% include 'usAdmin/navBar.html' %}
+	<!-- Top bar END -->
+
+	<!-- Page main content START -->
+	<div class="page-content-wrapper border">
+        <div class="container mt-4">
+        <h2>Agregar pregunta a: {{ competencia.recurso.titulo }}</h2>
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+            <label>Enunciado:</label>
+            <textarea name="enunciado" class="form-control" required></textarea>
+            </div>
+
+            <div class="mb-3">
+            <label>Tipo de pregunta:</label>
+            <select name="tipo_pregunta" class="form-control" id="tipoPregunta" required>
+                {% for tipo in tipos %}
+                <option value="{{ tipo.id }}" data-nombre="{{ tipo.nombre }}">{{ tipo.nombre|capfirst }}</option>
+                {% endfor %}
+            </select>
+            </div>
+
+            <div class="mb-3">
+            <label>Orden:</label>
+            <input type="number" name="orden" class="form-control" value="1" required>
+            </div>
+
+            <div class="mb-3">
+            <label>Puntaje:</label>
+            <input type="number" name="puntaje" class="form-control" value="1" required>
+            </div>
+
+            <!-- Selección múltiple -->
+            <div id="seleccion_multiple" class="tipo-container" style="display:none;">
+            <h5>Opciones:</h5>
+            {% for i in "1234" %}
+                <div class="mb-2">
+                <input type="text" name="opcion_{{ i }}" class="form-control mb-1" placeholder="Opción {{ i }}">
+                <input type="radio" name="correcta" value="{{ i }}"> Es correcta
+                </div>
+            {% endfor %}
+            </div>
+
+            <!-- Verdadero/Falso -->
+            <div id="verdadero_falso" class="tipo-container" style="display:none;">
+            <label>Respuesta correcta:</label><br>
+            <input type="radio" name="vf_respuesta" value="verdadero" required> Verdadero
+            <input type="radio" name="vf_respuesta" value="falso" required> Falso
+            </div>
+
+            <!-- Completar -->
+            <div id="completar" class="tipo-container" style="display:none;">
+            <label>Palabra correcta:</label>
+            <input type="text" name="palabra_correcta" class="form-control" placeholder="Respuesta esperada">
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Guardar pregunta</button>
+            <a href="{% url 'panel_competencia' competencia.id %}" class="btn btn-secondary mt-3">Cancelar</a>
+        </form>
+        </div>
+    </div>
+</div>
+</main>
+
+<script>
+  const tipoSelect = document.getElementById("tipoPregunta");
+  const tipoContainers = document.querySelectorAll(".tipo-container");
+
+  tipoSelect.addEventListener("change", function () {
+    const selected = tipoSelect.options[tipoSelect.selectedIndex].dataset.nombre;
+
+    tipoContainers.forEach(div => div.style.display = 'none');
+
+    if (selected === "seleccion_multiple") {
+      document.getElementById("seleccion_multiple").style.display = 'block';
+    } else if (selected === "verdadero_falso") {
+      document.getElementById("verdadero_falso").style.display = 'block';
+    } else if (selected === "completar") {
+      document.getElementById("completar").style.display = 'block';
+    }
+  });
+
+  // Ejecutar al cargar
+  window.addEventListener("DOMContentLoaded", () => {
+    tipoSelect.dispatchEvent(new Event("change"));
+  });
+</script>
+</body>
+</html>

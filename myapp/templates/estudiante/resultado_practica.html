@@ -1,0 +1,7 @@
+<h2>Resultado de tu intento</h2>
+{% if es_correcta %}
+  <p style="color: green;">✅ ¡Correcto! Has armado correctamente la molécula.</p>
+{% else %}
+  <p style="color: red;">❌ Lo sentimos, la molécula no coincide. Intenta nuevamente.</p>
+{% endif %}
+<a href="{% url 'resolver_practica' practica.id %}">🔁 Intentar de nuevo</a>

@@ -30,3 +30,6 @@ class RecursoForm(forms.ModelForm):
             raise forms.ValidationError("Debe ingresar el contenido del texto.")
         if tipo and tipo.nombre.lower() == 'video' and not video:
             raise forms.ValidationError("Debe subir un video.")
+
+class UnirseCursoForm(forms.Form):
+    codigo_acceso = forms.CharField(label="Código del curso", max_length=10)

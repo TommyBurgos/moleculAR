@@ -1,78 +1,73 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from rdkit import Chem
-from rdkit.Chem import AllChem
-from rdkit.Chem import SDWriter
+#from rdkit import Chem
+#from rdkit.Chem import AllChem
+#from rdkit.Chem import SDWriter
 from django.middleware.csrf import rotate_token
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 import tempfile
 import json
 
+from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante
 
-from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, PreguntaCuestionario, OpcionPregunta, TipoPregunta, IntentoCuestionario, RespuestaEstudiante
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
 from django.db.models import Q, Sum  
  
 
+import requests
+
+API_RDKit_URL = "https://rdkit-api-l1d9.onrender.com"
+
+def llamar_api_rdkit(endpoint, datos):
+    try:
+        response = requests.post(f"{API_RDKit_URL}{endpoint}", json=datos)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"error": "Error al comunicarse con la API externa"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @csrf_exempt
 def modificar_molecula(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        smiles = data.get("smiles")
-        atomo_idx = int(data.get("atomo_idx"))
-        grupo = data.get("grupo")
-
-        mol = Chem.MolFromSmiles(smiles)
-        mol = Chem.AddHs(mol)
-        edmol = Chem.RWMol(mol)
-
         try:
-            # Remover un hidrógeno unido al átomo objetivo
-            h_idx = None
-            for vecino in edmol.GetAtomWithIdx(atomo_idx).GetNeighbors():
-                if vecino.GetAtomicNum() == 1:
-                    h_idx = vecino.GetIdx()
-                    break
+            data = json.loads(request.body)
+            smiles = data.get("smiles")
+            atomo_idx = data.get("atomo_idx")  # ya no convertimos a int aquí
+            grupo = data.get("grupo")
 
-            if h_idx is not None:
-                edmol.RemoveAtom(h_idx)
+            if not smiles or atomo_idx is None or not grupo:
+                return JsonResponse({"error": "Faltan datos requeridos"}, status=400)
 
-            if grupo == "CH3":
-                c = Chem.Atom(6)
-                h1 = Chem.Atom(1)
-                h2 = Chem.Atom(1)
-                h3 = Chem.Atom(1)
-                c_idx = edmol.AddAtom(c)
-                edmol.AddBond(atomo_idx, c_idx, Chem.rdchem.BondType.SINGLE)
-                edmol.AddBond(c_idx, edmol.AddAtom(h1), Chem.rdchem.BondType.SINGLE)
-                edmol.AddBond(c_idx, edmol.AddAtom(h2), Chem.rdchem.BondType.SINGLE)
-                edmol.AddBond(c_idx, edmol.AddAtom(h3), Chem.rdchem.BondType.SINGLE)
+            # Enviar a la API externa con la lógica RDKit
+            payload = {
+                "smiles": smiles,
+                "atomo_idx": atomo_idx,
+                "grupo": grupo
+            }
 
-            mol_final = edmol.GetMol()
-            Chem.SanitizeMol(mol_final)
-            mol_final.UpdatePropertyCache(strict=False)
-            AllChem.EmbedMolecule(mol_final)
-            AllChem.UFFOptimizeMolecule(mol_final)
+            resultado = llamar_api_rdkit("/modificar", payload)
 
-            # Guardar SDF temporal
-            with tempfile.NamedTemporaryFile(suffix=".sdf", delete=False) as temp:
-                writer = SDWriter(temp.name)
-                writer.write(mol_final)
-                writer.close()
-                with open(temp.name, "r") as f:
-                    sdf_data = f.read()
+            if "error" in resultado:
+                return JsonResponse({"error": resultado["error"]}, status=400)
 
-            return JsonResponse({"sdf": sdf_data})
+            return JsonResponse({"sdf": resultado["sdf"]})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Error en el formato JSON recibido."}, status=400)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-    # ✅ Manejo para GET
     return JsonResponse({"message": "Usa POST para modificar la molécula."})
 
 def vista_modificador(request):
@@ -142,7 +137,7 @@ def inicioAdmin(request):
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 def vistaAllCursos(request):
     user = request.user    
     imgPerfil=user.imgPerfil 
@@ -153,9 +148,10 @@ def vistaAllCursos(request):
         'cursos': cursos       
     }   
     return render(request,'usAdmin/detalleCursos.html',context)
+
 from django.db.models import Prefetch
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 @login_required
 def detalle_curso(request, curso_id):
     curso = get_object_or_404(Curso, id=curso_id)
@@ -180,39 +176,99 @@ def detalle_curso(request, curso_id):
         'tipos_recurso': recursosTipo
     })
 
-def ver_practica(request, recurso_id):
-    recurso = get_object_or_404(Recurso, id=recurso_id)
-    practica = get_object_or_404(Practica, recurso=recurso)
-    print(f"el recurso es {recurso}")
-    print(f"la practica es {practica}")
+from django.utils.html import strip_tags
 
-    modelo = practica.modelo_objetivo
-    print(f"el modelo es {modelo}")
-    print(f"el smile es {modelo.smiles}")
-    print(modelo.smiles if modelo else "")
-    smiles = modelo.smiles if modelo else ""
-    
-    return render(request, 'usAdmin/ver_practica.html', {
-        'practica': practica,
-        'recurso': recurso,
-        'modelo':modelo,
-        'smiles': smiles
-    })
+def limpiar_html_permitiendo_alineacion(html):
+    if not html:
+        return ""
+
+    # Elimina todo menos etiquetas <p>, <strong>, <em>, <u>, <br>, <span>
+    html = re.sub(r'<(?!/?(p|strong|em|u|br|span|img)(\s|>|/))[^>]+>', '', html)
+
+    # Filtra los estilos permitidos (solo text-align)
+    html = re.sub(r'style="[^"]*"', lambda m: filtrar_estilos(m.group()), html)
+
+    return html
+
+def filtrar_estilos(style_str):
+    estilos_permitidos = ['text-align', 'color', 'background-color']
+    estilos = style_str.replace('style="', '').replace('"', '').split(';')
+    estilos_filtrados = [s for s in estilos if any(permitido in s for permitido in estilos_permitidos)]
+    if estilos_filtrados:
+        return f'style="{";".join(estilos_filtrados)}"'
+    return ''
 
 
+import bleach
+
+
+@login_required
 def detalle_recurso(request, recurso_id):
+    print("He ingresado al detalle del recurso")
     recurso = get_object_or_404(Recurso, id=recurso_id)
+
+    if request.user.is_authenticated and hasattr(request.user, 'rol') and request.user.rol.nombre == 'Estudiante':
+        progreso, creado = ProgresoUsuario.objects.get_or_create(
+            usuario=request.user,
+            recurso=recurso,
+            defaults={'visto': True}
+        )
+        if not creado and not progreso.visto:
+            progreso.visto = True
+            progreso.save()
+
     curso = recurso.seccion.curso 
+    contenido_html = recurso.contenido_texto or ""
+    html_limpio = limpiar_html_permitiendo_alineacion(contenido_html)
+
     recursos_prefetch = Prefetch(
         'recursos',
         queryset=Recurso.objects.order_by('orden'),
         to_attr='recursos_ordenados'
     )    
     secciones = Seccion.objects.filter(curso=curso).prefetch_related(recursos_prefetch).order_by('orden')
+
     return render(request, 'usAdmin/detalleRecurso.html', {
         'recurso': recurso,
         'secciones': secciones,
-        'curso': curso})
+        'curso': curso,
+        'html_limpio': html_limpio
+    })
+
+@role_required(['Admin', 'Docente'])
+@login_required
+def editar_video(request, recurso_id):
+    print("Acabo de ingresar a editar texto")
+    recurso = get_object_or_404(Recurso, id=recurso_id, tipo__nombre='Video')
+
+    if request.method == 'POST':
+        recurso.titulo = request.POST.get('titulo')
+        recurso.descripcion = request.POST.get('descripcion')
+        # Opcionalmente permitir reemplazar el video
+        if 'archivo' in request.FILES:
+            recurso.archivo = request.FILES['archivo']
+        recurso.save()
+        messages.success(request, "Video actualizado correctamente.")
+        return redirect('detalle_curso', curso_id=recurso.seccion.curso.id)
+
+    return render(request, 'usAdmin/editar_video.html', {'recurso': recurso})
+
+
+@role_required(['Admin', 'Docente'])
+@login_required
+def editar_texto(request, recurso_id):
+    print("Acabo de ingresar a editar texto")
+    recurso = get_object_or_404(Recurso, id=recurso_id, tipo__nombre='Texto')
+    print(recurso)
+    if request.method == 'POST':
+        recurso.titulo = request.POST.get('titulo')
+        recurso.descripcion = request.POST.get('descripcion')
+        recurso.contenido_texto = request.POST.get('contenido_texto')
+        recurso.save()
+        messages.success(request, "Texto actualizado correctamente.")
+        return redirect('detalle_curso', curso_id=recurso.seccion.curso.id)
+
+    return render(request, 'usAdmin/editar_texto.html', {'recurso': recurso})
 
 
 def crear_modulo(request, curso_id):
@@ -257,11 +313,30 @@ def obtener_smiles_pubchem(nombre_molecula):
         print(f"❌ Error al consultar PubChem: {e}")
     return None
 
+def ver_practica(request, recurso_id):
+    recurso = get_object_or_404(Recurso, id=recurso_id)
+    practica = get_object_or_404(Practica, recurso=recurso)
+    print(f"el recurso es {recurso}")
+    print(f"la practica es {practica}")
+
+    modelo = practica.modelo_objetivo
+    print(f"el modelo es {modelo}")
+    print(f"el smile es {modelo.smiles}")
+    print(modelo.smiles if modelo else "")
+    smiles = modelo.smiles if modelo else ""
+    
+    return render(request, 'usAdmin/ver_practica.html', {
+        'practica': practica,
+        'recurso': recurso,
+        'modelo':modelo,
+        'smiles': smiles
+    })
+
 
 @login_required
 def editar_practica(request, recurso_id):
     recurso = get_object_or_404(Recurso, id=recurso_id)
-    practica = Practica.objects.filter(recurso=recurso).first()
+    practica, creado = Practica.objects.get_or_create(recurso=recurso)
 
     if request.method == 'POST':
         fuente = request.POST.get('fuente_molecula')
@@ -282,7 +357,7 @@ def editar_practica(request, recurso_id):
                     visible_biblioteca=False
                 )
             else:
-                return render(request, 'editar_practica.html', {
+                return render(request, 'usAdmin/editor_dibujo.html', {
                     'recurso': recurso,
                     'error': 'No se pudo obtener el SMILES desde el editor JSME.'
                 })
@@ -307,22 +382,22 @@ def editar_practica(request, recurso_id):
                     'error': f"No se pudo encontrar un SMILES válido para '{nombre_molecula}'. Intenta con otro nombre."
                 })
 
-        # Crear la práctica solo si se creó un modelo
+        # Crear o actualizar la práctica solo si se creó un modelo
         if modelo:
             practica, creada = Practica.objects.get_or_create(
-            recurso=recurso,
-            defaults={
-                'titulo_objetivo': titulo_objetivo,
-                'instrucciones': instrucciones,
-                'modelo_objetivo': modelo
-            }
-        )
+                recurso=recurso,
+                defaults={
+                    'titulo_objetivo': titulo_objetivo,
+                    'instrucciones': instrucciones,
+                    'modelo_objetivo': modelo
+                }
+            )
 
-        if not creada:
-            practica.titulo_objetivo = titulo_objetivo
-            practica.instrucciones = instrucciones
-            practica.modelo_objetivo = modelo
-            practica.save()
+            if not creada:
+                practica.titulo_objetivo = titulo_objetivo
+                practica.instrucciones = instrucciones
+                practica.modelo_objetivo = modelo
+                practica.save()
 
             return redirect('detalle_curso', curso_id=recurso.seccion.curso.id)
         else:
@@ -331,7 +406,16 @@ def editar_practica(request, recurso_id):
                 'error': 'No se pudo crear la práctica porque no se generó ningún modelo.'
             })
 
-    return render(request, 'usAdmin/editor_dibujo.html', {'recurso': recurso})
+    # Enviar el SMILES existente si hay modelo asociado, si no, un string vacío
+    smiles_existente = practica.modelo_objetivo.smiles if practica.modelo_objetivo else ""
+    print(f"el smile existente es {smiles_existente}")
+
+    return render(request, 'usAdmin/editor_dibujo.html', {
+        'recurso': recurso,
+        'practica': practica,
+        'instruccion': practica.instrucciones if practica.instrucciones else "",
+        'smiles': smiles_existente
+    })
 
 
 def crear_recurso(request, seccion_id):
@@ -344,10 +428,12 @@ def crear_recurso(request, seccion_id):
         imagen = request.FILES.get('imagen_referencial')
         tipo_id = request.POST.get('tipo')
         visible = 'visible_biblioteca' in request.POST
+        print("es visible? ", visible)
         seccion_id = request.POST.get('seccion_id')
         print("La sección id es" + seccion_id)
         tipo = TipoRecurso.objects.get(id=tipo_id)
         seccion = Seccion.objects.get(id=seccion_id)
+        contenido_texto = request.POST.get('contenido_texto')
 
         recurso = Recurso.objects.create(
             titulo=titulo,
@@ -355,7 +441,8 @@ def crear_recurso(request, seccion_id):
             tipo=tipo,
             imagen=imagen,
             seccion=seccion,
-            visible_biblioteca=visible
+            visible_biblioteca=visible,
+            contenido_texto=contenido_texto
         )
         print(f"Recurso creado {recurso}")
         # CREACIÓN SEGÚN TIPO DE RECURSO
@@ -378,9 +465,14 @@ def crear_recurso(request, seccion_id):
                 recurso.save()
             else:
                 print("⚠️ No se recibió la URL del video desde el formulario.")
-
-
-        elif 'cuestionario' in nombre_tipo:
+              
+        elif tipo.nombre.lower() == 'practica':
+            # Por ahora NO creamos la práctica. Solo dejamos el recurso creado.
+            # Luego redirigiremos a una vista donde se edita ese recurso.
+            print("Se creo el recurso practica")
+            return redirect('editar_practica', recurso.id)  
+        
+        elif tipo.nombre.lower() == 'cuestionario':
             print("Dentro del if cuestionario")
             instrucciones = request.POST.get('nombre_cuestionario')
             tiempo_limite = request.POST.get('descripcion_cuestionario')
@@ -388,13 +480,155 @@ def crear_recurso(request, seccion_id):
                 recurso=recurso,
                 instrucciones=instrucciones,
                 tiempo_limite=tiempo_limite
-            )        
-        elif tipo.nombre.lower() == 'practica':
+            )  
             # Por ahora NO creamos la práctica. Solo dejamos el recurso creado.
             # Luego redirigiremos a una vista donde se edita ese recurso.
             print("Se creo el recurso practica")
-            return redirect('editar_practica', recurso.id)                
+            return redirect('editar_cuestionario', recurso.id)  
+        
+        elif tipo.nombre.lower() == 'competencia':
+            print("Dentro del if competencia")
+            instrucciones = request.POST.get('instrucciones_competencia', '')
+            # Aquí puedes generar un código aleatorio o permitir ingresarlo desde el formulario
+            import random, string
+            codigo = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
+            Competencia.objects.create(
+                recurso=recurso,
+                instrucciones=instrucciones,
+                codigo_acceso=codigo
+            )
+            print("Competencia creada correctamente.")
+            return redirect('panel_competencia', recurso.competencia.id)
+
+        return redirect('detalle_recurso',recurso.id)
+
+@role_required(['Admin', 'Docente'])
+def detalleUsuarios(request):
+    user = request.user
+    usuarios2 = User.objects.all().order_by('-date_joined')
+    usuarios = User.objects.all().order_by('-date_joined')
+    imgPerfil=user.imgPerfil
+
+    usuarios_con_progreso = []    
+    busqueda = request.GET.get("buscar")
+    if busqueda:
+        usuarios = User.objects.filter(
+            Q(username__icontains=busqueda) |
+            Q(first_name__icontains=busqueda) |
+            Q(last_name__icontains=busqueda) |
+            Q(email__icontains=busqueda)
+        ).distinct()
+        print("entre al if de busqueda")
+    print("LISTADO DE USUARIOS")
+    print(usuarios)
+    print(usuarios2)
+
+        # Paginación — debe ir después de filtrar los usuarios
+    paginator = Paginator(usuarios, 10)  # 10 usuarios por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    # 1. Cantidad de usuarios cuyo rol es igual a 2  
+    
+    filtro_progreso = request.GET.get('progreso')
+
+    for usuario in page_obj:
+        progreso = 0
+        recursos_totales = 0
+        recursos_vistos = 0
+        print("viendo viendoo")
+        print(hasattr(usuario, 'rol') and usuario.rol == 'Estudiante')
+        print(usuario.rol)        
+        print(str(usuario.rol) == 'Estudiante')
+        print(hasattr(usuario, 'rol'))
+
+        if hasattr(usuario, 'rol') and str(usuario.rol) == 'Estudiante':
+            # Cursos del estudiante
+            cursos = Curso.objects.filter(inscripcioncurso__estudiante=usuario)
+            recursos_totales = Recurso.objects.filter(seccion__curso__in=cursos).count()
+            recursos_vistos = ProgresoUsuario.objects.filter(usuario=usuario, visto=True).count()
+            progreso = int((recursos_vistos / recursos_totales) * 100) if recursos_totales > 0 else 0
+        # Aplicamos el filtro si se solicitó
+        if filtro_progreso == 'bajo' and progreso >= 50:
+            continue  # ignorar este usuario
+        usuarios_con_progreso.append({
+            'usuario': usuario,
+            'progreso': progreso,
+            'recursos_vistos': recursos_vistos,
+            'recursos_totales': recursos_totales,
+        }) 
+      
+    context = {                     
+        'imgPerfil': imgPerfil,        
+        'usuario':user.username,  
+        'usuarios':page_obj,
+        'usuarios_con_progreso': usuarios_con_progreso,  # Lista con progreso incluido
+      
+    }
+    return render(request, 'usAdmin/detalle_usuarios.html', context)
+
+@role_required(['Admin', 'Docente'])
+def editar_usuario(request, user_id):
+    usuario = get_object_or_404(User, id=user_id)
+    cursos_inscritos = InscripcionCurso.objects.filter(estudiante=usuario).select_related('curso')
+    # Total de recursos en la plataforma o en los cursos donde está inscrito
+    cursos = Curso.objects.filter(inscripcioncurso__estudiante=usuario)
+    recursos_totales = Recurso.objects.filter(seccion__curso__in=cursos).count()
+
+    # Recursos vistos por el estudiante
+    recursos_vistos = ProgresoUsuario.objects.filter(usuario=usuario, visto=True).count()
+
+    # Evitamos división por cero
+    if recursos_totales > 0:
+        progreso = int((recursos_vistos / recursos_totales) * 100)
+    else:
+        progreso = 0
+
+    if request.method == 'POST':
+        usuario.first_name = request.POST.get('first_name')
+        usuario.last_name = request.POST.get('last_name')
+        usuario.email = request.POST.get('email')
+        usuario.is_active = 'is_active' in request.POST  # checkbox activo
+        usuario.save()
+        messages.success(request, 'Usuario actualizado correctamente.')
+        return redirect('detalleUsuarios-adm')  # o donde quieras redirigir
+
+    context = {
+        'usuario': usuario,
+        'cursos_inscritos': cursos_inscritos,
+        'progreso': progreso,
+        'recursos_totales': recursos_totales,
+        'recursos_vistos': recursos_vistos,
+
+    }
+    return render(request, 'usAdmin/editar_usuario.html', context)
+
+@role_required('Admin')
+def eliminar_usuario(request, user_id):
+    usuario = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        usuario.delete()
+        messages.success(request, "Usuario eliminado correctamente.")
+        return redirect('detalle_usuarios')
+    return render(request, 'usAdmin/confirmar_eliminar_usuario.html', {'usuario': usuario})
+
+
+@role_required('Admin')
+@login_required
+def resetear_contrasena(request, id):
+    usuario = get_object_or_404(User, id=id)
+    
+    return redirect('detalle_usuarios')
+
+@role_required('Admin')
+def resetContra_usuario(request, id):
+    usuario = get_object_or_404(User, id=id)
+    # lógica para mostrar o editar
+    nueva_contrasena = "12345678"
+    usuario.set_password(nueva_contrasena)  # Cambia la contraseña de forma segura
+    usuario.save()
+    messages.success(request, f"La contraseña del usuario '{usuario.username}' ha sido reseteada con éxito.")
+    return redirect('detalleUsuarios-adm')
 
 
 
@@ -434,12 +668,9 @@ def obtener_presigned_url(request):
         })
 
 
-
-
-
 from .forms import CursoForm
 
-@role_required('Admin')
+@role_required(['Admin', 'Docente'])
 def vistaCrearCurso(request):
     user = request.user    
     imgPerfil=user.imgPerfil 
@@ -449,7 +680,7 @@ def vistaCrearCurso(request):
             curso = form.save(commit=False)
             curso.profesor = request.user  # Asignar el usuario actual como profesor
             curso.save()
-            return redirect('detalleCursos-adm', curso.id) 
+            return redirect('detalle_curso', curso.id) 
     else:
         form = CursoForm() 
     context = {                  
@@ -459,14 +690,218 @@ def vistaCrearCurso(request):
     }   
     return render(request,'usAdmin/crearCurso.html',context)
 
+#EMPEZANDO INTENTAR CREAR COMPETENCIAS
+
+def panel_competencia(request, competencia_id):
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    preguntas = competencia.preguntas.order_by('orden')
+
+    return render(request, 'usAdmin/panel_control.html', {
+        'competencia': competencia,
+        'preguntas': preguntas,
+    })
+
+def agregar_pregunta_competencia(request, competencia_id):
+    competencia = Competencia.objects.get(id=competencia_id)
+
+    if request.method == 'POST':
+        enunciado = request.POST.get('enunciado')
+        tipo_id = request.POST.get('tipo_pregunta')
+        orden = request.POST.get('orden')
+        puntaje = request.POST.get('puntaje')
+
+        tipo = TipoPregunta.objects.get(id=tipo_id)
+        tipo_nombre = tipo.nombre.lower()
+
+        # Crear la pregunta base
+        pregunta = PreguntaCuestionario.objects.create(
+            competencia=competencia,
+            enunciado=enunciado,
+            tipo=tipo,
+            orden=orden,
+            puntaje=puntaje
+        )
+
+        # Opciones según el tipo
+        if tipo_nombre == 'seleccion_multiple':
+            for i in range(1, 5):
+                texto = request.POST.get(f'opcion_{i}')
+                es_correcta = request.POST.get('correcta') == str(i)
+                if texto:
+                    pregunta.opciones.create(texto=texto, es_correcta=es_correcta)
+
+        elif tipo_nombre == 'verdadero_falso':
+            respuesta = request.POST.get('vf_respuesta')
+            if respuesta:
+                pregunta.opciones.create(texto='Verdadero', es_correcta=(respuesta == 'verdadero'))
+                pregunta.opciones.create(texto='Falso', es_correcta=(respuesta == 'falso'))
+
+        elif tipo_nombre == 'completar':
+            palabra_correcta = request.POST.get('palabra_correcta')
+            if palabra_correcta:
+                pregunta.opciones.create(texto=palabra_correcta.strip(), es_correcta=True)
+
+        return redirect('panel_competencia', competencia.id)
+
+    tipos = TipoPregunta.objects.all()
+    return render(request, 'usAdmin/agregar_pregunta.html', {
+        'competencia': competencia,
+        'tipos': tipos
+    })
 
 
-@role_required('estudiante')
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+
+def iniciar_competencia(request, competencia_id):
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    competencia.activa = True
+    competencia.save()
+    return HttpResponseRedirect(reverse('panel_competencia', args=[competencia.id]))
+
+def enviar_pregunta(request, pregunta_id):
+    pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+    competencia = pregunta.competencia
+    competencia.pregunta_actual = pregunta
+    competencia.save()
+    return HttpResponseRedirect(reverse('panel_competencia', args=[competencia.id]))
+
+##HASTA AQU[I]
+
+@role_required('Estudiante')
 def inicioEstudiante(request):
-    user = request.user    
-    return render(request, 'estudiante/student-dashboard.html')    
+    usuario = request.user
+    imgPerfil=usuario.imgPerfil
+    inscripciones = InscripcionCurso.objects.filter(estudiante=usuario).select_related('curso')
+    cursos = [ins.curso for ins in inscripciones]
+    
+    print(imgPerfil) 
+    context = {       
+        'cursos': cursos,           
+        'imgPerfil': imgPerfil,        
+        'usuario':usuario,                
+    }      
+    return render(request, 'estudiante/student-dashboard.html', context)    
 
-@role_required('docente')
+from django.contrib import messages
+
+def unirse_curso(request):
+    if request.method == 'POST':
+        codigo = request.POST.get('codigo_acceso')
+        try:
+            curso = Curso.objects.get(codigo_acceso=codigo)
+            ya_inscrito = InscripcionCurso.objects.filter(curso=curso, estudiante=request.user).exists()
+            if ya_inscrito:
+                messages.warning(request, 'Ya estás inscrito en este curso.')
+            else:
+                InscripcionCurso.objects.create(curso=curso, estudiante=request.user)
+                messages.success(request, 'Te has unido correctamente al curso.')
+        except Curso.DoesNotExist:
+            messages.error(request, 'El código ingresado no es válido.')
+        return redirect('listar_cursos')  # o tu página de cursos
+
+def listar_cursos(request):
+    usuario = request.user
+    inscripciones = InscripcionCurso.objects.filter(estudiante=usuario).select_related('curso')
+    cursos = [ins.curso for ins in inscripciones]
+
+    return render(request, 'estudiante/student-course-list.html', {
+        'cursos': cursos,
+        'usuario': usuario,
+        'imgPerfil': usuario.imgPerfil
+    })
+
+def detalle_cursoEstudiante(request, curso_id):
+    print("Ingrese al detalle del curso estudiante")
+    curso = get_object_or_404(Curso, id=curso_id)
+    
+    recursos_prefetch = Prefetch(
+        'recursos',
+        queryset=Recurso.objects.order_by('orden'),
+        to_attr='recursos_ordenados'
+    )
+    print(recursos_prefetch)
+    secciones = Seccion.objects.filter(curso=curso_id).prefetch_related(recursos_prefetch).order_by('orden')    
+    recursosTipo = TipoRecurso.objects.all()
+    user = request.user
+    imgPerfil = user.imgPerfil
+
+    return render(request, 'estudiante/student-course-resume.html', {
+        'curso': curso,
+        'imgPerfil': imgPerfil,
+        'usuario': user.username,
+        'secciones': secciones,
+        'tipos_recurso': recursosTipo
+    })
+
+@login_required
+def resolver_practica(request, practica_id):
+    practica = get_object_or_404(Practica, id=practica_id)
+
+    if request.method == 'POST':
+        smiles_estudiante = request.POST.get('mol_input')
+        modelo_objetivo = practica.modelo_objetivo
+
+        # Comprobación (simple, se puede mejorar con RDKit)
+        es_correcta = smiles_estudiante.strip() == modelo_objetivo.smiles.strip()
+
+        MoleculaEstudiante.objects.create(
+            estudiante=request.user,
+            practica=practica,
+            smiles=smiles_estudiante,
+            es_correcta=es_correcta
+        )
+
+        return render(request, 'estudiante/resultado_practica.html', {
+            'practica': practica,
+            'es_correcta': es_correcta
+        })
+
+    return render(request, 'estudiante/resolver_practica.html', {
+        'practica': practica,
+    })
+
+@login_required
+def historial_intentos(request, practica_id):
+    practica = get_object_or_404(Practica, id=practica_id)
+    intentos = MoleculaEstudiante.objects.filter(
+        estudiante=request.user,
+        practica=practica
+    ).order_by('-fecha_envio')
+
+    return render(request, 'estudiante/historial_intentos.html', {
+        'practica': practica,
+        'intentos': intentos
+    })
+
+
+
+def biblioteca_practicas(request):
+    query = request.GET.get('q', '')  # Capturamos el término de búsqueda
+
+    practicas_visibles = Recurso.objects.filter(
+        tipo__nombre__iexact='practica',
+        visible_biblioteca=True
+    )
+
+    if query:
+        practicas_visibles = practicas_visibles.filter(
+            Q(titulo__icontains=query)
+        )
+
+    # Paginación: 10 por página
+    paginator = Paginator(practicas_visibles.order_by('-fecha_creacion'), 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'query': query
+    }
+    return render(request, 'estudiante/biblioteca_practicas.html', context)
+
+
+@role_required('Docente')
 def inicioDocente(request):
     return render(request, 'docente/instructor-dashboard.html')
 
@@ -519,7 +954,7 @@ def custom_login(request):
         
         print(f"📧 Email recibido: '{email}'")
         print(f"🔒 Password recibido: {'Sí (' + str(len(password)) + ' caracteres)' if password else 'No'}")
-        
+        print(password)  
         # Validaciones básicas
         if not email or not password:
             error_msg = 'Email y contraseña son obligatorios'
@@ -536,6 +971,7 @@ def custom_login(request):
             print(f"🎭 Rol ID: {user_check.rol_id}")
             print(f"✅ Usuario activo: {user_check.is_active}")
             print(f"🆔 ID de usuario: {user_check.id}")
+            print(f"🆔 Contraseña de usuario: {user_check.password}")
         except User.DoesNotExist:
             error_msg = f'No existe un usuario con el email: {email}'
             print(f"❌ Usuario no encontrado: {error_msg}")
@@ -551,7 +987,9 @@ def custom_login(request):
         print("🔑 Intentando autenticar usuario...")
         
         # Autenticar usuario
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, username=request.POST['email'], password= request.POST
+        ['password'])
+        print(password==request.POST['password'])        
         print(f"🔐 Resultado autenticación: {user}")
         
         if user is not None:
@@ -621,8 +1059,7 @@ def signout(request):
     rotate_token(request)  # Gira el token CSRF para la nueva sesión
     return redirect('inicio')
 
-from rdkit import Chem
-from rdkit.Chem import AllChem, SDWriter
+#from rdkit.Chem import AllChem, SDWriter
 import tempfile
 
 @csrf_exempt
@@ -636,31 +1073,26 @@ def procesar_molecula(request):
         tipo = request.POST.get('tipo')  # "smiles" o "mol"
 
         try:
-            if tipo == 'smiles':
-                mol = Chem.MolFromSmiles(entrada)
-                mol = Chem.AddHs(mol)
-            elif tipo == 'mol':
-                mol = Chem.MolFromMolBlock(entrada)
+            response = requests.post(
+                f"{settings.RDKit_API_URL}/procesar",
+                json={"entrada": entrada, "tipo": tipo},
+                timeout=10
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                sdf_data = data.get("sdf")
+                return render(request, 'visor_3d.html', {'sdf_data': sdf_data})
             else:
-                return JsonResponse({'error': 'Formato no válido'}, status=400)
-
-            AllChem.EmbedMolecule(mol)
-            AllChem.UFFOptimizeMolecule(mol)
-
-            with tempfile.NamedTemporaryFile(suffix=".sdf", delete=False) as temp:
-                writer = SDWriter(temp.name)
-                writer.write(mol)
-                writer.close()
-                with open(temp.name, "r") as f:
-                    sdf_data = f.read()
-
-            return render(request, 'visor_3d.html', {'sdf_data': sdf_data})
+                return JsonResponse(
+                    {"error": response.json().get("error", "Error desconocido")},
+                    status=response.status_code
+                )
 
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'message': 'Usa POST con SMILES o MOL'})
-
 
 #Paula
 
@@ -768,6 +1200,47 @@ def editarCuestionario(request, cuestionario_id):
     
     return render(request, 'docente/crear_cuestionario.html', context)
 
+
+
+@login_required
+def editar_cuestionario(request, recurso_id):
+    """Vista para editar un cuestionario existente - AHORA USA RECURSO_ID"""
+    print(f"✏️ editarCuestionario llamada con Recurso ID: {recurso_id}")
+    
+    recurso = get_object_or_404(Recurso, id=recurso_id)
+    cuestionario = get_object_or_404(Cuestionario, recurso=recurso)
+    print(f"📋 Cuestionario encontrado: {cuestionario.recurso.titulo}")
+    
+    # Verificar permisos
+    if (cuestionario.recurso.seccion and 
+        cuestionario.recurso.seccion.curso.profesor != request.user):
+        print("❌ Usuario sin permisos para editar")
+        return redirect('dashboard-adm')
+    
+    # Obtener preguntas y tipos
+    preguntas = cuestionario.preguntas.all().order_by('orden')
+    tipos_pregunta = TipoPregunta.objects.all()
+    
+    # Calcular datos dinámicos
+    puntaje_calculado = preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+    tiene_preguntas_manuales = preguntas.filter(
+        tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
+    ).exists()
+    
+    print(f"📊 Preguntas: {preguntas.count()}, Puntaje: {puntaje_calculado}")
+    
+    context = {
+        'cuestionario': cuestionario,
+        'preguntas': preguntas,
+        'tipos_pregunta': tipos_pregunta,
+        'puntaje_calculado': puntaje_calculado,
+        'tiene_preguntas_manuales': tiene_preguntas_manuales,
+        'calificacion_mixta': tiene_preguntas_manuales and preguntas.exclude(
+            tipo__nombre__in=['respuesta_abierta', 'simulador_2d', 'simulador_3d']
+        ).exists()
+    }
+    
+    return render(request, 'docente/crear_cuestionario.html', context)
 # =====================================================
 # GUARDAR CUESTIONARIO BÁSICO - CORREGIDA
 # =====================================================

@@ -8,3 +8,6 @@ admin.site.register(CategoriaCurso)
 admin.site.register(TipoRecurso)
 admin.site.register(Cuestionario)
 admin.site.register(Recurso)
+admin.site.register(Curso)
+admin.site.register(TipoPregunta)
+

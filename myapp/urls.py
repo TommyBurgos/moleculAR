@@ -11,13 +11,35 @@ urlpatterns = [
     path('usAdmin/', views.inicioAdmin, name="dashboard-adm"),
     path('usAdmin/detalleCursos', views.vistaAllCursos, name="detalleCursos-adm"),
     path('detalleCurso/<int:curso_id>/', views.detalle_curso, name='detalle_curso'),
+
+    path('recurso/<int:recurso_id>/editar/video/', views.editar_video, name='editar_video'),
+    path('recurso/<int:recurso_id>/editar/texto/', views.editar_texto, name='editar_texto'),
+
+
+    path('usAdmin/detalleUsuarios', views.detalleUsuarios, name="detalleUsuarios-adm"),
+    path('usuarios/<int:user_id>/editar/', views.editar_usuario, name='editar_usuario'),
+    path('usuarios/<int:user_id>/eliminar/', views.eliminar_usuario, name='eliminar_usuario'),
+
+    path('usAdmin/<int:id>/resetearContra', views.resetContra_usuario, name="resetear_contrasena"),
     path('recurso/<int:recurso_id>/', views.detalle_recurso, name='detalle_recurso'),
+    path('unirse-curso/', views.unirse_curso, name='unirse_curso'),
+    path('mis-cursos/', views.listar_cursos, name='listar_cursos'),
+    path('detalleCursoEstudiante/<int:curso_id>/', views.detalle_cursoEstudiante, name='detalle_cursoEstudiante'),
+    path('practica/<int:practica_id>/resolver/', views.resolver_practica, name='resolver_practica'),
+    path('practica/<int:practica_id>/historial/', views.historial_intentos, name='historial_intentos'),
+
 
     path('curso/<int:curso_id>/modulo/nuevo/', views.crear_modulo, name='crear_modulo'),
     path('seccion/<int:seccion_id>/crear-recurso/', views.crear_recurso, name='crear_recurso'),
     path('practica/<int:recurso_id>/ver/', views.ver_practica, name='ver_practica'),
     path('practica/<int:recurso_id>/editar/', views.editar_practica, name='editar_practica'),
+    path('biblioteca/practicas/', views.biblioteca_practicas, name='biblioteca_practicas'),
 
+    path('competencia/<int:competencia_id>/panel/', views.panel_competencia, name='panel_competencia'),
+    path('competencia/<int:competencia_id>/agregar-pregunta/', views.agregar_pregunta_competencia, name='agregar_pregunta_competencia'),
+
+    path('competencia/<int:competencia_id>/iniciar/', views.iniciar_competencia, name='iniciar_competencia'),
+    path('competencia/pregunta/<int:pregunta_id>/enviar/', views.enviar_pregunta, name='enviar_pregunta'),
 
 
 
@@ -38,10 +60,13 @@ urlpatterns = [
     path('docente/crear_cuestionario/', views.instructorQuiz, name='crearCuestionario'),
     path('docente/crear_cuestionario/<int:seccion_id>/', views.instructorQuiz, name='crearCuestionarioSeccion'),
     path('docente/editar_cuestionario/<int:cuestionario_id>/', views.editarCuestionario, name='editarCuestionario'),
+    path('docente/editarCuestionario/<int:recurso_id>/', views.editar_cuestionario, name='editar_cuestionario'), #TOMMY> MI VERSION PARA QUE FUNCIONE AL AGREGAR RECURSO
+
     
-    path('docente/cuestionario/guardar-cuestionario/', views.guardar_cuestionario, name='guardarCuestionario'),
+    
+    path('docente/cuestionario/guardar-cuestionario/', views.guardar_cuestionario, name='guardarCuestionario'),#NOTA TOMMY: ME SALE QUE NO FUNCIONA ETA RUTA.
     path('docente/cuestionario/actualizar-cuestionario/<int:cuestionario_id>/', views.actualizarCuestionarioExistente, name='actualizarCuestionarioExistente'),
-    path('docente/cuestionario/actualizar-configuracion/', views.actualizarConfiguracion, name='actualizarConfiguracion'),
+    path('docente/cuestionario/actualizar-configuracion/', views.actualizarConfiguracion, name='actualizarConfiguracion'),#NOTA TOMMY: ME SALE QUE NO FUNCIONA ETA RUTA. al parecer por el required post.
     path('docente/cuestionario/finalizar/', views.finalizar_cuestionario, name='finalizarCuestionario'),
     
     path('docente/cuestionario/agregar-pregunta/', views.agregarPregunta, name='agregarPregunta'),
