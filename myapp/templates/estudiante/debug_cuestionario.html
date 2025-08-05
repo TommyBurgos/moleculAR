@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    {% load custom_filters %}
+    <title>DEBUG - Cuestionario: {{ cuestionario.recurso.titulo }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🔧 DEBUG - Cuestionario</h1>
+        
+        <!-- Información básica -->
+        <div class="alert alert-info">
+            <h4>Información del Cuestionario:</h4>
+            <p><strong>Título:</strong> {{ cuestionario.recurso.titulo }}</p>
+            <p><strong>Intento ID:</strong> {{ intento.id }}</p>
+            <p><strong>Usuario:</strong> {{ usuario }}</p>
+            <p><strong>Total preguntas:</strong> {{ preguntas.count }}</p>
+            <p><strong>Tiempo restante:</strong> {{ tiempo_restante }} segundos</p>
+        </div>
+        
+        <!-- Listado de preguntas para debug -->
+        <div class="alert alert-warning">
+            <h4>Preguntas encontradas:</h4>
+            {% for pregunta in preguntas %}
+                <div class="mb-2 p-2 border">
+                    <strong>Pregunta {{ forloop.counter }}:</strong> {{ pregunta.enunciado|truncatechars:100 }}<br>
+                    <small class="text-muted">Tipo: {{ pregunta.tipo.nombre }} | Puntaje: {{ pregunta.puntaje }}</small>
+                    
+                    {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'opcion_multiple' or pregunta.tipo.nombre == 'falso_verdadero' %}
+                        <br><strong>Opciones:</strong>
+                        <ul>
+                        {% for opcion in pregunta.opciones.all %}
+                            <li>{{ opcion.texto }} {% if opcion.es_correcta %}<span class="badge bg-success">Correcta</span>{% endif %}</li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p class="text-danger">❌ NO HAY PREGUNTAS ENCONTRADAS</p>
+            {% endfor %}
+        </div>
+        
+        <!-- Cuestionario simplificado -->
+        {% if preguntas.count > 0 %}
+        <div class="card">
+            <div class="card-header">
+                <h3>Cuestionario Real</h3>
+            </div>
+            <div class="card-body">
+                <form id="quizForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="intentoId" value="{{ intento.id }}">
+                    
+                    {% for pregunta in preguntas %}
+                    <div class="mb-4 p-3 border rounded" id="pregunta-{{ forloop.counter }}" {% if not forloop.first %}style="display:none"{% endif %}>
+                        <h4>Pregunta {{ forloop.counter }} de {{ preguntas.count }}</h4>
+                        <h5>{{ pregunta.enunciado }}</h5>
+                        
+                        {% if pregunta.tipo.nombre == 'opcion_unica' or pregunta.tipo.nombre == 'falso_verdadero' %}
+                            {% for opcion in pregunta.opciones.all %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" 
+                                       name="pregunta_{{ pregunta.id }}" 
+                                       id="opcion_{{ pregunta.id }}_{{ opcion.id }}"
+                                       value="{{ opcion.id }}">
+                                <label class="form-check-label" for="opcion_{{ pregunta.id }}_{{ opcion.id }}">
+                                    {{ opcion.texto }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            
+                        {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+                            {% for opcion in pregunta.opciones.all %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       name="pregunta_{{ pregunta.id }}_multiple" 
+                                       id="opcion_{{ pregunta.id }}_{{ opcion.id }}"
+                                       value="{{ opcion.id }}">
+                                <label class="form-check-label" for="opcion_{{ pregunta.id }}_{{ opcion.id }}">
+                                    {{ opcion.texto }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            <small class="text-muted">Puedes seleccionar múltiples opciones</small>
+                            
+                        {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
+                            <textarea class="form-control" 
+                                      name="pregunta_{{ pregunta.id }}_texto"
+                                      placeholder="Escribe tu respuesta aquí..."
+                                      rows="4"></textarea>
+                                      
+                        {% elif pregunta.tipo.nombre == 'completar' %}
+                            <p>Completa los espacios:</p>
+                            {% for i in "12345"|make_list %}
+                            <div class="mb-2">
+                                <label>Respuesta {{ forloop.counter }}:</label>
+                                <input type="text" class="form-control" 
+                                       name="completar_{{ pregunta.id }}_{{ forloop.counter }}"
+                                       placeholder="Tu respuesta...">
+                            </div>
+                            {% endfor %}
+                            
+                        {% else %}
+                            <div class="alert alert-warning">
+                                Tipo de pregunta no soportado: {{ pregunta.tipo.nombre }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Navegación -->
+                        <div class="mt-3">
+                            {% if not forloop.first %}
+                                <button type="button" class="btn btn-secondary" onclick="mostrarPregunta({{ forloop.counter|add:'-1' }})">Anterior</button>
+                            {% endif %}
+                            
+                            {% if forloop.last %}
+                                <button type="button" class="btn btn-success float-end" onclick="finalizarCuestionario()">Finalizar</button>
+                            {% else %}
+                                <button type="button" class="btn btn-primary float-end" onclick="mostrarPregunta({{ forloop.counter|add:'1' }})">Siguiente</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- JavaScript simplificado -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let preguntaActual = 1;
+        let totalPreguntas = {{ preguntas.count }};
+        
+        function mostrarPregunta(numero) {
+            // Ocultar pregunta actual
+            document.getElementById(`pregunta-${preguntaActual}`).style.display = 'none';
+            
+            // Mostrar nueva pregunta
+            document.getElementById(`pregunta-${numero}`).style.display = 'block';
+            
+            preguntaActual = numero;
+            
+            console.log(`Mostrando pregunta ${numero} de ${totalPreguntas}`);
+        }
+        
+        function finalizarCuestionario() {
+            if (confirm('¿Deseas finalizar el cuestionario?')) {
+                window.location.href = '{% url "finalizar_cuestionario_estudiante" intento.id %}';
+            }
+        }
+        
+        // Auto-guardado simplificado
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'radio' || e.target.type === 'checkbox' || e.target.tagName === 'TEXTAREA' || e.target.type === 'text') {
+                console.log('Cambio detectado:', e.target.name, e.target.value);
+                // Aquí puedes agregar lógica de guardado si es necesario
+            }
+        });
+        
+        console.log('Debug template cargado correctamente');
+        console.log('Total preguntas:', totalPreguntas);
+    </script>
+</body>
+</html>
