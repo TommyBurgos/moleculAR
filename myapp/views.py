@@ -148,6 +148,7 @@ def vistaAllCursos(request):
         'cursos': cursos       
     }   
     return render(request,'usAdmin/detalleCursos.html',context)
+
 from django.db.models import Prefetch
 
 @role_required(['Admin', 'Docente'])
@@ -679,7 +680,7 @@ def vistaCrearCurso(request):
             curso = form.save(commit=False)
             curso.profesor = request.user  # Asignar el usuario actual como profesor
             curso.save()
-            return redirect('detalleCursos-adm', curso.id) 
+            return redirect('detalle_curso', curso.id) 
     else:
         form = CursoForm() 
     context = {                  
