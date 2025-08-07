@@ -7,6 +7,10 @@ urlpatterns = [
     path("logout/", views.signout, name="logout"),
     path('registro/', views.registroUser),
     path('acceso_denegado/', views.acceso_denegado, name="acceso_denegado"),
+    # proyecto/urls.py
+    path('editar-perfil/', views.editar_perfil, name='editar_perfil'),
+
+
     #path('inicio/',views.custom_login),
     path('inicio/', views.custom_login, name='custom_login'), #cambio de Paula
     path('usAdmin/', views.inicioAdmin, name="dashboard-adm"),

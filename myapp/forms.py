@@ -1,6 +1,20 @@
 from django import forms
 from user.models import Curso, Recurso
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class EditarPerfilForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'imgPerfil']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellido'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Correo electrónico'}),
+        }
+
 class CursoForm(forms.ModelForm):
     class Meta:
         model = Curso

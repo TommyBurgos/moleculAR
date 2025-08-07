@@ -138,7 +138,7 @@ def inicioAdmin(request):
     imgPerfil=user.imgPerfil  
     context = {                  
         'imgPerfil': imgPerfil,        
-        'usuario':user.username,        
+        'usuario':user,        
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
 
@@ -2980,3 +2980,20 @@ def historial_cuestionario_especifico(request, cuestionario_id):
     }
     
     return render(request, 'estudiante/historial_cuestionario_especifico.html', context)
+
+
+from .forms import EditarPerfilForm
+
+@login_required
+def editar_perfil(request):
+    user = request.user
+
+    if request.method == 'POST':
+        form = EditarPerfilForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('editar_perfil')  # Puedes cambiar esto a donde quieras redirigir
+    else:
+        form = EditarPerfilForm(instance=user)
+
+    return render(request, 'usAdmin/editar_perfil.html', {'form': form})
