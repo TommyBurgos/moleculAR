@@ -122,7 +122,7 @@ def registroExitoso(request):
             return HttpResponse('Las contraseñas no coinciden.')
     return HttpResponse('Método no permitido')
 
-
+@csrf_exempt
 def vistaLogin(request):
     return render(request,'sign-in.html')
 
@@ -942,6 +942,7 @@ def inicioDocente(request):
             return render(request, 'dashboard-adm', {'error': 'Credenciales inválidas'})
     return redirect('inicio')"""
 
+@csrf_exempt
 @csrf_protect
 def custom_login(request):
     print("🔐 Entre a la función custom_login")
@@ -2607,7 +2608,8 @@ def biblioteca_cuestionarios_estudiante(request):
     
     return render(request, 'estudiante/biblioteca_cuestionarios.html', context)
 
-@role_required('estudiante')
+@csrf_exempt 
+@role_required('Estudiante')
 @login_required
 def iniciar_cuestionario(request, cuestionario_id):
     """Iniciar un nuevo intento de cuestionario"""
@@ -2643,7 +2645,8 @@ def iniciar_cuestionario(request, cuestionario_id):
     
     return redirect('realizar_cuestionario', intento_id=intento.id)
 
-@role_required('estudiante')
+@csrf_exempt 
+@role_required('Estudiante')
 @login_required
 def realizar_cuestionario(request, intento_id):
     """Interfaz para realizar el cuestionario - VERSIÓN CON DEBUG"""
@@ -2708,7 +2711,7 @@ def realizar_cuestionario(request, intento_id):
     
     return render(request, 'estudiante/realizar_cuestionario.html', context)
 
-@role_required('estudiante')
+@role_required('Estudiante')
 @login_required
 @csrf_exempt
 def guardar_respuesta(request):
@@ -2853,8 +2856,8 @@ def guardar_respuesta(request):
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
 
-
-@role_required('estudiante')
+@csrf_exempt 
+@role_required('Estudiante')
 @login_required
 def finalizar_cuestionario_estudiante(request, intento_id):
     """Finalizar el cuestionario y calcular puntaje"""
@@ -2879,7 +2882,8 @@ def finalizar_cuestionario_estudiante(request, intento_id):
     
     return redirect('resultado_cuestionario', intento_id=intento.id)
 
-@role_required('estudiante')
+@csrf_exempt 
+@role_required('Estudiante')
 @login_required
 def resultado_cuestionario(request, intento_id):
     """Mostrar resultados del cuestionario"""
@@ -2890,7 +2894,27 @@ def resultado_cuestionario(request, intento_id):
         'pregunta', 'opcion_seleccionada'
     ).prefetch_related('pregunta__opciones').all()
     
-    # Calcular porcentaje
+    # Procesar respuestas para el template
+    for respuesta in respuestas:
+        # Calcular porcentaje de la pregunta
+        if respuesta.pregunta.puntaje > 0:
+            respuesta.porcentaje_pregunta = int((respuesta.puntaje_obtenido / respuesta.pregunta.puntaje) * 100)
+        else:
+            respuesta.porcentaje_pregunta = 0
+        
+        # Procesar opciones múltiples
+        if respuesta.opciones_multiples:
+            respuesta.opciones_ids = [int(x.strip()) for x in respuesta.opciones_multiples.split(',') if x.strip()]
+        else:
+            respuesta.opciones_ids = []
+        
+        # Procesar respuestas de completar
+        if respuesta.pregunta.respuestas_completar:
+            respuesta.respuestas_correctas_lista = [x.strip() for x in respuesta.pregunta.respuestas_completar.split(',') if x.strip()]
+        else:
+            respuesta.respuestas_correctas_lista = []
+    
+    # Calcular porcentaje total
     puntaje_porcentaje = 0
     if intento.cuestionario.puntaje_total > 0:
         puntaje_porcentaje = (intento.puntaje_obtenido / intento.cuestionario.puntaje_total * 100)
@@ -2906,30 +2930,53 @@ def resultado_cuestionario(request, intento_id):
     
     return render(request, 'estudiante/resultado_cuestionario.html', context)
 
-@role_required('estudiante')
+@csrf_exempt 
+@role_required('Estudiante')
 @login_required
-def historial_cuestionarios(request):
-    """Historial de intentos del estudiante"""
+def historial_cuestionario_especifico(request, cuestionario_id):
+    """Historial de intentos de un cuestionario específico"""
+    cuestionario = get_object_or_404(Cuestionario, id=cuestionario_id)
     user = request.user
     
-    # Filtro opcional por cuestionario específico
-    cuestionario_id = request.GET.get('cuestionario')
-    
+    # Obtener todos los intentos del estudiante para este cuestionario
     intentos = IntentoCuestionario.objects.filter(
         estudiante=user,
+        cuestionario=cuestionario,
         completado=True
-    ).select_related(
-        'cuestionario', 'cuestionario__recurso'
-    ).order_by('-fecha_finalizacion')
+    ).select_related('cuestionario').order_by('-fecha_finalizacion')
     
-    if cuestionario_id:
-        intentos = intentos.filter(cuestionario_id=cuestionario_id)
+    print(f"📊 Historial específico - Cuestionario: {cuestionario.recurso.titulo}")
+    print(f"👤 Usuario: {user.username}")
+    print(f"🔢 Total intentos: {intentos.count()}")
+    
+    # Calcular estadísticas
+    estadisticas = {
+        'total_intentos': intentos.count(),
+        'mejor_puntaje': 0,
+        'promedio_puntaje': 0,
+        'ultimo_puntaje': 0,
+        'mejor_tiempo': 0,
+        'tiempo_promedio': 0
+    }
+    
+    if intentos.exists():
+        puntajes = [float(intento.puntaje_obtenido) for intento in intentos]
+        tiempos = [intento.tiempo_empleado for intento in intentos if intento.tiempo_empleado]
+        
+        estadisticas['mejor_puntaje'] = max(puntajes)
+        estadisticas['promedio_puntaje'] = sum(puntajes) / len(puntajes)
+        estadisticas['ultimo_puntaje'] = float(intentos.first().puntaje_obtenido)
+        
+        if tiempos:
+            estadisticas['mejor_tiempo'] = min(tiempos) / 60  # en minutos
+            estadisticas['tiempo_promedio'] = sum(tiempos) / len(tiempos) / 60
     
     context = {
+        'cuestionario': cuestionario,
         'intentos': intentos,
-        'cuestionario_filtro': cuestionario_id,
+        'estadisticas': estadisticas,
         'imgPerfil': user.imgPerfil,
         'usuario': user.username,
     }
     
-    return render(request, 'estudiante/historial_cuestionarios.html', context)
+    return render(request, 'estudiante/historial_cuestionario_especifico.html', context)

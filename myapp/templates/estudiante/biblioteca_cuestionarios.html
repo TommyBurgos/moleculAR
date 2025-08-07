@@ -235,7 +235,7 @@
                                             </div>
                                             <!-- Button -->
                                             <div class="col-xl-1">
-                                                <a href="{% url 'historial_cuestionarios' %}" class="btn btn-info mb-0 rounded z-index-1 w-100" title="Ver Historial">
+                                                <a href="{% url 'student_dashboard' %}" class="btn btn-info mb-0 rounded z-index-1 w-100" title="Ver Historial">
                                                     <i class="fas fa-history"></i>
                                                 </a>
                                             </div>
@@ -395,9 +395,11 @@
                                                                 
                                                                 <!-- Botón de Ver Historial si tiene intentos -->
                                                                 {% if item.intentos_realizados > 0 %}
-                                                                    <a href="{% url 'historial_cuestionario_especifico' item.cuestionario.id %}" class="btn btn-outline-info btn-sm" title="Ver historial de intentos">
-                                                                        <i class="fas fa-history"></i>
-                                                                    </a>
+                                                                <a href="{% url 'historial_cuestionario_especifico' item.cuestionario.id %}" 
+                                                                class="btn btn-outline-info btn-sm" 
+                                                                title="Ver historial de intentos">
+                                                                    <i class="fas fa-history"></i>
+                                                                </a>
                                                                 {% endif %}
                                                                 
                                                                 <!-- Dropdown con más opciones -->
@@ -410,8 +412,8 @@
                                                                             <i class="fas fa-info-circle me-2"></i>Ver Detalles
                                                                         </a></li>
                                                                         {% if item.completado %}
-                                                                        <li><a class="dropdown-item" href="#" onclick="verMejorIntento({{ item.cuestionario.id }})">
-                                                                            <i class="fas fa-trophy me-2"></i>Mejor Intento
+                                                                        <li><a class="dropdown-item" href="{% url 'historial_cuestionario_especifico' item.cuestionario.id %}" onclick="verDetallesCuestionario({{ item.cuestionario.id }})">
+                                                                            <i class="fas fa-info-circle me-2"></i>Ver Historial de Intentos
                                                                         </a></li>
                                                                         {% endif %}
                                                                     </ul>

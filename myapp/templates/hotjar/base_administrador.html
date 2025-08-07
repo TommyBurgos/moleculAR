@@ -1,0 +1,25 @@
+{% extends 'base_general.html' %}
+
+{% block title %}Panel Administrador - MoleculAR{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'assets/css/administrador.css' %}">
+{% endblock %}
+
+{% block main_content %}
+  {% include 'administrador/base_banner_sup.html' %}
+  <section class="pt-0">
+    <div class="container" style="max-width: 100%;">
+      <div class="row">
+        {% include 'administrador/base_sidebar.html' %}
+        <div class="col-xl-10">
+          {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'assets/js/administrador-custom.js' %}"></script>
+{% endblock %}

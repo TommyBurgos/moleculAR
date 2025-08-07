@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Eduport - Historial: {{ cuestionario.recurso.titulo }}</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Webestica.com">
+    <meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+    
+    <!-- Estilos específicos para historial de cuestionario -->
+    <style>
+        .quiz-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .quiz-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            animation: float 20s linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .attempt-card {
+            transition: all 0.3s ease;
+            border-left: 5px solid #e9ecef;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        .attempt-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .attempt-card.excellent {
+            border-left-color: #28a745;
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .attempt-card.good {
+            border-left-color: #17a2b8;
+            background: linear-gradient(135deg, rgba(23, 162, 184, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .attempt-card.average {
+            border-left-color: #ffc107;
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .attempt-card.poor {
+            border-left-color: #dc3545;
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .score-badge {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: white;
+            margin-right: 1.5rem;
+        }
+        .score-excellent { background: linear-gradient(135deg, #28a745, #20c997); }
+        .score-good { background: linear-gradient(135deg, #17a2b8, #6f42c1); }
+        .score-average { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+        .score-poor { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+        .stats-overview {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .progress-chart {
+            position: relative;
+            height: 200px;
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            border: 1px solid #dee2e6;
+        }
+        .progress-bar-chart {
+            width: 30px;
+            background: linear-gradient(to top, #007bff, #6f42c1);
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .progress-bar-chart:hover {
+            transform: scale(1.1);
+        }
+        .attempt-number {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .attempt-score {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #666;
+        }
+        .timeline-container {
+            position: relative;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 2rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #007bff, #e9ecef);
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 1.25rem;
+            top: 1.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .dot-excellent { background: #28a745; }
+        .dot-good { background: #17a2b8; }
+        .dot-average { background: #ffc107; }
+        .dot-poor { background: #dc3545; }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6c757d;
+        }
+        .btn-view-result {
+            background: linear-gradient(135deg, #007bff, #6f42c1);
+            border: none;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-view-result:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+            color: white;
+        }
+        .improvement-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .improvement-up {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+        }
+        .improvement-down {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+        .improvement-same {
+            background: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        .info-badge {
+            background: linear-gradient(135deg, #17a2b8, #20c997);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .stats-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+
+<body>
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+    <!-- Sidebar START -->
+    {% include 'estudiante/baseSideBar.html' %}
+    <!-- Sidebar END -->	
+        
+    <!-- =======================
+    Inner part START -->
+    <div class="page-content">
+
+        <!-- Top bar START -->
+        {% include 'estudiante/navBar.html' %}
+        <!-- Top bar END -->
+
+        <!-- Page main content START -->
+        <div class="page-content-wrapper border">
+            <section class="pt-0">
+                <div class="container">
+                    <div class="row">
+                        <!-- Main content START -->
+                        <div class="col-xl-12">
+                            
+                            <!-- =======================
+                            Page Banner START -->
+                            <section class="py-4">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="bg-light p-4 text-center rounded-3">
+                                                <h1 class="m-0">📊 Historial de Intentos</h1>
+                                                <!-- Breadcrumb -->
+                                                <div class="d-flex justify-content-center">
+                                                    <nav aria-label="breadcrumb">
+                                                        <ol class="breadcrumb breadcrumb-dots mb-0">
+                                                            <li class="breadcrumb-item"><a href="{% url 'student_dashboard' %}">Dashboard</a></li>
+                                                            <li class="breadcrumb-item"><a href="{% url 'biblioteca_cuestionarios_estudiante' %}">Cuestionarios</a></li>
+                                                            <li class="breadcrumb-item active" aria-current="page">Historial</li>
+                                                        </ol>
+                                                    </nav>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page Banner END -->
+                            <!-- =======================
+                            Header del Cuestionario START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="quiz-header">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-2 text-center">
+                                                <img src="{% if cuestionario.recurso.imagen %}{{ cuestionario.recurso.imagen.url }}{% else %}{% static 'img/Plataforma/General/default_cuestionario.jpg' %}{% endif %}" 
+                                                     class="img-fluid rounded-circle border border-white border-3" 
+                                                     style="width: 100px; height: 100px; object-fit: cover;" 
+                                                     alt="{{ cuestionario.recurso.titulo }}">
+                                            </div>
+                                            <div class="col-md-8">
+                                                <h2 class="mb-2" style="position: relative; z-index: 2;">{{ cuestionario.recurso.titulo }}</h2>
+                                                {% if cuestionario.recurso.seccion %}
+                                                <p class="mb-2 text-white-50" style="position: relative; z-index: 2;">
+                                                    <i class="fas fa-graduation-cap me-1"></i>
+                                                    {{ cuestionario.recurso.seccion.curso.titulo }}
+                                                </p>
+                                                {% endif %}
+                                                <p class="mb-0 text-white-75" style="position: relative; z-index: 2;">
+                                                    {{ cuestionario.instrucciones|truncatechars:120 }}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-2 text-center">
+                                                <div style="position: relative; z-index: 2;">
+                                                    <h3 class="text-white mb-1">{{ estadisticas.total_intentos }}</h3>
+                                                    <small class="text-white-50">Intento{{ estadisticas.total_intentos|pluralize }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Header del Cuestionario END -->
+                            
+                            <!-- =======================
+                            Estadísticas Generales START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="stats-overview">
+                                        <div class="row">
+                                            <div class="col-md-8">
+                                                <div class="row">
+                                                    <div class="col-md-3">
+                                                        <div class="stats-card">
+                                                            <div class="stats-number text-primary">{{ estadisticas.mejor_puntaje|floatformat:1 }}</div>
+                                                            <div class="stats-label">Mejor Puntaje</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="stats-card">
+                                                            <div class="stats-number text-success">{{ estadisticas.promedio_puntaje|floatformat:1 }}</div>
+                                                            <div class="stats-label">Promedio</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="stats-card">
+                                                            <div class="stats-number text-info">{{ estadisticas.ultimo_puntaje|floatformat:1 }}</div>
+                                                            <div class="stats-label">Último Intento</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="stats-card">
+                                                            <div class="stats-number text-warning">{{ estadisticas.mejor_tiempo|floatformat:1 }}m</div>
+                                                            <div class="stats-label">Mejor Tiempo</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="chart-container">
+                                                    <h6 class="mb-3 text-center">📈 Evolución de Puntajes</h6>
+                                                    <div class="progress-chart" id="progressChart">
+                                                        {% for intento in intentos reversed %}
+                                                            {% widthratio intento.puntaje_obtenido cuestionario.puntaje_total 100 as altura %}
+                                                            <div class="progress-bar-chart" 
+                                                                 style="height: {{ altura }}%;" 
+                                                                 title="Intento {{ intento.numero_intento }}: {{ intento.puntaje_obtenido|floatformat:1 }} pts">
+                                                                <div class="attempt-number">{{ intento.numero_intento }}</div>
+                                                                <div class="attempt-score">{{ altura }}%</div>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Estadísticas Generales END -->
+                            <!-- =======================
+                            Lista de Intentos START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-list me-2"></i>Todos tus Intentos
+                                                </h5>
+                                                <div class="d-flex gap-2">
+                                                    <a href="{% url 'biblioteca_cuestionarios_estudiante' %}" class="btn btn-outline-secondary btn-sm">
+                                                        <i class="fas fa-arrow-left me-1"></i>Volver a Cuestionarios
+                                                    </a>
+                                                    {% if cuestionario.esta_disponible %}
+                                                    <a href="{% url 'iniciar_cuestionario' cuestionario.id %}" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-plus me-1"></i>Nuevo Intento
+                                                    </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            {% if intentos %}
+                                            <!-- Timeline de intentos -->
+                                            <div class="timeline-container">
+                                                <div class="timeline-line"></div>
+                                                {% for intento in intentos %}
+                                                {% widthratio intento.puntaje_obtenido cuestionario.puntaje_total 100 as porcentaje %}
+                                                
+                                                <div class="timeline-item">
+                                                    <div class="timeline-dot 
+                                                        {% if porcentaje >= 90 %}dot-excellent{% elif porcentaje >= 70 %}dot-good{% elif porcentaje >= 50 %}dot-average{% else %}dot-poor{% endif %}">
+                                                    </div>
+                                                    
+                                                    <div class="attempt-card 
+                                                        {% if porcentaje >= 90 %}excellent{% elif porcentaje >= 70 %}good{% elif porcentaje >= 50 %}average{% else %}poor{% endif %}"
+                                                         data-intento="{{ forloop.counter }}"
+                                                         data-puntaje="{{ intento.puntaje_obtenido }}"
+                                                         data-fecha="{{ intento.fecha_finalizacion|date:'Y-m-d' }}">
+                                                        
+                                                        <div class="card shadow-sm">
+                                                            <div class="card-body">
+                                                                <div class="row align-items-center">
+                                                                    <!-- Badge de puntaje -->
+                                                                    <div class="col-auto">
+                                                                        <div class="score-badge 
+                                                                            {% if porcentaje >= 90 %}score-excellent{% elif porcentaje >= 70 %}score-good{% elif porcentaje >= 50 %}score-average{% else %}score-poor{% endif %}">
+                                                                            {{ porcentaje }}%
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <!-- Información principal -->
+                                                                    <div class="col">
+                                                                        <div class="row">
+                                                                            <div class="col-md-8">
+                                                                                <!-- Título del intento -->
+                                                                                <div class="d-flex align-items-center mb-2">
+                                                                                    <h5 class="mb-0 me-3">Intento {{ intento.numero_intento }}</h5>
+                                                                                    
+                                                                                    <!-- Badge de estado -->
+                                                                                    {% if forloop.first %}
+                                                                                    <span class="badge bg-primary ms-2">
+                                                                                        <i class="fas fa-star me-1"></i>Más Reciente
+                                                                                    </span>
+                                                                                    {% endif %}
+                                                                                    
+                                                                                    {% if porcentaje >= 90 %}
+                                                                                    <span class="badge bg-success ms-2">
+                                                                                        <i class="fas fa-trophy me-1"></i>Excelente
+                                                                                    </span>
+                                                                                    {% elif porcentaje >= 70 %}
+                                                                                    <span class="badge bg-info ms-2">
+                                                                                        <i class="fas fa-thumbs-up me-1"></i>Bueno
+                                                                                    </span>
+                                                                                    {% elif porcentaje >= 50 %}
+                                                                                    <span class="badge bg-warning ms-2">
+                                                                                        <i class="fas fa-meh me-1"></i>Regular
+                                                                                    </span>
+                                                                                    {% else %}
+                                                                                    <span class="badge bg-danger ms-2">
+                                                                                        <i class="fas fa-frown me-1"></i>Necesita Mejora
+                                                                                    </span>
+                                                                                    {% endif %}
+                                                                                </div>
+                                                                                
+                                                                                <!-- Estadísticas del intento -->
+                                                                                <div class="row text-center mb-3">
+                                                                                    <div class="col-3">
+                                                                                        <strong class="d-block text-primary">{{ intento.puntaje_obtenido|floatformat:1 }}</strong>
+                                                                                        <small class="text-muted">Puntos</small>
+                                                                                    </div>
+                                                                                    <div class="col-3">
+                                                                                        <strong class="d-block text-info">
+                                                                                            {% if intento.tiempo_empleado %}
+                                                                                                {{ intento.tiempo_empleado|floatformat:0 }}s
+                                                                                            {% else %}
+                                                                                                --
+                                                                                            {% endif %}
+                                                                                        </strong>
+                                                                                        <small class="text-muted">Tiempo</small>
+                                                                                    </div>
+                                                                                    <div class="col-3">
+                                                                                        <strong class="d-block text-success" id="correctas-{{ intento.id }}">{{ intento.respuestas.count }}</strong>
+                                                                                        <small class="text-muted">Respondidas</small>
+                                                                                    </div>
+                                                                                    <div class="col-3">
+                                                                                        <strong class="d-block text-warning">{{ cuestionario.preguntas.count }}</strong>
+                                                                                        <small class="text-muted">Total</small>
+                                                                                    </div>
+                                                                                </div>
+                                                                                
+                                                                                <!-- Fecha y hora -->
+                                                                                <div class="d-flex align-items-center text-muted mb-3">
+                                                                                    <i class="fas fa-calendar me-2"></i>
+                                                                                    <span class="me-3">{{ intento.fecha_finalizacion|date:"d/m/Y" }}</span>
+                                                                                    <i class="fas fa-clock me-2"></i>
+                                                                                    <span class="me-3">{{ intento.fecha_finalizacion|date:"H:i" }}</span>
+                                                                                    <i class="fas fa-stopwatch me-2"></i>
+                                                                                    <span>
+                                                                                        {% if intento.tiempo_empleado %}
+                                                                                            {{ intento.tiempo_empleado|floatformat:0 }} segundos
+                                                                                        {% else %}
+                                                                                            Tiempo no registrado
+                                                                                        {% endif %}
+                                                                                    </span>
+                                                                                </div>
+
+                                                                                <!-- Información adicional -->
+                                                                                <div class="info-badge">
+                                                                                    <i class="fas fa-info-circle me-2"></i>
+                                                                                    {% if intento.puntaje_obtenido == estadisticas.mejor_puntaje %}
+                                                                                        🏆 Tu mejor puntaje hasta ahora
+                                                                                    {% elif porcentaje >= estadisticas.promedio_puntaje %}
+                                                                                        📈 Por encima del promedio
+                                                                                    {% else %}
+                                                                                        📉 Por debajo del promedio
+                                                                                    {% endif %}
+                                                                                </div>
+                                                                            </div>
+                                                                            
+                                                                            <!-- Acciones -->
+                                                                            <div class="col-md-4 text-end">
+                                                                                <!-- Progreso visual -->
+                                                                                <div class="mb-3">
+                                                                                    <div class="progress" style="height: 8px;">
+                                                                                        <div class="progress-bar 
+                                                                                            {% if porcentaje >= 90 %}bg-success{% elif porcentaje >= 70 %}bg-info{% elif porcentaje >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                                                             style="width: {{ porcentaje }}%" 
+                                                                                             aria-valuenow="{{ porcentaje }}" 
+                                                                                             aria-valuemin="0" 
+                                                                                             aria-valuemax="100">
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <small class="text-muted">{{ intento.puntaje_obtenido|floatformat:1 }}/{{ cuestionario.puntaje_total|floatformat:0 }} puntos ({{ porcentaje }}%)</small>
+                                                                                </div>
+                                                                                
+                                                                                <!-- Botones de acción -->
+                                                                                <div class="d-flex flex-column gap-2">
+                                                                                    <a href="{% url 'resultado_cuestionario' intento.id %}" 
+                                                                                       class="btn btn-view-result btn-sm">
+                                                                                        <i class="fas fa-eye me-1"></i>Ver Resultado Completo
+                                                                                    </a>
+                                                                                    
+                                                                                    <div class="dropdown">
+                                                                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100" 
+                                                                                                type="button" data-bs-toggle="dropdown">
+                                                                                            <i class="fas fa-ellipsis-h me-1"></i>Más Opciones
+                                                                                        </button>
+                                                                                        <ul class="dropdown-menu">
+                                                                                            <li>
+                                                                                                <a class="dropdown-item" href="#" 
+                                                                                                   onclick="mostrarDetallesIntento({{ intento.id }})">
+                                                                                                    <i class="fas fa-info-circle me-2"></i>Detalles del Intento
+                                                                                                </a>
+                                                                                            </li>
+                                                                                            <li>
+                                                                                                <a class="dropdown-item" href="#" 
+                                                                                                   onclick="descargarIntento({{ intento.id }})">
+                                                                                                    <i class="fas fa-download me-2"></i>Descargar PDF
+                                                                                                </a>
+                                                                                            </li>
+                                                                                            <li><hr class="dropdown-divider"></li>
+                                                                                            {% if cuestionario.esta_disponible %}
+                                                                                            <li>
+                                                                                                <a class="dropdown-item text-primary" 
+                                                                                                   href="{% url 'iniciar_cuestionario' cuestionario.id %}">
+                                                                                                    <i class="fas fa-redo me-2"></i>Nuevo Intento
+                                                                                                </a>
+                                                                                            </li>
+                                                                                            {% endif %}
+                                                                                        </ul>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% else %}
+                                            <!-- Estado vacío -->
+                                            <div class="empty-state">
+                                                <div class="mb-4">
+                                                    <i class="fas fa-clipboard-list" style="font-size: 4rem;"></i>
+                                                </div>
+                                                <h4 class="mb-3">Aún no has realizado este cuestionario</h4>
+                                                <p class="mb-4">¡Es tu oportunidad de demostrar lo que has aprendido!</p>
+                                                {% if cuestionario.esta_disponible %}
+                                                <a href="{% url 'iniciar_cuestionario' cuestionario.id %}" class="btn btn-primary btn-lg">
+                                                    <i class="fas fa-play me-2"></i>Realizar mi Primer Intento
+                                                </a>
+                                                {% else %}
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    Este cuestionario no está disponible en este momento.
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+
+                                            <!-- Información del cuestionario -->
+                                            {% if intentos %}
+                                            <div class="row mt-5">
+                                                <div class="col-12">
+                                                    <div class="card border-0 shadow">
+                                                        <div class="card-header bg-light">
+                                                            <h6 class="mb-0">
+                                                                <i class="fas fa-info-circle me-2"></i>Información del Cuestionario
+                                                            </h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <div class="row">
+                                                                <div class="col-md-6">
+                                                                    <div class="mb-3">
+                                                                        <strong>📋 Detalles:</strong>
+                                                                        <ul class="list-unstyled mt-2 ms-3">
+                                                                            <li><i class="fas fa-question-circle text-primary me-2"></i>{{ cuestionario.preguntas.count }} preguntas</li>
+                                                                            <li><i class="fas fa-star text-warning me-2"></i>{{ cuestionario.puntaje_total|floatformat:0 }} puntos totales</li>
+                                                                            <li><i class="fas fa-clock text-info me-2"></i>{{ cuestionario.tiempo_limite }} minutos de límite</li>
+                                                                            <li><i class="fas fa-redo text-secondary me-2"></i>
+                                                                                {% if cuestionario.intentos_permitidos == 999 %}
+                                                                                    Intentos ilimitados
+                                                                                {% else %}
+                                                                                    {{ cuestionario.intentos_permitidos }} intentos permitidos
+                                                                                {% endif %}
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="mb-3">
+                                                                        <strong>⚙️ Configuración:</strong>
+                                                                        <ul class="list-unstyled mt-2 ms-3">
+                                                                            <li><i class="fas fa-robot text-success me-2"></i>
+                                                                                {% if cuestionario.calificacion_automatica %}
+                                                                                    Calificación automática
+                                                                                {% else %}
+                                                                                    Calificación manual
+                                                                                {% endif %}
+                                                                            </li>
+                                                                            <li><i class="fas fa-eye text-primary me-2"></i>
+                                                                                {% if cuestionario.mostrar_resultados %}
+                                                                                    Resultados visibles
+                                                                                {% else %}
+                                                                                    Resultados ocultos
+                                                                                {% endif %}
+                                                                            </li>
+                                                                            <li><i class="fas fa-random text-info me-2"></i>
+                                                                                {% if cuestionario.orden_aleatorio %}
+                                                                                    Preguntas en orden aleatorio
+                                                                                {% else %}
+                                                                                    Preguntas en orden fijo
+                                                                                {% endif %}
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <!-- Fechas de disponibilidad -->
+                                                            {% if cuestionario.fecha_apertura or cuestionario.fecha_cierre %}
+                                                            <div class="row">
+                                                                <div class="col-12">
+                                                                    <div class="alert alert-info">
+                                                                        <strong>📅 Disponibilidad:</strong>
+                                                                        {% if cuestionario.fecha_apertura %}
+                                                                            <br><i class="fas fa-calendar-check me-2"></i>Disponible desde: {{ cuestionario.fecha_apertura|date:"d/m/Y H:i" }}
+                                                                        {% endif %}
+                                                                        {% if cuestionario.fecha_cierre %}
+                                                                            <br><i class="fas fa-calendar-times me-2"></i>Disponible hasta: {{ cuestionario.fecha_cierre|date:"d/m/Y H:i" }}
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {% endif %}
+
+                                                            <!-- Instrucciones del cuestionario -->
+                                                            {% if cuestionario.instrucciones %}
+                                                            <div class="row">
+                                                                <div class="col-12">
+                                                                    <div class="mt-3">
+                                                                        <strong>📝 Instrucciones:</strong>
+                                                                        <div class="bg-light p-3 rounded mt-2">
+                                                                            {{ cuestionario.instrucciones|linebreaks }}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+
+                                        </div>
+                                        <!-- Main content END -->
+                                    </div><!-- Row END -->
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Lista de Intentos END -->
+
+                        </div>
+                        <!-- Main content END -->
+                    </div><!-- Row END -->
+                </div>
+            </section>
+        </div>
+    </div>
+    <!-- =======================
+    Inner part END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Modal de Detalles del Intento START -->
+<div class="modal fade" id="modalDetallesIntento" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalDetallesLabel">
+                    <i class="fas fa-info-circle me-2"></i>Detalles del Intento
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalDetallesContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando información...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Detalles END -->
+
+<!-- Scripts -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+<!-- JavaScript para Funcionalidades del Historial -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📊 Historial de cuestionario específico cargado');
+    
+    // Efectos visuales para las cards de intentos
+    document.querySelectorAll('.attempt-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px) translateX(10px)';
+            this.style.boxShadow = '0 12px 30px rgba(0,0,0,0.2)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) translateX(0)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        });
+    });
+    
+    // Efectos para las barras del gráfico
+    document.querySelectorAll('.progress-bar-chart').forEach(bar => {
+        bar.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.2)';
+            this.style.zIndex = '10';
+        });
+        
+        bar.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+            this.style.zIndex = '1';
+        });
+    });
+    
+    // Animar entrada de las cards
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('.timeline-item').forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(30px)';
+        item.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+        observer.observe(item);
+    });
+    
+    console.log('✅ Historial de cuestionario específico inicializado');
+});
+
+// Función para mostrar detalles del intento
+function mostrarDetallesIntento(intentoId) {
+    console.log('📋 Mostrando detalles del intento:', intentoId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalDetallesIntento'));
+    modal.show();
+    
+    // Simular carga de contenido (aquí podrías hacer una llamada AJAX real)
+    setTimeout(() => {
+        document.getElementById('modalDetallesContent').innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>Resumen del Intento
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>ID del Intento:</strong> ${intentoId}</div>
+                        <div class="mb-2"><strong>Estado:</strong> <span class="badge bg-success">Completado</span></div>
+                        <div class="mb-2"><strong>Tiempo empleado:</strong> 15 minutos 32 segundos</div>
+                        <div class="mb-0"><strong>Dispositivo:</strong> Navegador web</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success mb-3">
+                        <i class="fas fa-bullseye me-2"></i>Análisis de Respuestas
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>Preguntas correctas:</strong> 8 de 10</div>
+                        <div class="mb-2"><strong>Preguntas incorrectas:</strong> 2</div>
+                        <div class="mb-2"><strong>Preguntas sin responder:</strong> 0</div>
+                        <div class="mb-0"><strong>Precisión:</strong> 80%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <h6 class="text-info mb-3">
+                <i class="fas fa-clock me-2"></i>Cronología del Intento
+            </h6>
+            <div class="timeline">
+                <div class="alert alert-info">
+                    <div class="mb-2"><strong>📅 Inicio:</strong> ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}</div>
+                    <div class="mb-2"><strong>⏱️ Duración:</strong> 15 minutos 32 segundos</div>
+                    <div class="mb-0"><strong>🏁 Finalización:</strong> ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}</div>
+                </div>
+            </div>
+        `;
+    }, 500);
+}
+
+// Función para descargar el intento como PDF
+function descargarIntento(intentoId) {
+    console.log('📄 Descargando intento como PDF:', intentoId);
+    
+    // Mostrar mensaje de descarga
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-primary border-0 position-fixed top-50 start-50 translate-middle';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-download me-2"></i>Preparando descarga del PDF...
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Simular descarga
+    setTimeout(() => {
+        toast.remove();
+        alert('Funcionalidad de descarga PDF en desarrollo');
+    }, 2000);
+}
+
+// Función para ordenar intentos
+function ordenarIntentos(criterio) {
+    console.log('🔄 Ordenando intentos por:', criterio);
+    
+    const items = Array.from(document.querySelectorAll('.timeline-item'));
+    const container = document.querySelector('.timeline-container');
+    
+    if (criterio === 'reciente') {
+        // Ya están ordenados por fecha descendente
+        items.reverse();
+    }
+    
+    // Reordenar elementos
+    items.forEach(item => {
+        container.appendChild(item);
+    });
+}
+
+// Función para mostrar estadísticas detalladas
+function mostrarEstadisticasDetalladas() {
+    console.log('📈 Mostrando estadísticas detalladas');
+    alert('Funcionalidad de estadísticas detalladas en desarrollo');
+}
+
+// Función para comparar intentos
+function compararIntento(intentoId) {
+    console.log('⚖️ Comparando intento:', intentoId);
+    alert('Funcionalidad de comparación de intentos en desarrollo');
+}
+
+// Efectos adicionales al cargar
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar contadores estadísticos
+    document.querySelectorAll('.stats-number').forEach(counter => {
+        const target = parseFloat(counter.textContent);
+        let current = 0;
+        const increment = target / 30;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            counter.textContent = current.toFixed(1);
+        }, 50);
+    });
+});
+</script>
+
+</body>
+</html>

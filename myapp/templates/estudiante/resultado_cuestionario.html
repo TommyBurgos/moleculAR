@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Eduport - Resultado: {{ cuestionario.recurso.titulo }}</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Webestica.com">
+    <meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+    
+    <!-- Estilos específicos para resultado de cuestionario -->
+    <style>
+        .resultado-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .resultado-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            animation: float 20s linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: white;
+            margin: 0 auto 1rem;
+            position: relative;
+            z-index: 2;
+        }
+        .score-excellent { background: linear-gradient(135deg, #28a745, #20c997); }
+        .score-good { background: linear-gradient(135deg, #17a2b8, #6f42c1); }
+        .score-average { background: linear-gradient(135deg, #ffc107, #fd7e14); }
+        .score-poor { background: linear-gradient(135deg, #dc3545, #e83e8c); }
+        .pregunta-card {
+            border: none;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .pregunta-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .pregunta-card.correcta {
+            border-left: 5px solid #28a745;
+            background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .pregunta-card.incorrecta {
+            border-left: 5px solid #dc3545;
+            background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .pregunta-card.parcial {
+            border-left: 5px solid #ffc107;
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .pregunta-card.pendiente {
+            border-left: 5px solid #6c757d;
+            background: linear-gradient(135deg, rgba(108, 117, 125, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+        }
+        .pregunta-numero {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        .respuesta-correcta {
+            background: rgba(40, 167, 69, 0.1);
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+        .respuesta-incorrecta {
+            background: rgba(220, 53, 69, 0.1);
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+        .respuesta-estudiante {
+            background: rgba(108, 117, 125, 0.1);
+            border: 2px solid #6c757d;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+        .badge-estado {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+        }
+        .badge-correcta {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        .badge-incorrecta {
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
+            color: white;
+        }
+        .badge-parcial {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: white;
+        }
+        .badge-pendiente {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+        }
+        .stats-resumen {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .retroalimentacion-card {
+            background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(255, 255, 255, 1) 100%);
+            border: 2px solid #17a2b8;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .multimedia-preview {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 1rem 0;
+        }
+        .btn-accion {
+            border-radius: 25px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 0.25rem;
+        }
+        .btn-accion:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .btn-volver {
+            background: linear-gradient(135deg, #6c757d, #495057);
+            color: white;
+            border: none;
+        }
+        .btn-reintentar {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+        }
+        .btn-descargar {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1);
+            color: white;
+            border: none;
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: 251.2;
+            transition: stroke-dashoffset 0.5s ease-in-out;
+        }
+        .feedback-profesor {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 255, 255, 1) 100%);
+            border-left: 5px solid #ffc107;
+            padding: 1rem;
+            border-radius: 0 10px 10px 0;
+            margin: 1rem 0;
+        }
+        .tiempo-empleado {
+            background: rgba(23, 162, 184, 0.1);
+            color: #17a2b8;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+    <!-- Sidebar START -->
+    {% include 'estudiante/baseSideBar.html' %}
+    <!-- Sidebar END -->	
+        
+    <!-- =======================
+    Inner part START -->
+    <div class="page-content">
+        <!-- Top bar START -->
+        {% include 'estudiante/navBar.html' %}
+        <!-- Top bar END -->
+
+        <!-- Page main content START -->
+        <div class="page-content-wrapper border">
+            <section class="pt-0">
+                <div class="container">
+                    <div class="row">
+                        <!-- Main content START -->
+                        <div class="col-xl-12">
+                            
+                            <!-- =======================
+                            Page Banner START -->
+                            <section class="py-4">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="bg-light p-4 text-center rounded-3">
+                                                <h1 class="m-0">📊 Resultado del Cuestionario</h1>
+                                                <!-- Breadcrumb -->
+                                                <div class="d-flex justify-content-center">
+                                                    <nav aria-label="breadcrumb">
+                                                        <ol class="breadcrumb breadcrumb-dots mb-0">
+                                                            <li class="breadcrumb-item"><a href="{% url 'student_dashboard' %}">Dashboard</a></li>
+                                                            <li class="breadcrumb-item"><a href="{% url 'biblioteca_cuestionarios_estudiante' %}">Cuestionarios</a></li>
+                                                            <li class="breadcrumb-item"><a href="{% url 'historial_cuestionario_especifico' cuestionario.id %}">Historial</a></li>
+                                                            <li class="breadcrumb-item active" aria-current="page">Resultado</li>
+                                                        </ol>
+                                                    </nav>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page Banner END -->
+
+                            <!-- =======================
+                            Header del Resultado START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="resultado-header">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-3 text-center">
+                                                {% with puntaje_porcentaje|floatformat:0 as porcentaje %}
+                                                <div class="score-circle 
+                                                    {% if puntaje_porcentaje >= 90 %}score-excellent{% elif puntaje_porcentaje >= 70 %}score-good{% elif puntaje_porcentaje >= 50 %}score-average{% else %}score-poor{% endif %}">
+                                                    {{ porcentaje }}%
+                                                </div>
+                                                <div style="position: relative; z-index: 2;">
+                                                    <h4 class="text-white mb-1">{{ intento.puntaje_obtenido|floatformat:1 }}/{{ cuestionario.puntaje_total|floatformat:0 }}</h4>
+                                                    <small class="text-white-50">puntos obtenidos</small>
+                                                </div>
+                                                {% endwith %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div style="position: relative; z-index: 2;">
+                                                    <h2 class="mb-2">{{ cuestionario.recurso.titulo }}</h2>
+                                                    {% if cuestionario.recurso.seccion %}
+                                                    <p class="mb-2 text-white-50">
+                                                        <i class="fas fa-graduation-cap me-1"></i>
+                                                        {{ cuestionario.recurso.seccion.curso.titulo }}
+                                                    </p>
+                                                    {% endif %}
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <span class="badge-estado 
+                                                            {% if puntaje_porcentaje >= 90 %}badge-correcta{% elif puntaje_porcentaje >= 70 %}badge-good{% elif puntaje_porcentaje >= 50 %}badge-parcial{% else %}badge-incorrecta{% endif %}">
+                                                            {% if puntaje_porcentaje >= 90 %}
+                                                                <i class="fas fa-trophy me-1"></i>¡Excelente!
+                                                            {% elif puntaje_porcentaje >= 70 %}
+                                                                <i class="fas fa-thumbs-up me-1"></i>Buen trabajo
+                                                            {% elif puntaje_porcentaje >= 50 %}
+                                                                <i class="fas fa-meh me-1"></i>Puede mejorar
+                                                            {% else %}
+                                                                <i class="fas fa-times me-1"></i>Necesita estudiar más
+                                                            {% endif %}
+                                                        </span>
+                                                        <span class="tiempo-empleado ms-3">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            {% if intento.tiempo_empleado %}
+                                                                {{ intento.tiempo_empleado|floatformat:0 }} segundos
+                                                            {% else %}
+                                                                Tiempo no registrado
+                                                            {% endif %}
+                                                        </span>
+                                                    </div>
+                                                    <p class="mb-0 text-white-75">
+                                                        Intento {{ intento.numero_intento }} realizado el {{ intento.fecha_finalizacion|date:"d/m/Y" }} a las {{ intento.fecha_finalizacion|date:"H:i" }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 text-center">
+                                                <div style="position: relative; z-index: 2;">
+                                                    <!-- Progreso circular SVG -->
+                                                    <svg class="progress-ring" width="100" height="100">
+                                                        <circle class="progress-ring-circle" 
+                                                                stroke="#ffffff50" 
+                                                                stroke-width="8" 
+                                                                fill="transparent" 
+                                                                r="40" 
+                                                                cx="50" 
+                                                                cy="50"/>
+                                                        <circle class="progress-ring-circle" 
+                                                                stroke="#ffffff" 
+                                                                stroke-width="8" 
+                                                                fill="transparent" 
+                                                                r="40" 
+                                                                cx="50" 
+                                                                cy="50"
+                                                                style="stroke-dashoffset: calc(251.2 - (251.2 * {{ puntaje_porcentaje|floatformat:0 }}) / 100);"/>
+                                                    </svg>
+                                                    <div class="mt-2">
+                                                        <small class="text-white-50">Progreso Global</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Header del Resultado END -->
+
+                            <!-- =======================
+                            Resumen Estadístico START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="stats-resumen">
+                                        <div class="row">
+                                            <div class="col-md-2">
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-primary" id="totalPreguntas">{{ cuestionario.preguntas.count }}</div>
+                                                    <div class="stat-label">Total Preguntas</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-success" id="correctasCount">0</div>
+                                                    <div class="stat-label">Correctas</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-danger" id="incorrectasCount">0</div>
+                                                    <div class="stat-label">Incorrectas</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-warning" id="parcialesCount">0</div>
+                                                    <div class="stat-label">Parciales</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-secondary" id="pendientesCount">0</div>
+                                                    <div class="stat-label">Sin Calificar</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="stat-item">
+                                                    <div class="stat-number text-info">{{ puntaje_porcentaje|floatformat:0 }}%</div>
+                                                    <div class="stat-label">Precisión</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Resumen Estadístico END -->
+
+                            <!-- =======================
+                            Acciones Principales START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="row mb-4">
+                                        <div class="col-12 text-center">
+                                            <div class="d-flex justify-content-center flex-wrap gap-2">
+                                                <a href="{% url 'historial_cuestionario_especifico' cuestionario.id %}" class="btn btn-accion btn-volver">
+                                                    <i class="fas fa-arrow-left me-1"></i>Volver al Historial
+                                                </a>
+                                                <a href="{% url 'biblioteca_cuestionarios_estudiante' %}" class="btn btn-accion btn-volver">
+                                                    <i class="fas fa-list me-1"></i>Ver Otros Cuestionarios
+                                                </a>
+                                                {% if cuestionario.esta_disponible %}
+                                                <a href="{% url 'iniciar_cuestionario' cuestionario.id %}" class="btn btn-accion btn-reintentar">
+                                                    <i class="fas fa-redo me-1"></i>Nuevo Intento
+                                                </a>
+                                                {% endif %}
+                                                <button class="btn btn-accion btn-descargar" onclick="descargarResultado()">
+                                                    <i class="fas fa-download me-1"></i>Descargar PDF
+                                                </button>
+                                                <button class="btn btn-accion btn-descargar" onclick="compartirResultado()">
+                                                    <i class="fas fa-share me-1"></i>Compartir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Acciones Principales END -->
+
+                            <!-- =======================
+                            Detalle de Preguntas START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-clipboard-list me-2"></i>Detalle de Respuestas
+                                                </h5>
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-outline-primary btn-sm" onclick="filtrarPreguntas('todas')">
+                                                        <i class="fas fa-list me-1"></i>Todas
+                                                    </button>
+                                                    <button class="btn btn-outline-success btn-sm" onclick="filtrarPreguntas('correctas')">
+                                                        <i class="fas fa-check me-1"></i>Correctas
+                                                    </button>
+                                                    <button class="btn btn-outline-danger btn-sm" onclick="filtrarPreguntas('incorrectas')">
+                                                        <i class="fas fa-times me-1"></i>Incorrectas
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary btn-sm" onclick="contraerTodas()">
+                                                        <i class="fas fa-compress me-1"></i>Contraer Todo
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Lista de preguntas con respuestas -->
+                                            {% for respuesta in respuestas %}
+                                            {% with estado_clase='' estado_texto='' estado_icono='' %}
+                                                {% if respuesta.es_correcta == True %}
+                                                    {% with estado_clase='correcta' estado_texto='Correcta' estado_icono='fas fa-check' %}
+                                                        <div class="pregunta-card correcta" data-estado="correcta">
+                                                    {% endwith %}
+                                                {% elif respuesta.es_correcta == False %}
+                                                    {% with estado_clase='incorrecta' estado_texto='Incorrecta' estado_icono='fas fa-times' %}
+                                                        <div class="pregunta-card incorrecta" data-estado="incorrecta">
+                                                    {% endwith %}
+                                                {% elif respuesta.es_correcta == None %}
+                                                    {% with estado_clase='pendiente' estado_texto='Pendiente' estado_icono='fas fa-clock' %}
+                                                        <div class="pregunta-card pendiente" data-estado="pendiente">
+                                                    {% endwith %}
+                                                {% else %}
+                                                    {% with estado_clase='parcial' estado_texto='Parcial' estado_icono='fas fa-minus' %}
+                                                        <div class="pregunta-card parcial" data-estado="parcial">
+                                                    {% endwith %}
+                                                {% endif %}
+                                                
+                                                    <div class="card">
+                                                        <div class="card-header bg-light">
+                                                            <div class="d-flex align-items-center justify-content-between">
+                                                                <div class="d-flex align-items-center">
+                                                                    <div class="pregunta-numero">{{ forloop.counter }}</div>
+                                                                    <div>
+                                                                        <h6 class="mb-1">Pregunta {{ forloop.counter }}</h6>
+                                                                        <small class="text-muted">{{ respuesta.pregunta.tipo.descripcion }}</small>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="d-flex align-items-center">
+                                                                    <span class="badge me-2
+                                                                        {% if respuesta.es_correcta == True %}badge-correcta{% elif respuesta.es_correcta == False %}badge-incorrecta{% elif respuesta.es_correcta == None %}badge-pendiente{% else %}badge-parcial{% endif %}">
+                                                                        <i class="{{ estado_icono }} me-1"></i>{{ estado_texto }}
+                                                                    </span>
+                                                                    <span class="badge bg-primary me-2">
+                                                                        {{ respuesta.puntaje_obtenido|floatformat:1 }}/{{ respuesta.pregunta.puntaje }} pts
+                                                                    </span>
+                                                                    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#pregunta{{ forloop.counter }}" aria-expanded="false">
+                                                                        <i class="fas fa-chevron-down"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="collapse" id="pregunta{{ forloop.counter }}">
+                                                            <div class="card-body">
+                                                                <!-- Enunciado de la pregunta -->
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-primary mb-2">📝 Enunciado:</h6>
+                                                                    <div class="bg-light p-3 rounded">
+                                                                        {{ respuesta.pregunta.enunciado|linebreaks }}
+                                                                    </div>
+                                                                    
+                                                                    <!-- Multimedia de la pregunta -->
+                                                                    {% if respuesta.pregunta.archivo_multimedia %}
+                                                                    <div class="mt-3">
+                                                                        <h6 class="text-info mb-2">📎 Archivo adjunto:</h6>
+                                                                        {% if respuesta.pregunta.archivo_multimedia.url|slice:"-3:" == "jpg" or respuesta.pregunta.archivo_multimedia.url|slice:"-3:" == "png" or respuesta.pregunta.archivo_multimedia.url|slice:"-4:" == "jpeg" %}
+                                                                            <img src="{{ respuesta.pregunta.archivo_multimedia.url }}" class="multimedia-preview" alt="Imagen de la pregunta">
+                                                                        {% elif respuesta.pregunta.archivo_multimedia.url|slice:"-3:" == "mp4" or respuesta.pregunta.archivo_multimedia.url|slice:"-3:" == "avi" %}
+                                                                            <video class="multimedia-preview" controls>
+                                                                                <source src="{{ respuesta.pregunta.archivo_multimedia.url }}" type="video/mp4">
+                                                                            </video>
+                                                                        {% else %}
+                                                                            <a href="{{ respuesta.pregunta.archivo_multimedia.url }}" class="btn btn-outline-info btn-sm" target="_blank">
+                                                                                <i class="fas fa-download me-1"></i>Descargar archivo
+                                                                            </a>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    {% endif %}
+                                                                    
+                                                                    <!-- Video de YouTube -->
+                                                                    {% if respuesta.pregunta.url_youtube %}
+                                                                    <div class="mt-3">
+                                                                        <h6 class="text-danger mb-2">🎥 Video de YouTube:</h6>
+                                                                        <div class="ratio ratio-16x9">
+                                                                            <iframe src="https://www.youtube.com/embed/{{ respuesta.pregunta.url_youtube }}" 
+                                                                                    title="YouTube video" allowfullscreen></iframe>
+                                                                        </div>
+                                                                    </div>
+                                                                    {% endif %}
+                                                                </div>
+
+                                                                <!-- Respuesta del estudiante -->
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-secondary mb-2">👤 Tu respuesta:</h6>
+                                                                    <div class="respuesta-estudiante">
+                                                                        {% if respuesta.pregunta.tipo.nombre == 'opcion_unica' or respuesta.pregunta.tipo.nombre == 'falso_verdadero' %}
+                                                                            {% if respuesta.opcion_seleccionada %}
+                                                                                <div class="d-flex align-items-center">
+                                                                                    <i class="fas fa-arrow-right text-primary me-2"></i>
+                                                                                    {{ respuesta.opcion_seleccionada.texto }}
+                                                                                </div>
+                                                                            {% else %}
+                                                                                <em class="text-muted">No se seleccionó ninguna opción</em>
+                                                                            {% endif %}
+                                                                        
+                                                                        {% elif respuesta.pregunta.tipo.nombre == 'opcion_multiple' %}
+                                                                            {% if respuesta.opciones_multiples %}
+                                                                                <ul class="list-unstyled mb-0">
+                                                                                    {% for opcion in respuesta.pregunta.opciones.all %}
+                                                                                        {% if opcion.id in respuesta.opciones_ids %}
+                                                                                            <li><i class="fas fa-check text-primary me-2"></i>{{ opcion.texto }}</li>
+                                                                                        {% endif %}
+                                                                                    {% endfor %}
+                                                                                </ul>
+                                                                            {% else %}
+                                                                                <em class="text-muted">No se seleccionaron opciones</em>
+                                                                            {% endif %}
+                                                                        
+                                                                        {% elif respuesta.pregunta.tipo.nombre == 'respuesta_abierta' %}
+                                                                            {% if respuesta.respuesta_texto %}
+                                                                                {{ respuesta.respuesta_texto|linebreaks }}
+                                                                            {% else %}
+                                                                                <em class="text-muted">No se proporcionó respuesta</em>
+                                                                            {% endif %}
+                                                                        
+                                                                        {% elif respuesta.pregunta.tipo.nombre == 'completar' %}
+                                                                            {% if respuesta.respuestas_completar %}
+                                                                                <div class="bg-secondary text-white p-2 rounded">
+                                                                                    {{ respuesta.respuestas_completar }}
+                                                                                </div>
+                                                                            {% else %}
+                                                                                <em class="text-muted">No se completaron los espacios</em>
+                                                                            {% endif %}
+                                                                        
+                                                                        {% elif respuesta.pregunta.tipo.nombre == 'unir_lineas' %}
+                                                                            {% if respuesta.conexiones_realizadas %}
+                                                                                <div class="bg-secondary text-white p-2 rounded">
+                                                                                    Conexiones realizadas: {{ respuesta.conexiones_realizadas }}
+                                                                                </div>
+                                                                            {% else %}
+                                                                                <em class="text-muted">No se realizaron conexiones</em>
+                                                                            {% endif %}
+                                                                        
+                                                                        {% elif respuesta.pregunta.tipo.nombre == 'simulador_2d' or respuesta.pregunta.tipo.nombre == 'simulador_3d' %}
+                                                                            {% if respuesta.respuesta_smiles %}
+                                                                                <div class="bg-secondary text-white p-2 rounded">
+                                                                                    <strong>SMILES:</strong> {{ respuesta.respuesta_smiles }}
+                                                                                </div>
+                                                                            {% else %}
+                                                                                <em class="text-muted">No se proporcionó estructura molecular</em>
+                                                                            {% endif %}
+                                                                        
+                                                                        {% else %}
+                                                                            <em class="text-muted">Tipo de pregunta no reconocido</em>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- Respuesta correcta -->
+                                                                {% if respuesta.pregunta.tipo.nombre == 'opcion_unica' or respuesta.pregunta.tipo.nombre == 'falso_verdadero' or respuesta.pregunta.tipo.nombre == 'opcion_multiple' %}
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-success mb-2">✅ Respuesta(s) correcta(s):</h6>
+                                                                    <div class="respuesta-correcta">
+                                                                        {% for opcion in respuesta.pregunta.opciones.all %}
+                                                                            {% if opcion.es_correcta %}
+                                                                                <div class="d-flex align-items-center mb-1">
+                                                                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                                                                    {{ opcion.texto }}
+                                                                                </div>
+                                                                            {% endif %}
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+
+                                                                <!-- Respuesta modelo para preguntas abiertas -->
+                                                                {% if respuesta.pregunta.tipo.nombre == 'respuesta_abierta' and respuesta.pregunta.respuesta_modelo %}
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-success mb-2">💡 Respuesta modelo:</h6>
+                                                                    <div class="respuesta-correcta">
+                                                                        {{ respuesta.pregunta.respuesta_modelo|linebreaks }}
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+
+                                                                <!-- Respuestas correctas para completar -->
+                                                                {% if respuesta.pregunta.tipo.nombre == 'completar' and respuesta.respuestas_correctas_lista %}
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-success mb-2">✅ Respuestas correctas:</h6>
+                                                                    <div class="respuesta-correcta">
+                                                                        {% for respuesta_correcta in respuesta.respuestas_correctas_lista %}
+                                                                            <span class="badge bg-success me-1">{{ respuesta_correcta }}</span>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+
+                                                                <!-- Conexiones correctas para unir líneas -->
+                                                                {% if respuesta.pregunta.tipo.nombre == 'unir_lineas' and respuesta.pregunta.conexiones_correctas %}
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-success mb-2">🔗 Conexiones correctas:</h6>
+                                                                    <div class="respuesta-correcta">
+                                                                        {{ respuesta.pregunta.conexiones_correctas }}
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+
+                                                                <!-- SMILES objetivo para simuladores -->
+                                                                {% if respuesta.pregunta.tipo.nombre == 'simulador_2d' or respuesta.pregunta.tipo.nombre == 'simulador_3d' %}
+                                                                    {% if respuesta.pregunta.smiles_objetivo %}
+                                                                    <div class="mb-3">
+                                                                        <h6 class="text-success mb-2">🎯 Estructura objetivo:</h6>
+                                                                        <div class="respuesta-correcta">
+                                                                            <strong>SMILES:</strong> {{ respuesta.pregunta.smiles_objetivo }}
+                                                                            {% if respuesta.pregunta.descripcion_molecula %}
+                                                                                <br><strong>Descripción:</strong> {{ respuesta.pregunta.descripcion_molecula }}
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </div>
+                                                                    {% endif %}
+                                                                {% endif %}
+
+                                                                <!-- Retroalimentación del profesor -->
+                                                                {% if respuesta.retroalimentacion %}
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-warning mb-2">👨‍🏫 Comentarios del profesor:</h6>
+                                                                    <div class="feedback-profesor">
+                                                                        <i class="fas fa-quote-left text-warning me-2"></i>
+                                                                        {{ respuesta.retroalimentacion|linebreaks }}
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+
+                                                                <!-- Criterios de evaluación para preguntas manuales -->
+                                                                {% if respuesta.pregunta.tipo.nombre == 'respuesta_abierta' and respuesta.pregunta.criterios_evaluacion %}
+                                                                <div class="mb-3">
+                                                                    <h6 class="text-info mb-2">📋 Criterios de evaluación:</h6>
+                                                                    <div class="retroalimentacion-card">
+                                                                        <i class="fas fa-list-check text-info me-2"></i>
+                                                                        {{ respuesta.pregunta.criterios_evaluacion|linebreaks }}
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+
+                                                                <!-- Información adicional del puntaje -->
+                                                                <div class="row">
+                                                                    <div class="col-md-6">
+                                                                        <div class="bg-light p-3 rounded">
+                                                                            <h6 class="text-primary mb-2">📊 Puntaje obtenido:</h6>
+                                                                            <div class="d-flex justify-content-between">
+                                                                                <span>Puntos:</span>
+                                                                                <strong class="text-primary">{{ respuesta.puntaje_obtenido|floatformat:1 }}/{{ respuesta.pregunta.puntaje }}</strong>
+                                                                            </div>
+                                                                            <div class="progress mt-2" style="height: 6px;">
+                                                                                <div class="progress-bar 
+                                                                                    {% if respuesta.es_correcta == True %}bg-success{% elif respuesta.es_correcta == False %}bg-danger{% elif respuesta.es_correcta == None %}bg-secondary{% else %}bg-warning{% endif %}" 
+                                                                                     style="width: {{ respuesta.porcentaje_pregunta|default:0 }}%"></div>
+                                                                            </div>
+                                                                            <small class="text-muted">
+                                                                                {{ respuesta.porcentaje_pregunta|default:0 }}% del puntaje total
+                                                                            </small>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="bg-light p-3 rounded">
+                                                                            <h6 class="text-secondary mb-2">⏱️ Tiempo de respuesta:</h6>
+                                                                            <div class="d-flex justify-content-between">
+                                                                                <span>Tiempo empleado:</span>
+                                                                                <strong class="text-info">
+                                                                                    {% if respuesta.tiempo_respuesta %}
+                                                                                        {{ respuesta.tiempo_respuesta }} segundos
+                                                                                    {% else %}
+                                                                                        No registrado
+                                                                                    {% endif %}
+                                                                                </strong>
+                                                                            </div>
+                                                                            <small class="text-muted">
+                                                                                {% if respuesta.tiempo_respuesta %}
+                                                                                    {% if respuesta.tiempo_respuesta < 30 %}
+                                                                                        Respuesta muy rápida
+                                                                                    {% elif respuesta.tiempo_respuesta < 120 %}
+                                                                                        Tiempo adecuado
+                                                                                    {% else %}
+                                                                                        Respuesta reflexiva
+                                                                                    {% endif %}
+                                                                                {% endif %}
+                                                                            </small>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endwith %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Detalle de Preguntas END -->
+
+                            <!-- =======================
+                            Resumen Final START -->
+                            <section class="pt-0">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card border-0 shadow-lg">
+                                                <div class="card-header bg-primary text-white">
+                                                    <h5 class="mb-0">
+                                                        <i class="fas fa-chart-pie me-2"></i>Resumen Final del Intento
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-primary mb-3">📈 Análisis de Rendimiento</h6>
+                                                            <div class="mb-3">
+                                                                <div class="d-flex justify-content-between mb-1">
+                                                                    <span>Puntaje obtenido:</span>
+                                                                    <strong>{{ intento.puntaje_obtenido|floatformat:1 }}/{{ cuestionario.puntaje_total|floatformat:0 }} ({{ puntaje_porcentaje|floatformat:0 }}%)</strong>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between mb-1">
+                                                                    <span>Tiempo empleado:</span>
+                                                                    <strong>
+                                                                        {% if intento.tiempo_empleado %}
+                                                                            {% if intento.tiempo_empleado < 60 %}
+                                                                                {{ intento.tiempo_empleado|floatformat:0 }} segundos
+                                                                            {% else %}
+                                                                                {{ intento.tiempo_minutos|floatformat:1 }} minutos
+                                                                            {% endif %}
+                                                                        {% else %}
+                                                                            No registrado
+                                                                        {% endif %}
+                                                                    </strong>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between mb-1">
+                                                                    <span>Intento número:</span>
+                                                                    <strong>{{ intento.numero_intento }}</strong>
+                                                                </div>
+                                                                <div class="d-flex justify-content-between">
+                                                                    <span>Fecha de realización:</span>
+                                                                    <strong>{{ intento.fecha_finalizacion|date:"d/m/Y H:i" }}</strong>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6 class="text-success mb-3">🎯 Recomendaciones</h6>
+                                                            <div class="alert 
+                                                                {% if puntaje_porcentaje >= 90 %}alert-success{% elif puntaje_porcentaje >= 70 %}alert-info{% elif puntaje_porcentaje >= 50 %}alert-warning{% else %}alert-danger{% endif %}">
+                                                                {% if puntaje_porcentaje >= 90 %}
+                                                                    <h6 class="alert-heading">🏆 ¡Excelente trabajo!</h6>
+                                                                    <p class="mb-0">Has demostrado un dominio excepcional del tema. ¡Sigue así!</p>
+                                                                {% elif puntaje_porcentaje >= 70 %}
+                                                                    <h6 class="alert-heading">👍 ¡Buen trabajo!</h6>
+                                                                    <p class="mb-0">Tienes un buen entendimiento del tema. Revisa los puntos donde fallaste para mejorar aún más.</p>
+                                                                {% elif puntaje_porcentaje >= 50 %}
+                                                                    <h6 class="alert-heading">📚 Puedes mejorar</h6>
+                                                                    <p class="mb-0">Tienes conocimientos básicos. Te recomendamos repasar el material y intentar nuevamente.</p>
+                                                                {% else %}
+                                                                    <h6 class="alert-heading">📖 Necesitas estudiar más</h6>
+                                                                    <p class="mb-0">Te recomendamos revisar todo el material del curso antes de intentar nuevamente.</p>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Acciones finales -->
+                                                    <div class="row mt-4">
+                                                        <div class="col-12 text-center">
+                                                            <div class="d-flex justify-content-center flex-wrap gap-2">
+                                                                {% if cuestionario.esta_disponible %}
+                                                                <a href="{% url 'iniciar_cuestionario' cuestionario.id %}" class="btn btn-accion btn-reintentar">
+                                                                    <i class="fas fa-redo me-1"></i>Intentar Nuevamente
+                                                                </a>
+                                                                {% endif %}
+                                                                <a href="{% url 'historial_cuestionario_especifico' cuestionario.id %}" class="btn btn-accion btn-volver">
+                                                                    <i class="fas fa-history me-1"></i>Ver Todos los Intentos
+                                                                </a>
+                                                                <a href="{% url 'biblioteca_cuestionarios_estudiante' %}" class="btn btn-accion btn-volver">
+                                                                    <i class="fas fa-book me-1"></i>Otros Cuestionarios
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Resumen Final END -->
+
+                        </div>
+                        <!-- Main content END -->
+                    </div><!-- Row END -->
+                </div>
+            </section>
+        </div>
+    </div>
+    <!-- =======================
+    Inner part END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Scripts -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+<!-- JavaScript para Funcionalidades del Resultado -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📊 Resultado de cuestionario cargado');
+    
+    // Calcular estadísticas de respuestas
+    calcularEstadisticasRespuestas();
+    
+    // Animar entrada de las cards de preguntas
+    animarEntradaPreguntas();
+    
+    // Configurar efectos visuales
+    configurarEfectosVisuales();
+    
+    console.log('✅ Resultado de cuestionario inicializado');
+});
+
+// Función para calcular estadísticas de respuestas
+function calcularEstadisticasRespuestas() {
+    const preguntas = document.querySelectorAll('.pregunta-card');
+    let correctas = 0;
+    let incorrectas = 0;
+    let parciales = 0;
+    let pendientes = 0;
+    
+    preguntas.forEach(pregunta => {
+        const estado = pregunta.dataset.estado;
+        switch(estado) {
+            case 'correcta':
+                correctas++;
+                break;
+            case 'incorrecta':
+                incorrectas++;
+                break;
+            case 'parcial':
+                parciales++;
+                break;
+            case 'pendiente':
+                pendientes++;
+                break;
+        }
+    });
+    
+    // Actualizar contadores en el DOM
+    document.getElementById('correctasCount').textContent = correctas;
+    document.getElementById('incorrectasCount').textContent = incorrectas;
+    document.getElementById('parcialesCount').textContent = parciales;
+    document.getElementById('pendientesCount').textContent = pendientes;
+    
+    console.log(`📊 Estadísticas: ${correctas} correctas, ${incorrectas} incorrectas, ${parciales} parciales, ${pendientes} pendientes`);
+}
+
+// Función para animar entrada de preguntas
+function animarEntradaPreguntas() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+    
+    document.querySelectorAll('.pregunta-card').forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px)';
+        card.style.transition = `opacity 0.6s ease ${index * 0.1}s, transform 0.6s ease ${index * 0.1}s`;
+        observer.observe(card);
+    });
+}
+
+// Función para configurar efectos visuales
+function configurarEfectosVisuales() {
+    // Efectos hover para las cards
+    document.querySelectorAll('.pregunta-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 12px 30px rgba(0,0,0,0.2)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        });
+    });
+    
+    // Animar contadores
+    document.querySelectorAll('.stat-number').forEach(counter => {
+        const target = parseInt(counter.textContent);
+        let current = 0;
+        const increment = target / 30;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                current = target;
+                clearInterval(timer);
+            }
+            counter.textContent = Math.floor(current);
+        }, 50);
+    });
+}
+
+// Función para filtrar preguntas por estado
+function filtrarPreguntas(filtro) {
+    const preguntas = document.querySelectorAll('.pregunta-card');
+    
+    preguntas.forEach(pregunta => {
+        const estado = pregunta.dataset.estado;
+        
+        if (filtro === 'todas') {
+            pregunta.style.display = 'block';
+        } else if (filtro === 'correctas' && estado === 'correcta') {
+            pregunta.style.display = 'block';
+        } else if (filtro === 'incorrectas' && estado === 'incorrecta') {
+            pregunta.style.display = 'block';
+        } else if (filtro !== 'todas') {
+            pregunta.style.display = 'none';
+        }
+    });
+    
+    console.log(`🔍 Filtrado por: ${filtro}`);
+}
+
+// Función para contraer todas las preguntas
+function contraerTodas() {
+    const collapses = document.querySelectorAll('.collapse');
+    
+    collapses.forEach(collapse => {
+        const bsCollapse = bootstrap.Collapse.getInstance(collapse);
+        if (bsCollapse) {
+            bsCollapse.hide();
+        }
+    });
+    
+    console.log('📁 Todas las preguntas contraídas');
+}
+
+// Función para descargar resultado como PDF
+function descargarResultado() {
+    console.log('📄 Descargando resultado como PDF');
+    
+    // Mostrar mensaje de descarga
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-primary border-0 position-fixed top-50 start-50 translate-middle';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fas fa-download me-2"></i>Generando PDF del resultado...
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    // Simular descarga
+    setTimeout(() => {
+        toast.remove();
+        alert('Funcionalidad de descarga PDF en desarrollo');
+    }, 2000);
+}
+
+// Función para compartir resultado
+function compartirResultado() {
+    console.log('🔗 Compartiendo resultado');
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Mi resultado en el cuestionario',
+            text: `He completado el cuestionario con una puntuación de {{ puntaje_porcentaje|floatformat:0 }}%`,
+            url: window.location.href
+        }).then(() => {
+            console.log('✅ Resultado compartido exitosamente');
+        }).catch((error) => {
+            console.log('❌ Error al compartir:', error);
+            copiarEnlace();
+        });
+    } else {
+        copiarEnlace();
+    }
+}
+
+// Función auxiliar para copiar enlace
+function copiarEnlace() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-50 start-50 translate-middle';
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas fa-check me-2"></i>Enlace copiado al portapapeles
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        setTimeout(() => toast.remove(), 3000);
+    });
+}
+</script>
+
+</body>
+</html>
