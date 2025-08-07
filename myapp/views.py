@@ -2646,21 +2646,40 @@ def iniciar_cuestionario(request, cuestionario_id):
 @role_required('estudiante')
 @login_required
 def realizar_cuestionario(request, intento_id):
-    """Interfaz para realizar el cuestionario"""
+    """Interfaz para realizar el cuestionario - VERSIÓN CON DEBUG"""
     intento = get_object_or_404(IntentoCuestionario, id=intento_id, estudiante=request.user)
     
     print(f"📝 Realizando cuestionario - Intento: {intento_id}")
+    print(f"👤 Usuario: {request.user.username}")
+    print(f"📋 Cuestionario: {intento.cuestionario.recurso.titulo}")
     
     if intento.completado:
+        print(f"✅ Intento ya completado, redirigiendo a resultados")
         return redirect('resultado_cuestionario', intento_id=intento.id)
     
     # Obtener preguntas
     preguntas = intento.cuestionario.preguntas.all().order_by('orden')
+    print(f"❓ Total de preguntas encontradas: {preguntas.count()}")
+    
+    for i, pregunta in enumerate(preguntas):
+        print(f"  📋 Pregunta {i+1}: {pregunta.enunciado[:50]}... (Tipo: {pregunta.tipo.nombre})")
+        if pregunta.tipo.nombre in ['opcion_unica', 'opcion_multiple', 'falso_verdadero']:
+            opciones_count = pregunta.opciones.count()
+            print(f"      🔘 Opciones: {opciones_count}")
+    
+    if preguntas.count() == 0:
+        print("❌ ERROR: No hay preguntas en este cuestionario")
+        messages.error(request, 'Este cuestionario no tiene preguntas configuradas.')
+        return redirect('biblioteca_cuestionarios_estudiante')
     
     # Calcular tiempo restante
     tiempo_limite_segundos = intento.cuestionario.tiempo_limite * 60
     tiempo_transcurrido = (timezone.now() - intento.fecha_inicio).total_seconds()
     tiempo_restante = max(0, tiempo_limite_segundos - tiempo_transcurrido)
+    
+    print(f"⏱️ Tiempo límite: {intento.cuestionario.tiempo_limite} min")
+    print(f"⏱️ Tiempo transcurrido: {tiempo_transcurrido/60:.1f} min")
+    print(f"⏱️ Tiempo restante: {tiempo_restante/60:.1f} min")
     
     if tiempo_restante <= 0:
         # Tiempo agotado, finalizar automáticamente
@@ -2672,6 +2691,8 @@ def realizar_cuestionario(request, intento_id):
     for respuesta in intento.respuestas.all():
         respuestas_existentes[respuesta.pregunta.id] = respuesta
     
+    print(f"💾 Respuestas existentes: {len(respuestas_existentes)}")
+    
     context = {
         'intento': intento,
         'cuestionario': intento.cuestionario,
@@ -2682,13 +2703,16 @@ def realizar_cuestionario(request, intento_id):
         'usuario': request.user.username,
     }
     
+    print(f"📤 Enviando contexto con {len(context)} elementos")
+    print(f"📋 Template: estudiante/realizar_cuestionario.html")
+    
     return render(request, 'estudiante/realizar_cuestionario.html', context)
 
 @role_required('estudiante')
 @login_required
 @csrf_exempt
 def guardar_respuesta(request):
-    """Guardar respuesta de una pregunta vía AJAX"""
+    """Guardar respuesta de una pregunta vía AJAX - VERSIÓN CORREGIDA"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -2696,7 +2720,9 @@ def guardar_respuesta(request):
             pregunta_id = data.get('pregunta_id')
             respuesta = data.get('respuesta')
             
-            print(f"💾 Guardando respuesta - Pregunta: {pregunta_id}, Respuesta: {respuesta}")
+            print(f"💾 Guardando respuesta - Pregunta: {pregunta_id}")
+            print(f"📋 Tipo de respuesta: {type(respuesta)}")
+            print(f"📝 Contenido respuesta (primeros 100 chars): {str(respuesta)[:100]}")
             
             intento = get_object_or_404(IntentoCuestionario, id=intento_id, estudiante=request.user)
             pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
@@ -2711,10 +2737,17 @@ def guardar_respuesta(request):
             # Procesar según tipo de pregunta
             if pregunta.tipo.nombre in ['opcion_unica', 'falso_verdadero']:
                 if respuesta:
-                    opcion = get_object_or_404(OpcionPregunta, id=respuesta)
-                    respuesta_obj.opcion_seleccionada = opcion
-                    respuesta_obj.es_correcta = opcion.es_correcta
-                    respuesta_obj.puntaje_obtenido = pregunta.puntaje if opcion.es_correcta else 0
+                    try:
+                        opcion = get_object_or_404(OpcionPregunta, id=respuesta)
+                        respuesta_obj.opcion_seleccionada = opcion
+                        respuesta_obj.es_correcta = opcion.es_correcta
+                        respuesta_obj.puntaje_obtenido = pregunta.puntaje if opcion.es_correcta else 0
+                        print(f"✅ Opción única guardada - Correcta: {opcion.es_correcta}")
+                    except:
+                        print("❌ Error al procesar opción única")
+                        respuesta_obj.opcion_seleccionada = None
+                        respuesta_obj.es_correcta = False
+                        respuesta_obj.puntaje_obtenido = 0
                 else:
                     respuesta_obj.opcion_seleccionada = None
                     respuesta_obj.es_correcta = False
@@ -2724,13 +2757,19 @@ def guardar_respuesta(request):
                 if isinstance(respuesta, list) and respuesta:
                     respuesta_obj.opciones_multiples = ','.join(map(str, respuesta))
                     # Calcular puntaje para opción múltiple
-                    opciones_correctas = set(str(op.id) for op in pregunta.opciones.filter(es_correcta=True))
-                    opciones_seleccionadas = set(map(str, respuesta))
-                    
-                    if opciones_seleccionadas == opciones_correctas:
-                        respuesta_obj.es_correcta = True
-                        respuesta_obj.puntaje_obtenido = pregunta.puntaje
-                    else:
+                    try:
+                        opciones_correctas = set(str(op.id) for op in pregunta.opciones.filter(es_correcta=True))
+                        opciones_seleccionadas = set(map(str, respuesta))
+                        
+                        if opciones_seleccionadas == opciones_correctas:
+                            respuesta_obj.es_correcta = True
+                            respuesta_obj.puntaje_obtenido = pregunta.puntaje
+                        else:
+                            respuesta_obj.es_correcta = False
+                            respuesta_obj.puntaje_obtenido = 0
+                        print(f"✅ Opción múltiple guardada - Correcta: {respuesta_obj.es_correcta}")
+                    except:
+                        print("❌ Error al procesar opción múltiple")
                         respuesta_obj.es_correcta = False
                         respuesta_obj.puntaje_obtenido = 0
                 else:
@@ -2739,28 +2778,67 @@ def guardar_respuesta(request):
                     respuesta_obj.puntaje_obtenido = 0
             
             elif pregunta.tipo.nombre == 'respuesta_abierta':
-                respuesta_obj.respuesta_texto = respuesta or ''
+                respuesta_texto = str(respuesta) if respuesta else ''
+                if len(respuesta_texto) > 5000:  # Limitar longitud
+                    respuesta_texto = respuesta_texto[:5000]
+                respuesta_obj.respuesta_texto = respuesta_texto
                 respuesta_obj.es_correcta = None  # Requiere calificación manual
                 respuesta_obj.puntaje_obtenido = 0  # Se califica después
+                print(f"✅ Respuesta abierta guardada - {len(respuesta_texto)} caracteres")
             
             elif pregunta.tipo.nombre == 'completar':
-                respuesta_obj.respuestas_completar = respuesta or ''
+                # CORREGIR ESTE CASO QUE ESTÁ CAUSANDO EL PROBLEMA
+                if isinstance(respuesta, str) and respuesta:
+                    # Limpiar respuesta de caracteres extraños
+                    respuesta_limpia = respuesta.replace('|', '').strip()
+                    if len(respuesta_limpia) > 1000:  # Limitar longitud
+                        respuesta_limpia = respuesta_limpia[:1000]
+                    respuesta_obj.respuestas_completar = respuesta_limpia
+                    print(f"✅ Completar guardado - Respuesta limpia: {respuesta_limpia[:50]}")
+                elif isinstance(respuesta, list):
+                    # Si es una lista, unir con |
+                    respuesta_lista = [str(r).strip() for r in respuesta if str(r).strip()]
+                    respuesta_obj.respuestas_completar = '|'.join(respuesta_lista)
+                    print(f"✅ Completar guardado - Lista: {len(respuesta_lista)} elementos")
+                else:
+                    respuesta_obj.respuestas_completar = ''
+                    print("⚠️ Completar vacío")
+                
                 # Calcular puntaje automáticamente
-                respuesta_obj.calcular_puntaje_automatico()
+                try:
+                    respuesta_obj.calcular_puntaje_automatico()
+                except:
+                    print("❌ Error al calcular puntaje automático")
+                    respuesta_obj.puntaje_obtenido = 0
             
             elif pregunta.tipo.nombre == 'unir_lineas':
-                respuesta_obj.conexiones_realizadas = json.dumps(respuesta) if respuesta else ''
-                # Calcular puntaje automáticamente
-                respuesta_obj.calcular_puntaje_automatico()
+                if respuesta:
+                    try:
+                        respuesta_obj.conexiones_realizadas = json.dumps(respuesta) if isinstance(respuesta, dict) else str(respuesta)
+                        # Calcular puntaje automáticamente
+                        respuesta_obj.calcular_puntaje_automatico()
+                        print(f"✅ Unir líneas guardado")
+                    except:
+                        print("❌ Error al procesar unir líneas")
+                        respuesta_obj.conexiones_realizadas = ''
+                        respuesta_obj.puntaje_obtenido = 0
+                else:
+                    respuesta_obj.conexiones_realizadas = ''
+                    respuesta_obj.puntaje_obtenido = 0
             
             elif pregunta.tipo.nombre in ['simulador_2d', 'simulador_3d']:
-                respuesta_obj.respuesta_smiles = respuesta or ''
+                respuesta_smiles = str(respuesta) if respuesta else ''
+                if len(respuesta_smiles) > 500:  # Limitar longitud
+                    respuesta_smiles = respuesta_smiles[:500]
+                respuesta_obj.respuesta_smiles = respuesta_smiles
                 respuesta_obj.es_correcta = None  # Requiere validación
                 respuesta_obj.puntaje_obtenido = 0
+                print(f"✅ Simulador guardado - SMILES: {respuesta_smiles[:20]}")
             
+            # Guardar la respuesta
             respuesta_obj.save()
             
-            print(f"✅ Respuesta guardada - Puntaje: {respuesta_obj.puntaje_obtenido}")
+            print(f"✅ Respuesta guardada exitosamente - Puntaje: {respuesta_obj.puntaje_obtenido}")
             
             return JsonResponse({
                 'success': True,
@@ -2769,9 +2847,12 @@ def guardar_respuesta(request):
             
         except Exception as e:
             print(f"❌ Error al guardar respuesta: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
 
 @role_required('estudiante')
 @login_required

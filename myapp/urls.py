@@ -92,7 +92,7 @@ urlpatterns = [
     path('estudiante/iniciar-cuestionario/<int:cuestionario_id>/', views.iniciar_cuestionario, name='iniciar_cuestionario'),
     path('estudiante/realizar-cuestionario/<int:intento_id>/', views.realizar_cuestionario, name='realizar_cuestionario'),
     path('estudiante/guardar-respuesta/', views.guardar_respuesta, name='guardar_respuesta'),
-    path('estudiante/finalizar-cuestionario/<int:intento_id>/', views.finalizar_cuestionario, name='finalizar_cuestionario'),
+    path('estudiante/finalizar-cuestionario/<int:intento_id>/', views.finalizar_cuestionario_estudiante, name='finalizar_cuestionario_estudiante'),
     path('estudiante/resultado-cuestionario/<int:intento_id>/', views.resultado_cuestionario, name='resultado_cuestionario'),
     path('estudiante/historial-cuestionarios/', views.historial_cuestionarios, name='historial_cuestionarios'),
 

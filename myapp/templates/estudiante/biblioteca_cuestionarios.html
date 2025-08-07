@@ -161,27 +161,15 @@
                                                         <p class="mb-0">Cuestionarios Disponibles</p>
                                                     </div>
                                                     <div class="col-md-3">
-                                                        <h3 class="mb-0">
-                                                            {% for item in cuestionarios_disponibles %}
-                                                                {% if item.completado %}{{ forloop.counter0|add:1 }}{% endif %}
-                                                            {% empty %}0{% endfor %}
-                                                        </h3>
+                                                        <h3 class="mb-0" id="completadosCount">0</h3>
                                                         <p class="mb-0">Completados</p>
                                                     </div>
                                                     <div class="col-md-3">
-                                                        <h3 class="mb-0">
-                                                            {% for item in cuestionarios_disponibles %}
-                                                                {% if not item.puede_intentar %}{{ forloop.counter0|add:1 }}{% endif %}
-                                                            {% empty %}0{% endfor %}
-                                                        </h3>
+                                                        <h3 class="mb-0" id="agotadosCount">0</h3>
                                                         <p class="mb-0">Intentos Agotados</p>
                                                     </div>
                                                     <div class="col-md-3">
-                                                        <h3 class="mb-0">
-                                                            {% for item in cuestionarios_disponibles %}
-                                                                {% if item.mejor_puntaje > 0 %}{{ item.mejor_puntaje|floatformat:1 }}{% endif %}
-                                                            {% empty %}0{% endfor %}
-                                                        </h3>
+                                                        <h3 class="mb-0" id="promedioCount">0</h3>
                                                         <p class="mb-0">Mejor Puntaje Promedio</p>
                                                     </div>
                                                 </div>
@@ -821,6 +809,56 @@ function actualizarTiemposRestantes() {
 // Actualizar tiempos cada minuto
 setInterval(actualizarTiemposRestantes, 60000);
 actualizarTiemposRestantes();
+
+
+// Función para calcular estadísticas correctamente
+function calcularEstadisticas() {
+    const items = document.querySelectorAll('.cuestionario-item');
+    let completados = 0;
+    let agotados = 0;
+    let totalPuntaje = 0;
+    let contadorPuntajes = 0;
+    
+    items.forEach(item => {
+        const estado = item.dataset.estado;
+        const puntaje = parseFloat(item.dataset.puntaje) || 0;
+        
+        // Contar completados
+        if (estado === 'completado') {
+            completados++;
+        }
+        
+        // Contar agotados
+        if (estado === 'agotado') {
+            agotados++;
+        }
+        
+        // Sumar puntajes
+        if (puntaje > 0) {
+            totalPuntaje += puntaje;
+            contadorPuntajes++;
+        }
+    });
+    
+    // Calcular promedio
+    const promedio = contadorPuntajes > 0 ? (totalPuntaje / contadorPuntajes) : 0;
+    
+    // Actualizar los contadores en el DOM
+    document.getElementById('completadosCount').textContent = completados;
+    document.getElementById('agotadosCount').textContent = agotados;
+    document.getElementById('promedioCount').textContent = promedio.toFixed(1);
+    
+    console.log(`📊 Estadísticas calculadas: ${completados} completados, ${agotados} agotados, ${promedio.toFixed(1)} promedio`);
+}
+
+// Llamar la función al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    // ... tu código existente ...
+    
+    // Calcular estadísticas después de cargar
+    setTimeout(calcularEstadisticas, 100);
+});
+
 </script>
 
 </body>
