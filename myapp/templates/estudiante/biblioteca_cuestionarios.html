@@ -4,6 +4,18 @@
     {% load static %}
     <title>Eduport - Cuestionarios Disponibles</title>
 
+            <!-- Hotjar - Seguimiento usuarios -->
+    <script>
+        (function(h,o,t,j,a,r){
+            h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+            h._hjSettings={hjid:6485293,hjsv:6};
+            a=o.getElementsByTagName('head')[0];
+            r=o.createElement('script');r.async=1;
+            r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+            a.appendChild(r);
+        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+    </script>
+
     <!-- Meta Tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -383,9 +395,9 @@
                                                                 
                                                                 <!-- Botón de Ver Historial si tiene intentos -->
                                                                 {% if item.intentos_realizados > 0 %}
-                                                                    <button class="btn btn-outline-info btn-sm" onclick="verHistorialCuestionario({{ item.cuestionario.id }})" title="Ver historial">
+                                                                    <a href="{% url 'historial_cuestionario_especifico' item.cuestionario.id %}" class="btn btn-outline-info btn-sm" title="Ver historial de intentos">
                                                                         <i class="fas fa-history"></i>
-                                                                    </button>
+                                                                    </a>
                                                                 {% endif %}
                                                                 
                                                                 <!-- Dropdown con más opciones -->
@@ -733,8 +745,8 @@ function verDetallesCuestionario(cuestionarioId) {
 // Función para ver historial de un cuestionario específico
 function verHistorialCuestionario(cuestionarioId) {
     console.log('📊 Viendo historial del cuestionario:', cuestionarioId);
-    // Redirigir al historial filtrado por este cuestionario
-    window.location.href = `/estudiante/historial-cuestionarios/?cuestionario=${cuestionarioId}`;
+    // Redirigir al historial específico de este cuestionario
+    window.location.href = `/estudiante/historial-cuestionario/${cuestionarioId}/`;
 }
 
 // Función para ver el mejor intento
