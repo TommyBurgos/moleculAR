@@ -126,6 +126,11 @@ def registroExitoso(request):
 def vistaLogin(request):
     return render(request,'sign-in.html')
 
+def acceso_denegado(request):
+    print("Inicie a la función de acceso denegado")        
+    return render(request, 'error-404.html')
+
+
 @role_required('Admin')
 def inicioAdmin(request):
     print("Inicie a la función de inicio Admin")
