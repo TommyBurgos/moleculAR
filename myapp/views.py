@@ -2987,6 +2987,7 @@ from .forms import EditarPerfilForm
 @login_required
 def editar_perfil(request):
     user = request.user
+    imgPerfil=user.imgPerfil      
 
     if request.method == 'POST':
         form = EditarPerfilForm(request.POST, request.FILES, instance=user)
@@ -2996,4 +2997,14 @@ def editar_perfil(request):
     else:
         form = EditarPerfilForm(instance=user)
 
-    return render(request, 'usAdmin/editar_perfil.html', {'form': form})
+    return render(request, 'usAdmin/editar_perfil.html', {'form': form, 'imgPerfil': imgPerfil,        
+        'usuario':user })
+
+def comming_soon(request):
+    user = request.user
+    imgPerfil=user.imgPerfil  
+    context = {                  
+        'imgPerfil': imgPerfil,        
+        'usuario':user,        
+    }   
+    return render(request, 'coming-soon.html', context)    

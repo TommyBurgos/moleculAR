@@ -9,6 +9,7 @@ urlpatterns = [
     path('acceso_denegado/', views.acceso_denegado, name="acceso_denegado"),
     # proyecto/urls.py
     path('editar-perfil/', views.editar_perfil, name='editar_perfil'),
+    path('coming_soon/', views.comming_soon, name='comming_soon'),
 
 
     #path('inicio/',views.custom_login),
