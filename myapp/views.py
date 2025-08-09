@@ -508,6 +508,55 @@ def crear_recurso(request, seccion_id):
 
         return redirect('detalle_recurso',recurso.id)
 
+from .forms import AdminCrearUsuarioForm
+
+@role_required('Admin')
+def crear_usuario_admin(request):
+    """
+    Solo permite acceso a usuarios con rol 'admin'.
+    Ajusta el nombre exacto de tu rol si es 'Admin', 'Administrador', etc.
+    """
+    if not request.user.rol or request.user.rol.nombre.lower() != 'admin':
+        messages.error(request, "No tienes permisos para acceder a esta sección.")
+        return redirect('no_autorizado')  # o a donde corresponda en tu proyecto
+
+    if request.method == 'POST':
+        form = AdminCrearUsuarioForm(request.POST, request.FILES)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            first_name = form.cleaned_data.get('first_name', '')
+            last_name = form.cleaned_data.get('last_name', '')
+            email = form.cleaned_data['email']
+            rol = form.cleaned_data['rol']
+            password = form.cleaned_data['password1']
+            imgPerfil = form.cleaned_data.get('imgPerfil')
+            is_active = form.cleaned_data['is_active']
+
+            # Crea el usuario con password hasheado
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            user.rol = rol
+            user.is_active = is_active
+            if imgPerfil:
+                user.imgPerfil = imgPerfil
+            user.save()
+
+            messages.success(request, f"Usuario '{username}' creado correctamente.")
+            # Redirige a donde prefieras: listado, perfil admin, etc.
+            return redirect('crear_usuario_admin')
+        else:
+            messages.error(request, "Por favor corrige los errores del formulario.")
+    else:
+        form = AdminCrearUsuarioForm()
+
+    return render(request, 'usAdmin/crear_usuario_admin.html', {'form': form})
+
+
 @role_required(['Admin', 'Docente'])
 def detalleUsuarios(request):
     user = request.user
