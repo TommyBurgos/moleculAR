@@ -120,74 +120,42 @@
 
 	<!-- Page main content START -->
 	<div class="page-content-wrapper border">
-        <div class="container mt-4">
-        <h3 class="mb-4">Editar Usuario</h3>
 
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label class="form-label">Nombres</label>
-                <input type="text" name="first_name" class="form-control" value="{{ usuario.first_name }}">
+        <div class="container mt-5">
+        <div class="card mx-auto" style="max-width: 600px;">
+            <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Editar Perfil</h4>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Apellidos</label>
-                <input type="text" name="last_name" class="form-control" value="{{ usuario.last_name }}">
+            <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3 text-center">
+                <img src="{{ user.imgPerfil.url }}" class="rounded-circle" width="120" height="120" alt="Imagen de perfil">
+                </div>
+
+                <div class="mb-3">
+                {{ form.first_name.label_tag }}
+                {{ form.first_name }}
+                </div>
+                <div class="mb-3">
+                {{ form.last_name.label_tag }}
+                {{ form.last_name }}
+                </div>
+                <div class="mb-3">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+                </div>
+                <div class="mb-3">
+                {{ form.imgPerfil.label_tag }}
+                {{ form.imgPerfil }}
+                </div>
+                <button type="submit" class="btn btn-success w-100">Guardar Cambios</button>
+            </form>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Correo electrónico</label>
-                <input type="email" name="email" class="form-control" value="{{ usuario.email }}">
-            </div>
-            <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" name="is_active" id="activoCheck" {% if usuario.is_active %}checked{% endif %}>
-                <label class="form-check-label" for="activoCheck">Usuario Activo</label>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Guardar cambios</button>
-            <a href="{% url 'detalleUsuarios-adm' %}" class="btn btn-secondary">Cancelar</a>
-            <a href="{% url 'eliminar_usuario' usuario.id %}" class="btn btn-danger float-end">Eliminar usuario</a>
-        </form>
-
-        <hr class="my-4">
-
-        <h5>Actividad del usuario</h5>
-        <p><strong>Último inicio de sesión:</strong> {{ usuario.last_login }}</p>
-        <p><strong>Fecha de registro:</strong> {{ usuario.date_joined }}</p>
-
-        {% if cursos_inscritos %}
-        <hr class="my-4">
-        <h5>Cursos inscritos</h5>
-        <ul class="list-group">
-            {% for inscripcion in cursos_inscritos %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ inscripcion.curso.titulo }}
-                <span class="badge bg-success">Inscrito</span>
-            </li>
-            {% endfor %}
-        </ul>
-        <hr class="my-4">
-        <h5>Progreso académico</h5>
-        <p>Recursos completados: {{ recursos_vistos }} de {{ recursos_totales }}</p>
-
-            <div class="progress">
-            <div class="progress-bar" role="progressbar" style="width: {{ progreso|stringformat:'d' }} %;"
-aria-valuenow="{{ progreso }}" aria-valuemin="0" aria-valuemax="100">
-                {{ progreso }}%
-            </div>
-            </div>
-
-        {% endif %}
-    </div>
+        </div>
+        </div>
     </div>
 </div>
 </main>
-<!-- Bootstrap JS -->
-<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
-
-<!-- Vendors -->
-<script src="{% static 'assets/vendor/apexcharts/js/apexcharts.min.js' %}"></script>
-<script src="{% static 'assets/vendor/overlay-scrollbar/js/overlayscrollbars.min.js' %}"></script>
-
-<!-- Template Functions -->
-<script src="{% static 'assets/js/functions.js' %}"></script>
 </body>
 </html>

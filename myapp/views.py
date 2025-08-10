@@ -139,7 +139,7 @@ def inicioAdmin(request):
     imgPerfil=user.imgPerfil  
     context = {                  
         'imgPerfil': imgPerfil,        
-        'usuario':user.username,        
+        'usuario':user,        
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
 
@@ -508,6 +508,55 @@ def crear_recurso(request, seccion_id):
             return redirect('panel_competencia', recurso.competencia.id)
 
         return redirect('detalle_recurso',recurso.id)
+
+from .forms import AdminCrearUsuarioForm
+
+@role_required('Admin')
+def crear_usuario_admin(request):
+    """
+    Solo permite acceso a usuarios con rol 'admin'.
+    Ajusta el nombre exacto de tu rol si es 'Admin', 'Administrador', etc.
+    """
+    if not request.user.rol or request.user.rol.nombre.lower() != 'admin':
+        messages.error(request, "No tienes permisos para acceder a esta sección.")
+        return redirect('no_autorizado')  # o a donde corresponda en tu proyecto
+
+    if request.method == 'POST':
+        form = AdminCrearUsuarioForm(request.POST, request.FILES)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            first_name = form.cleaned_data.get('first_name', '')
+            last_name = form.cleaned_data.get('last_name', '')
+            email = form.cleaned_data['email']
+            rol = form.cleaned_data['rol']
+            password = form.cleaned_data['password1']
+            imgPerfil = form.cleaned_data.get('imgPerfil')
+            is_active = form.cleaned_data['is_active']
+
+            # Crea el usuario con password hasheado
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            user.rol = rol
+            user.is_active = is_active
+            if imgPerfil:
+                user.imgPerfil = imgPerfil
+            user.save()
+
+            messages.success(request, f"Usuario '{username}' creado correctamente.")
+            # Redirige a donde prefieras: listado, perfil admin, etc.
+            return redirect('crear_usuario_admin')
+        else:
+            messages.error(request, "Por favor corrige los errores del formulario.")
+    else:
+        form = AdminCrearUsuarioForm()
+
+    return render(request, 'usAdmin/crear_usuario_admin.html', {'form': form})
+
 
 @role_required(['Admin', 'Docente'])
 def detalleUsuarios(request):
@@ -6082,3 +6131,29 @@ def actualizar_opcion_competencia(request):
 def eliminar_opcion_competencia(request, opcion_id):
     """Eliminar opción competencia (placeholder)"""
     return JsonResponse({'success': False, 'error': 'En desarrollo'})
+from .forms import EditarPerfilForm
+
+@login_required
+def editar_perfil(request):
+    user = request.user
+    imgPerfil=user.imgPerfil      
+
+    if request.method == 'POST':
+        form = EditarPerfilForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('editar_perfil')  # Puedes cambiar esto a donde quieras redirigir
+    else:
+        form = EditarPerfilForm(instance=user)
+
+    return render(request, 'usAdmin/editar_perfil.html', {'form': form, 'imgPerfil': imgPerfil,        
+        'usuario':user })
+
+def comming_soon(request):
+    user = request.user
+    imgPerfil=user.imgPerfil  
+    context = {                  
+        'imgPerfil': imgPerfil,        
+        'usuario':user,        
+    }   
+    return render(request, 'coming-soon.html', context)    
