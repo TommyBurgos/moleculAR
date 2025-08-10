@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Eduport - Biblioteca de Competencias</title>
+
+    <!-- Hotjar - Seguimiento usuarios -->
+  <script>
+    (function(h,o,t,j,a,r){
+        h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+        h._hjSettings={hjid:6485293,hjsv:6};
+        a=o.getElementsByTagName('head')[0];
+        r=o.createElement('script');r.async=1;
+        r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+        a.appendChild(r);
+    })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+  </script>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Webestica.com">
+    <meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/choices/css/choices.min.css' %}">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+    
+    <!-- Custom CSS para competencias -->
+    <style>
+        .competencia-card {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .competencia-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(231,76,60,0.15);
+            border-color: #e74c3c;
+        }
+
+        .pin-display {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .estado-badge {
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .estado-badge.configuracion {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+
+        .estado-badge.esperando {
+            background: linear-gradient(135deg, #cce5ff 0%, #99d6ff 100%);
+            color: #0066cc;
+        }
+
+        .estado-badge.activa {
+            background: linear-gradient(135deg, #d5f4e6 0%, #a8e6cf 100%);
+            color: #155724;
+        }
+
+        .estado-badge.finalizada {
+            background: linear-gradient(135deg, #e9ecef 0%, #d6d8db 100%);
+            color: #495057;
+        }
+
+        .modalidad-badge {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+            color: #721c24;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .modalidad-badge.grupal {
+            background: linear-gradient(135deg, #e8f6f3 0%, #d5f4e6 100%);
+            color: #155724;
+        }
+
+        .stats-mini {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .btn-competencia {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+    <!-- Sidebar START -->
+    {% include 'docente/baseSideBar.html' %}
+    <!-- Sidebar END -->	
+        
+    <!-- =======================
+    Inner part START -->
+    <div class="page-content">
+
+        <!-- Top bar START -->
+        {% include 'docente/navBar.html' %}
+        <!-- Top bar END -->
+
+        <!-- Page main content START -->
+        <div class="page-content-wrapper border">
+            <section class="pt-0">
+                <div class="container">
+                    <div class="row">
+                        <!-- Main content START -->
+                        <div class="col-xl-12">
+                            <!-- =======================
+                            Page Banner START -->
+                            <section class="py-4">
+                                <div class="container">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="gradient-bg p-4 text-center rounded-3 text-white">
+                                                <h1 class="m-0">🏆 Biblioteca de Competencias</h1>
+                                                <!-- Breadcrumb -->
+                                                <div class="d-flex justify-content-center">
+                                                    <nav aria-label="breadcrumb">
+                                                        <ol class="breadcrumb breadcrumb-dots mb-0">
+                                                            <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}" class="text-white text-decoration-none">Dashboard</a></li>
+                                                            <li class="breadcrumb-item text-white-50" aria-current="page">Biblioteca Competencias</li>
+                                                        </ol>
+                                                    </nav>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page Banner END -->
+                            <!-- =======================
+                            Page content START -->
+                            <section class="pt-0">
+                                <div class="container">
+
+                                    <!-- Filter bar START -->
+                                    <form class="bg-light border p-4 rounded-3 my-4 z-index-9 position-relative">
+                                        <div class="row g-3">
+                                            <!-- Input -->
+                                            <div class="col-xl-3">
+                                                <input class="form-control me-1" type="search" placeholder="Buscar competencias..." id="buscarCompetencia">
+                                            </div>
+
+                                            <!-- Select item -->
+                                            <div class="col-xl-8">
+                                                <div class="row g-3">
+                                                    <!-- Select items -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Filtro por curso" id="filtroCurso">
+                                                            <option value="">Todos los Cursos</option>
+                                                            {% regroup competencias by recurso.seccion.curso.titulo as cursos_agrupados %}
+                                                            {% for curso in cursos_agrupados %}
+                                                                {% if curso.grouper %}
+                                                                    <option value="{{ curso.grouper }}">{{ curso.grouper }}</option>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Modalidad -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Modalidad" id="filtroModalidad">
+                                                            <option value="">Todas las Modalidades</option>
+                                                            <option value="individual">Individual</option>
+                                                            <option value="grupal">Grupal</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Estado -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Estado" id="filtroEstado">
+                                                            <option value="">Todos los Estados</option>
+                                                            <option value="configuracion">En Configuración</option>
+                                                            <option value="esperando">Esperando</option>
+                                                            <option value="activa">Activa</option>
+                                                            <option value="finalizada">Finalizada</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <!-- Ordenar -->
+                                                    <div class="col-sm-6 col-md-3 pb-2 pb-md-0">
+                                                        <select class="form-select form-select-sm js-choice" aria-label="Ordenar" id="ordenar">
+                                                            <option value="reciente">Más Recientes</option>
+                                                            <option value="antiguo">Más Antiguos</option>
+                                                            <option value="alfabetico">A-Z</option>
+                                                        </select>
+                                                    </div>
+                                                </div> <!-- Row END -->
+                                            </div>
+                                            <!-- Button -->
+                                            <div class="col-xl-1">
+                                                <a href="{% url 'crear_competencia' %}" class="btn btn-danger mb-0 rounded z-index-1 w-100" title="Crear Nueva Competencia">
+                                                    <i class="fas fa-plus"></i>
+                                                </a>
+                                            </div>
+                                        </div> <!-- Row END -->
+                                    </form>
+                                    <!-- Filter bar END -->
+                                     <div class="row mt-3">
+                                        <!-- Main content START -->
+                                        <div class="col-12">
+
+                                            <!-- Competencias Grid START -->
+                                            <div class="row g-4">
+
+                                                {% for competencia in competencias %}
+                                                <!-- Card item START -->
+                                                <div class="col-sm-6 col-lg-4 col-xl-3 competencia-item" 
+                                                     data-curso="{% if competencia.recurso.seccion %}{{ competencia.recurso.seccion.curso.titulo }}{% else %}Sin Curso{% endif %}"
+                                                     data-modalidad="{{ competencia.modalidad }}"
+                                                     data-estado="{{ competencia.estado }}"
+                                                     data-titulo="{{ competencia.recurso.titulo|lower }}"
+                                                     data-fecha="{{ competencia.recurso.fecha_creacion|date:'Y-m-d' }}">
+                                                    
+                                                    <div class="card shadow h-100 competencia-card">
+                                                        <!-- Imagen -->
+                                                        <div class="position-relative">
+                                                            <img src="{% static 'img/Plataforma/General/default_competencia.jpg' %}" class="card-img-top" alt="{{ competencia.recurso.titulo }}" style="height: 180px; object-fit: cover;">
+                                                            <!-- PIN Overlay -->
+                                                            <div class="position-absolute top-0 end-0 m-2">
+                                                                <div class="pin-display">
+                                                                    {{ competencia.pin_acceso }}
+                                                                </div>
+                                                            </div>
+                                                            <!-- Estado Overlay -->
+                                                            <div class="position-absolute bottom-0 start-0 m-2">
+                                                                <span class="estado-badge {{ competencia.estado }}">
+                                                                    {% if competencia.estado == 'configuracion' %}
+                                                                        <i class="fas fa-cog me-1"></i>Configuración
+                                                                    {% elif competencia.estado == 'esperando' %}
+                                                                        <i class="fas fa-clock me-1"></i>Esperando
+                                                                    {% elif competencia.estado == 'activa' %}
+                                                                        <i class="fas fa-play me-1"></i>Activa
+                                                                    {% elif competencia.estado == 'finalizada' %}
+                                                                        <i class="fas fa-flag-checkered me-1"></i>Finalizada
+                                                                    {% endif %}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Card body -->
+                                                        <div class="card-body pb-0">
+                                                            <!-- Badge de modalidad -->
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span class="modalidad-badge {% if competencia.modalidad == 'grupal' %}grupal{% endif %}">
+                                                                    {% if competencia.modalidad == 'individual' %}
+                                                                        <i class="fas fa-user me-1"></i>Individual
+                                                                    {% else %}
+                                                                        <i class="fas fa-users me-1"></i>Grupal
+                                                                    {% endif %}
+                                                                </span>
+                                                                
+                                                                {% if competencia.recurso.seccion %}
+                                                                    <a href="#" class="h6 fw-light mb-0 text-info" title="Asignado a curso">
+                                                                        <i class="fas fa-link"></i>
+                                                                    </a>
+                                                                {% else %}
+                                                                    <a href="#" class="h6 fw-light mb-0 text-secondary" title="En biblioteca">
+                                                                        <i class="fas fa-book"></i>
+                                                                    </a>
+                                                                {% endif %}
+                                                            </div>
+                                                            <!-- Title -->
+                                                            <h5 class="card-title">
+                                                                <a href="{% url 'editar_competencia' competencia.id %}" class="text-decoration-none">{{ competencia.recurso.titulo|truncatechars:40 }}</a>
+                                                            </h5>
+                                                            
+                                                            <!-- Course Info -->
+                                                            {% if competencia.recurso.seccion %}
+                                                                <p class="text-muted small mb-2">
+                                                                    <i class="fas fa-graduation-cap me-1"></i>{{ competencia.recurso.seccion.curso.titulo|truncatechars:30 }}
+                                                                </p>
+                                                            {% else %}
+                                                                <p class="text-muted small mb-2">
+                                                                    <i class="fas fa-folder me-1"></i>En Biblioteca - Sin asignar
+                                                                </p>
+                                                            {% endif %}
+                                                            
+                                                            <!-- Stats mini -->
+                                                            <div class="stats-mini mb-2">
+                                                                <div class="row text-center">
+                                                                    <div class="col-4">
+                                                                        <div class="small text-danger">
+                                                                            <i class="fas fa-clock"></i>
+                                                                            <div class="fw-bold">{{ competencia.tiempo_limite }}min</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-4">
+                                                                        <div class="small text-warning">
+                                                                            <i class="fas fa-question-circle"></i>
+                                                                            <div class="fw-bold">{{ competencia.count_preguntas|default:0 }}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-4">
+                                                                        <div class="small text-success">
+                                                                            <i class="fas fa-users"></i>
+                                                                            <div class="fw-bold">{{ competencia.get_participantes_activos.count|default:0 }}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Card footer -->
+                                                        <div class="card-footer pt-0 pb-3">
+                                                            <hr>
+                                                            <!-- Info adicional -->
+                                                            <div class="d-flex justify-content-between mb-3">
+                                                                <span class="small text-muted">
+                                                                    <i class="fas fa-calendar me-1"></i>
+                                                                    {{ competencia.fecha_creacion|date:"d M Y" }}
+                                                                </span>
+                                                                {% if competencia.modalidad == 'grupal' %}
+                                                                <span class="small text-muted">
+                                                                    <i class="fas fa-layer-group me-1"></i>
+                                                                    Max {{ competencia.max_miembros_grupo }}
+                                                                </span>
+                                                                {% endif %}
+                                                            </div>
+                                                            
+                                                            <!-- Botones de acción -->
+                                                            <div class="d-flex gap-1">
+                                                                <!-- Botón principal según estado -->
+                                                                {% if competencia.estado == 'configuracion' %}
+                                                                    <a href="{% url 'editar_competencia' competencia.id %}" class="btn btn-primary btn-sm btn-competencia flex-fill">
+                                                                        <i class="fas fa-edit me-1"></i>Configurar
+                                                                    </a>
+                                                                {% elif competencia.estado == 'esperando' %}
+                                                                    <button class="btn btn-warning btn-sm btn-competencia flex-fill" onclick="abrirPanelControl({{ competencia.id }})">
+                                                                        <i class="fas fa-tv me-1"></i>Panel
+                                                                    </button>
+                                                                {% elif competencia.estado == 'activa' %}
+                                                                    <button class="btn btn-success btn-sm btn-competencia flex-fill" onclick="abrirPanelControl({{ competencia.id }})">
+                                                                        <i class="fas fa-play me-1"></i>En Vivo
+                                                                    </button>
+                                                                {% elif competencia.estado == 'finalizada' %}
+                                                                    <button class="btn btn-info btn-sm btn-competencia flex-fill" onclick="verResultados({{ competencia.id }})">
+                                                                        <i class="fas fa-chart-bar me-1"></i>Resultados
+                                                                    </button>
+                                                                {% endif %}
+                                                                
+                                                                <!-- Botón secundario -->
+                                                                <button class="btn btn-outline-secondary btn-sm btn-competencia" onclick="verDetallesCompetencia({{ competencia.id }})" title="Ver detalles">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                                
+                                                                <!-- Dropdown de opciones -->
+                                                                <div class="dropdown">
+                                                                    <button class="btn btn-outline-danger btn-sm btn-competencia" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                                        <i class="fas fa-ellipsis-v"></i>
+                                                                    </button>
+                                                                    <ul class="dropdown-menu">
+                                                                        <li><a class="dropdown-item" href="{% url 'editar_competencia' competencia.id %}">
+                                                                            <i class="fas fa-edit me-2"></i>Editar
+                                                                        </a></li>
+                                                                        <li><button class="dropdown-item" onclick="copiarPin('{{ competencia.pin_acceso }}')">
+                                                                            <i class="fas fa-copy me-2"></i>Copiar PIN
+                                                                        </button></li>
+                                                                        {% if competencia.estado == 'configuracion' %}
+                                                                        <li><button class="dropdown-item" onclick="duplicarCompetencia({{ competencia.id }})">
+                                                                            <i class="fas fa-clone me-2"></i>Duplicar
+                                                                        </button></li>
+                                                                        {% endif %}
+                                                                        <li><hr class="dropdown-divider"></li>
+                                                                        {% if competencia.estado != 'finalizada' %}
+                                                                        <li><button class="dropdown-item text-warning" onclick="reiniciarCompetencia({{ competencia.id }})">
+                                                                            <i class="fas fa-redo me-2"></i>Reiniciar
+                                                                        </button></li>
+                                                                        {% endif %}
+                                                                        <li><button class="dropdown-item text-danger" onclick="eliminarCompetencia({{ competencia.id }})">
+                                                                            <i class="fas fa-trash me-2"></i>Eliminar
+                                                                        </button></li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Card item END -->
+                                                {% empty %}
+                                                <!-- No hay competencias -->
+                                                <div class="col-12">
+                                                    <div class="text-center py-5">
+                                                        <div class="mb-4">
+                                                            <i class="fas fa-trophy text-muted" style="font-size: 4rem;"></i>
+                                                        </div>
+                                                        <h4 class="text-muted mb-3">No tienes competencias creadas</h4>
+                                                        <p class="text-muted mb-4">Crea tu primera competencia en tiempo real para evaluar a tus estudiantes de manera dinámica</p>
+                                                        <div class="d-flex gap-3 justify-content-center flex-wrap">
+                                                            <a href="{% url 'crear_competencia' %}" class="btn btn-danger">
+                                                                <i class="fas fa-plus me-2"></i>Crear Mi Primera Competencia
+                                                            </a>
+                                                            <a href="{% url 'crearCuestionario' %}" class="btn btn-outline-primary">
+                                                                <i class="fas fa-clipboard-list me-2"></i>Crear Cuestionario
+                                                            </a>
+                                                        </div>
+                                                        <div class="mt-4">
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-info-circle me-1"></i>
+                                                                Las competencias son actividades en tiempo real donde los estudiantes compiten usando un PIN de acceso
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+
+                                            </div>
+                                            <!-- Competencias Grid END -->
+
+                                            <!-- Pagination START -->
+                                            <div class="col-12">
+                                                <nav class="mt-4 d-flex justify-content-center" aria-label="navigation">
+                                                    <ul class="pagination pagination-primary-soft d-inline-block d-md-flex rounded mb-0">
+                                                        <li class="page-item mb-0"><a class="page-link" href="#" tabindex="-1"><i class="fas fa-angle-double-left"></i></a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">1</a></li>
+                                                        <li class="page-item mb-0 active"><a class="page-link" href="#">2</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">..</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#">6</a></li>
+                                                        <li class="page-item mb-0"><a class="page-link" href="#"><i class="fas fa-angle-double-right"></i></a></li>
+                                                    </ul>
+                                                </nav>
+                                            </div>
+                                            <!-- Pagination END -->
+                                        </div>
+                                        <!-- Main content END -->
+                                    </div><!-- Row END -->
+                                </div>
+                            </section>
+                            <!-- =======================
+                            Page content END -->
+
+                        </div>
+                        <!-- Main content END -->
+                    </div><!-- Row END -->
+                </div>
+            </section>
+        </div>
+    </div>
+    <!-- =======================
+    Inner part END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Modal de Detalles de Competencia START -->
+<div class="modal fade" id="modalDetallesCompetencia" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header gradient-bg text-white">
+                <h5 class="modal-title" id="modalDetallesLabel">
+                    <i class="fas fa-trophy me-2"></i>Detalles de la Competencia
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalDetallesContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando detalles...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnEditarDesdeModal">
+                    <i class="fas fa-edit me-1"></i>Editar Competencia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal de Detalles de Competencia END -->
+
+<!-- Modal Confirmación START -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalConfirmacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalConfirmacionLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Acción
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalConfirmacionContent">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarAccion">
+                    <i class="fas fa-check me-1"></i>Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Confirmación END -->
+
+<!-- Scripts -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'assets/vendor/choices/js/choices.min.js' %}"></script>
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+<!-- JavaScript para Funcionalidades de Competencias -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🏆 Biblioteca de Competencias cargada');
+    
+    // Referencias a elementos
+    const buscarInput = document.getElementById('buscarCompetencia');
+    const filtroCurso = document.getElementById('filtroCurso');
+    const filtroModalidad = document.getElementById('filtroModalidad');
+    const filtroEstado = document.getElementById('filtroEstado');
+    const ordenarSelect = document.getElementById('ordenar');
+    
+    // Función de búsqueda y filtrado
+    function filtrarCompetencias() {
+        const textoBusqueda = buscarInput.value.toLowerCase();
+        const cursoSeleccionado = filtroCurso.value;
+        const modalidadSeleccionada = filtroModalidad.value;
+        const estadoSeleccionado = filtroEstado.value;
+        const items = document.querySelectorAll('.competencia-item');
+        
+        let itemsVisibles = 0;
+        
+        items.forEach(item => {
+            const titulo = item.dataset.titulo;
+            const curso = item.dataset.curso;
+            const modalidad = item.dataset.modalidad;
+            const estado = item.dataset.estado;
+            
+            let mostrar = true;
+            
+            // Filtro por texto
+            if (textoBusqueda && !titulo.includes(textoBusqueda)) {
+                mostrar = false;
+            }
+            
+            // Filtro por curso
+            if (cursoSeleccionado && curso !== cursoSeleccionado) {
+                mostrar = false;
+            }
+            
+            // Filtro por modalidad
+            if (modalidadSeleccionada && modalidad !== modalidadSeleccionada) {
+                mostrar = false;
+            }
+            
+            // Filtro por estado
+            if (estadoSeleccionado && estado !== estadoSeleccionado) {
+                mostrar = false;
+            }
+            
+            if (mostrar) {
+                item.style.display = 'block';
+                itemsVisibles++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        console.log(`Mostrando ${itemsVisibles} de ${items.length} competencias`);
+    }
+    
+    // Event listeners para filtros
+    if (buscarInput) buscarInput.addEventListener('input', filtrarCompetencias);
+    if (filtroCurso) filtroCurso.addEventListener('change', filtrarCompetencias);
+    if (filtroModalidad) filtroModalidad.addEventListener('change', filtrarCompetencias);
+    if (filtroEstado) filtroEstado.addEventListener('change', filtrarCompetencias);
+    
+    console.log('✅ Filtros de biblioteca de competencias inicializados');
+});
+
+// =====================================================
+// FUNCIONES DE ACCIONES DE COMPETENCIAS
+// =====================================================
+
+/**
+ * Ver detalles de la competencia
+ */
+function verDetallesCompetencia(competenciaId) {
+    console.log('👀 Viendo detalles de la competencia:', competenciaId);
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalDetallesCompetencia'));
+    modal.show();
+    
+    // Simular carga de datos (aquí harías una llamada AJAX real)
+    setTimeout(() => {
+        document.getElementById('modalDetallesContent').innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-danger mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Información General
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>ID:</strong> ${competenciaId}</div>
+                        <div class="mb-2"><strong>Estado:</strong> <span class="badge bg-success">Activa</span></div>
+                        <div class="mb-2"><strong>PIN:</strong> <span class="badge bg-danger">ABC123</span></div>
+                        <div class="mb-0"><strong>Última modificación:</strong> Hace 2 horas</div>
+                    </div>
+                    
+                    <h6 class="text-warning mb-3">
+                        <i class="fas fa-cog me-2"></i>Configuración
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>Modalidad:</strong> Individual</div>
+                        <div class="mb-2"><strong>Tiempo límite:</strong> 30 minutos</div>
+                        <div class="mb-0"><strong>Preguntas:</strong> 10</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-success mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>Estadísticas en Vivo
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>Participantes:</strong> 0</div>
+                        <div class="mb-2"><strong>En sala:</strong> 0</div>
+                        <div class="mb-2"><strong>Finalizados:</strong> 0</div>
+                        <div class="mb-0"><strong>Promedio:</strong> N/A</div>
+                    </div>
+                    
+                    <h6 class="text-info mb-3">
+                        <i class="fas fa-clock me-2"></i>Tiempo Real
+                    </h6>
+                    <div class="bg-light p-3 rounded mb-3">
+                        <div class="mb-2"><strong>Estado actual:</strong> En configuración</div>
+                        <div class="mb-2"><strong>Tiempo transcurrido:</strong> --</div>
+                        <div class="mb-0"><strong>Tiempo restante:</strong> --</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel de acciones rápidas -->
+            <div class="mt-4">
+                <h6 class="text-primary mb-3">
+                    <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                </h6>
+                <div class="d-flex gap-2 flex-wrap">
+                    <button class="btn btn-sm btn-outline-warning" onclick="copiarPin('ABC123')">
+                        <i class="fas fa-copy me-1"></i>Copiar PIN
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="compartirCompetencia(${competenciaId})">
+                        <i class="fas fa-share me-1"></i>Compartir
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="duplicarCompetencia(${competenciaId})">
+                        <i class="fas fa-clone me-1"></i>Duplicar
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('btnEditarDesdeModal').onclick = function() {
+            window.location.href = `/docente/editar_competencia/${competenciaId}/`;
+        };
+    }, 800);
+}
+
+/**
+ * Abrir panel de control de competencia
+ */
+function abrirPanelControl(competenciaId) {
+    console.log('🎮 Abriendo panel de control para competencia:', competenciaId);
+    // Por ahora solo mostramos un mensaje, después implementarás el panel real
+    mostrarToast('Panel de control en desarrollo', 'info');
+    // window.location.href = `/competencia/${competenciaId}/panel/`;
+}
+
+/**
+ * Ver resultados de competencia
+ */
+function verResultados(competenciaId) {
+    console.log('📊 Viendo resultados de competencia:', competenciaId);
+    mostrarToast('Resultados en desarrollo', 'info');
+    // window.location.href = `/docente/competencia/resultados/${competenciaId}/`;
+}
+
+/**
+ * Copiar PIN al portapapeles
+ */
+function copiarPin(pin) {
+    navigator.clipboard.writeText(pin).then(() => {
+        mostrarToast(`PIN ${pin} copiado al portapapeles`, 'success');
+    }).catch(() => {
+        mostrarToast('Error al copiar PIN', 'error');
+    });
+}
+
+/**
+ * Compartir competencia
+ */
+function compartirCompetencia(competenciaId) {
+    console.log('📤 Compartiendo competencia:', competenciaId);
+    const pin = 'ABC123'; // En una implementación real, obtendrías el PIN real
+    const url = `${window.location.origin}/competencia/acceder/${pin}/`;
+    const texto = `¡Únete a mi competencia en tiempo real!\n\nPIN: ${pin}\nEnlace directo: ${url}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Competencia en Tiempo Real',
+            text: texto,
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(texto).then(() => {
+            mostrarToast('Información de la competencia copiada al portapapeles', 'success');
+        });
+    }
+}
+
+/**
+ * Duplicar competencia
+ */
+function duplicarCompetencia(competenciaId) {
+    console.log('📋 Duplicando competencia:', competenciaId);
+    
+    mostrarConfirmacion(
+        'Duplicar Competencia',
+        '¿Estás seguro de que quieres crear una copia de esta competencia? Se creará una nueva competencia con la misma configuración.',
+        function() {
+            mostrarToast('Duplicación en desarrollo', 'info');
+            // Aquí harías la llamada AJAX para duplicar
+        }
+    );
+}
+
+/**
+ * Reiniciar competencia
+ */
+function reiniciarCompetencia(competenciaId) {
+    console.log('🔄 Reiniciando competencia:', competenciaId);
+    
+    mostrarConfirmacion(
+        'Reiniciar Competencia',
+        '¿Estás seguro de que quieres reiniciar esta competencia? Se eliminarán todos los participantes y respuestas.',
+        function() {
+            mostrarToast('Reinicio en desarrollo', 'warning');
+            // Aquí harías la llamada AJAX para reiniciar
+        }
+    );
+}
+
+/**
+ * Eliminar competencia
+ */
+function eliminarCompetencia(competenciaId) {
+    console.log('🗑️ Eliminando competencia:', competenciaId);
+    
+    mostrarConfirmacion(
+        'Eliminar Competencia',
+        '⚠️ ¿Estás COMPLETAMENTE seguro de que quieres eliminar esta competencia? Esta acción NO se puede deshacer y se perderán todos los datos.',
+        function() {
+            mostrarToast('Eliminación en desarrollo', 'error');
+            // Aquí harías la llamada AJAX para eliminar
+        }
+    );
+}
+
+// =====================================================
+// SISTEMA DE NOTIFICACIONES Y MODALES
+// =====================================================
+
+/**
+ * Mostrar modal de confirmación personalizado
+ */
+function mostrarConfirmacion(titulo, mensaje, callback) {
+    const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+    
+    document.getElementById('modalConfirmacionLabel').innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>${titulo}
+    `;
+    
+    document.getElementById('modalConfirmacionContent').innerHTML = `
+        <div class="text-center mb-3">
+            <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+        </div>
+        <p class="text-center">${mensaje}</p>
+    `;
+    
+    document.getElementById('btnConfirmarAccion').onclick = function() {
+        modal.hide();
+        if (callback) callback();
+    };
+    
+    modal.show();
+}
+
+/**
+ * Mostrar toast notification
+ */
+function mostrarToast(mensaje, tipo = 'info') {
+    const colores = {
+        'success': 'bg-success',
+        'error': 'bg-danger', 
+        'warning': 'bg-warning',
+        'info': 'bg-info'
+    };
+    
+    const iconos = {
+        'success': 'fas fa-check-circle',
+        'error': 'fas fa-exclamation-circle',
+        'warning': 'fas fa-exclamation-triangle', 
+        'info': 'fas fa-info-circle'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white ${colores[tipo]} border-0`;
+    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="${iconos[tipo]} me-2"></i>${mensaje}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    });
+}
+// =====================================================
+// FUNCIONES DE UTILIDAD
+// =====================================================
+
+/**
+ * Obtener cookie CSRF
+ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+/**
+ * Formatear fecha
+ */
+function formatearFecha(fecha) {
+    const opciones = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return new Date(fecha).toLocaleDateString('es-ES', opciones);
+}
+
+/**
+ * Actualizar contadores en tiempo real (se puede expandir después)
+ */
+function actualizarContadores() {
+    // Esta función se puede usar después para actualizar contadores en tiempo real
+    console.log('🔄 Actualizando contadores...');
+}
+
+// Actualizar contadores cada 30 segundos (opcional)
+setInterval(actualizarContadores, 30000);
+
+console.log('🏆 Biblioteca de Competencias - Sistema completo inicializado');
+console.log('📌 Funciones disponibles:');
+console.log('   - Filtrado avanzado por curso, modalidad y estado');
+console.log('   - Vista de detalles con información en tiempo real');
+console.log('   - Acciones rápidas: copiar PIN, compartir, duplicar');
+console.log('   - Panel de control (pendiente implementación)');
+console.log('   - Sistema de notificaciones toast');
+console.log('✅ Sistema listo para usar');
+
+</script>
+
+</body>
+</html>

@@ -10,11 +10,12 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 #from rdkit.Chem import SDWriter
 from django.middleware.csrf import rotate_token
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 import tempfile
 import json
 
-from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante
+from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante, GrupoCompetencia, ParticipacionCompetencia, RespuestaCompetencia
 
 from django.contrib.auth import login, logout, authenticate
 import re
@@ -697,7 +698,7 @@ def vistaCrearCurso(request):
 
 #EMPEZANDO INTENTAR CREAR COMPETENCIAS
 
-def panel_competencia(request, competencia_id):
+"""def panel_competencia(request, competencia_id):
     competencia = get_object_or_404(Competencia, id=competencia_id)
     preguntas = competencia.preguntas.order_by('orden')
 
@@ -769,7 +770,7 @@ def enviar_pregunta(request, pregunta_id):
     competencia = pregunta.competencia
     competencia.pregunta_actual = pregunta
     competencia.save()
-    return HttpResponseRedirect(reverse('panel_competencia', args=[competencia.id]))
+    return HttpResponseRedirect(reverse('panel_competencia', args=[competencia.id]))"""
 
 ##HASTA AQU[I]
 
@@ -2980,3 +2981,3104 @@ def historial_cuestionario_especifico(request, cuestionario_id):
     }
     
     return render(request, 'estudiante/historial_cuestionario_especifico.html', context)
+
+
+
+# =====================================================
+# VISTAS PRINCIPALES PARA CREAR COMPETENCIAS
+# =====================================================
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def crear_competencia(request, seccion_id=None):
+    """Vista principal para crear competencias - CORREGIDA"""
+    print(f"🏆 crear_competencia llamada con seccion_id: {seccion_id}")
+    
+    seccion = None
+    if seccion_id:
+        seccion = get_object_or_404(Seccion, id=seccion_id)
+        print(f"📁 Sección encontrada: {seccion.titulo}")
+        
+        # Verificar permisos
+        if seccion.curso.profesor != request.user:
+            print("❌ Usuario sin permisos")
+            messages.error(request, 'No tienes permisos para crear competencias en esta sección')
+            return redirect('dashboard-adm')
+    
+    # Crear tipos de pregunta si no existen
+    tipos_pregunta = TipoPregunta.objects.all()
+    if not tipos_pregunta.exists():
+        print("🔧 Creando tipos de pregunta básicos...")
+        tipos_pregunta = crear_tipos_pregunta_basicos()
+    
+    # AGREGAR: Verificar que existe el tipo de recurso 'competencia'
+    tipo_competencia, created = TipoRecurso.objects.get_or_create(
+        nombre='competencia',
+        defaults={'descripcion': 'Recurso tipo competencia en tiempo real'}
+    )
+    if created:
+        print("✅ Tipo de recurso 'competencia' creado automáticamente")
+    
+    print(f"📝 Tipos de pregunta disponibles: {tipos_pregunta.count()}")
+    
+    context = {
+        'competencia': None,
+        'preguntas': [],
+        'seccion': seccion,
+        'seccion_id': seccion_id,
+        'tipos_pregunta': tipos_pregunta,
+        'modalidades': Competencia.MODALIDAD_CHOICES,
+        'estados': Competencia.ESTADO_CHOICES,
+        # AGREGAR: Información adicional para el template
+        'max_tiempo_limite': 180,  # 3 horas máximo
+        'max_miembros_grupo': 10,
+        'configuracion_defecto': {
+            'tiempo_limite': 30,
+            'max_miembros_grupo': 4,
+            'grupos_aleatorios': False,
+            'grupos_abiertos': True,
+            'mostrar_resultados_inmediatos': True,
+            'permitir_reingreso': False,
+            'orden_preguntas_aleatorio': False,
+        }
+    }
+    
+    return render(request, 'docente/competencias/crear_competencia.html', context)
+
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def editar_competencia(request, competencia_id):
+    """Vista para editar una competencia existente"""
+    print(f"✏️ editar_competencia llamada con ID: {competencia_id}")
+    
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    print(f"🏆 Competencia encontrada: {competencia.recurso.titulo}")
+    
+    # Verificar permisos
+    if (competencia.recurso.seccion and 
+        competencia.recurso.seccion.curso.profesor != request.user):
+        print("❌ Usuario sin permisos para editar")
+        return redirect('dashboard-adm')
+    
+    # CORREGIR ESTA LÍNEA - Obtener preguntas usando la relación genérica
+    from django.contrib.contenttypes.models import ContentType
+    competencia_ct = ContentType.objects.get_for_model(Competencia)
+    preguntas = PreguntaCuestionario.objects.filter(
+        content_type=competencia_ct,
+        object_id=competencia.id
+    ).order_by('orden')
+    
+    tipos_pregunta = TipoPregunta.objects.all()
+    
+    # Obtener grupos si es modalidad grupal
+    grupos = []
+    if competencia.modalidad == 'grupal':
+        grupos = competencia.grupos.all().order_by('fecha_creacion')
+    
+    # Calcular datos dinámicos
+    puntaje_calculado = preguntas.aggregate(total=Sum('puntaje'))['total'] or 0
+    participantes_count = competencia.participaciones.filter(activo=True).count()
+    
+    print(f"📊 Preguntas: {preguntas.count()}, Puntaje: {puntaje_calculado}, Participantes: {participantes_count}")
+    
+    context = {
+        'competencia': competencia,
+        'preguntas': preguntas,
+        'tipos_pregunta': tipos_pregunta,
+        'modalidades': Competencia.MODALIDAD_CHOICES,
+        'estados': Competencia.ESTADO_CHOICES,
+        'puntaje_calculado': puntaje_calculado,
+        'participantes_count': participantes_count,
+        'grupos': grupos,
+        'puede_iniciar': competencia.puede_iniciar(),
+        'esta_activa': competencia.esta_activa(),
+    }
+    
+    return render(request, 'docente/competencias/crear_competencia.html', context)
+
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def editar_competencia_por_recurso(request, recurso_id):
+    """Vista para editar competencia usando recurso_id - Para compatibilidad"""
+    print(f"✏️ editar_competencia_por_recurso llamada con Recurso ID: {recurso_id}")
+    
+    recurso = get_object_or_404(Recurso, id=recurso_id)
+    competencia = get_object_or_404(Competencia, recurso=recurso)
+    
+    return editar_competencia(request, competencia.id)
+
+
+# =====================================================
+# GUARDAR COMPETENCIA BÁSICA
+# =====================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def guardar_competencia(request):
+    """Guardar competencia básica - Similar a guardar_cuestionario"""
+    try:
+        print("💾 Iniciando guardado de competencia...")
+        print(f"POST data: {request.POST}")
+        
+        seccion_id = request.POST.get('seccion_id')
+        titulo = request.POST.get('titulo', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        modalidad = request.POST.get('modalidad', 'individual')
+        
+        print(f"🏆 Datos recibidos - Título: '{titulo}', Modalidad: '{modalidad}'")
+        
+        # Validaciones
+        if not titulo:
+            return JsonResponse({
+                'success': False, 
+                'error': 'El título de la competencia es obligatorio'
+            })
+        
+        if len(titulo) < 3:
+            return JsonResponse({
+                'success': False,
+                'error': 'El título debe tener al menos 3 caracteres'
+            })
+        
+        if not descripcion:
+            return JsonResponse({
+                'success': False,
+                'error': 'La descripción de la competencia es obligatoria'
+            })
+        
+        if modalidad not in ['individual', 'grupal']:
+            return JsonResponse({
+                'success': False,
+                'error': 'Modalidad no válida'
+            })
+        
+        # Validar sección
+        seccion = None
+        if seccion_id:
+            seccion = get_object_or_404(Seccion, id=seccion_id)
+            if seccion.curso.profesor != request.user:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Sin permisos para crear competencia en esta sección'
+                }, status=403)
+        
+        # Crear competencia con transacción
+        with transaction.atomic():
+            print("🔧 Creando tipo de recurso competencia...")
+            
+            # Crear o obtener tipo de recurso
+            tipo_competencia, created = TipoRecurso.objects.get_or_create(
+                nombre='competencia',
+                defaults={'descripcion': 'Recurso tipo competencia en tiempo real'}
+            )
+            
+            if created:
+                print("✅ Tipo de recurso 'competencia' creado")
+            
+            # Crear recurso
+            print("🗂️ Creando recurso...")
+            recurso = Recurso.objects.create(
+                seccion=seccion,
+                tipo=tipo_competencia,
+                titulo=titulo,
+                descripcion=descripcion,
+                orden=seccion.recursos.count() + 1 if seccion else 1,
+                creado_por=request.user
+            )
+            
+            print(f"✅ Recurso creado con ID: {recurso.id}")
+            
+            # Configuración adicional para modalidad grupal
+            max_miembros = 4
+            grupos_aleatorios = False
+            grupos_abiertos = True
+            
+            if modalidad == 'grupal':
+                max_miembros = int(request.POST.get('max_miembros_grupo', 4))
+                grupos_aleatorios = request.POST.get('grupos_aleatorios') == 'true'
+                grupos_abiertos = request.POST.get('grupos_abiertos', 'true') == 'true'
+                
+                print(f"🏆 Configuración grupal - Max: {max_miembros}, Aleatorios: {grupos_aleatorios}")
+            
+            # Crear competencia
+            print("🏆 Creando competencia...")
+            competencia = Competencia.objects.create(
+                recurso=recurso,
+                instrucciones=descripcion,
+                modalidad=modalidad,
+                max_miembros_grupo=max_miembros,
+                grupos_aleatorios=grupos_aleatorios,
+                grupos_abiertos=grupos_abiertos,
+                tiempo_limite=30,
+                estado='configuracion',
+                mostrar_resultados_inmediatos=True,
+                permitir_reingreso=False,
+                orden_preguntas_aleatorio=False
+            )
+            
+            print(f"✅ Competencia creada con ID: {competencia.id}")
+            print(f"📌 PIN de acceso generado: {competencia.pin_acceso}")
+        
+        response_data = {
+            'success': True,
+            'competencia_id': competencia.id,
+            'pin_acceso': competencia.pin_acceso,
+            'codigo_acceso': competencia.codigo_acceso,
+            'mensaje': 'Competencia creada exitosamente',
+            'redirect_url': f'/docente/editar_competencia/{competencia.id}/'
+        }
+        
+        print(f"✅ Respuesta exitosa: {response_data}")
+        return JsonResponse(response_data)
+        
+    except Exception as e:
+        print(f"❌ Error al guardar competencia: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error interno: {str(e)}'
+        }, status=400)
+
+
+# AGREGAR ESTAS FUNCIONES AL ARCHIVO myapp/views.py
+# PARTE 2: CONFIGURACIÓN Y GESTIÓN DE COMPETENCIAS
+
+# =====================================================
+# ACTUALIZAR CONFIGURACIÓN DE COMPETENCIAS
+# =====================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def actualizar_configuracion_competencia(request):
+    """Actualizar configuración de la competencia"""
+    try:
+        print("⚙️ Actualizando configuración de competencia...")
+        
+        data = json.loads(request.body)
+        competencia_id = data.get('competencia_id')
+        configuracion = data.get('configuracion')
+        
+        print(f"🏆 Competencia ID: {competencia_id}")
+        print(f"⚙️ Configuración: {configuracion}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Solo permitir cambios si está en configuración
+        if competencia.estado not in ['configuracion', 'esperando']:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se puede modificar una competencia activa o finalizada'
+            })
+        
+        # Actualizar configuración
+        if configuracion:
+            # Configuración básica
+            if 'tiempo_limite' in configuracion:
+                tiempo = int(configuracion['tiempo_limite'])
+                if 1 <= tiempo <= 180:  # Máximo 3 horas
+                    competencia.tiempo_limite = tiempo
+                    print(f"⏱️ Tiempo límite actualizado: {tiempo} min")
+            
+            if 'modalidad' in configuracion:
+                nueva_modalidad = configuracion['modalidad']
+                if nueva_modalidad in ['individual', 'grupal']:
+                    competencia.modalidad = nueva_modalidad
+                    print(f"👥 Modalidad actualizada: {nueva_modalidad}")
+            
+            # Configuración para modalidad grupal
+            if 'max_miembros_grupo' in configuracion:
+                max_miembros = int(configuracion['max_miembros_grupo'])
+                if 2 <= max_miembros <= 10:
+                    competencia.max_miembros_grupo = max_miembros
+                    print(f"👥 Max miembros por grupo: {max_miembros}")
+            
+            if 'grupos_aleatorios' in configuracion:
+                competencia.grupos_aleatorios = bool(configuracion['grupos_aleatorios'])
+                print(f"🎲 Grupos aleatorios: {competencia.grupos_aleatorios}")
+            
+            if 'grupos_abiertos' in configuracion:
+                competencia.grupos_abiertos = bool(configuracion['grupos_abiertos'])
+                print(f"🔓 Grupos abiertos: {competencia.grupos_abiertos}")
+            
+            # Configuración avanzada
+            if 'mostrar_resultados_inmediatos' in configuracion:
+                competencia.mostrar_resultados_inmediatos = bool(configuracion['mostrar_resultados_inmediatos'])
+                print(f"📊 Mostrar resultados: {competencia.mostrar_resultados_inmediatos}")
+            
+            if 'permitir_reingreso' in configuracion:
+                competencia.permitir_reingreso = bool(configuracion['permitir_reingreso'])
+                print(f"🔄 Permitir reingreso: {competencia.permitir_reingreso}")
+            
+            if 'orden_preguntas_aleatorio' in configuracion:
+                competencia.orden_preguntas_aleatorio = bool(configuracion['orden_preguntas_aleatorio'])
+                print(f"🔀 Orden aleatorio: {competencia.orden_preguntas_aleatorio}")
+            
+            # Manejar fecha de inicio programada
+            if 'fecha_inicio' in configuracion and configuracion['fecha_inicio']:
+                try:
+                    fecha_inicio = datetime.fromisoformat(
+                        configuracion['fecha_inicio'].replace('Z', '+00:00')
+                    )
+                    competencia.fecha_inicio = fecha_inicio
+                    print(f"📅 Fecha inicio programada: {fecha_inicio}")
+                except Exception as e:
+                    print(f"⚠️ Error en fecha inicio: {e}")
+        
+        competencia.save()
+        print("✅ Configuración guardada exitosamente")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Configuración actualizada exitosamente',
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al actualizar configuración: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+# =====================================================
+# GESTIÓN DE PREGUNTAS DE COMPETENCIAS
+# =====================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def agregar_pregunta_competencia(request):
+    """Agregar una nueva pregunta a la competencia - CORREGIDO"""
+    try:
+        print("➕ Agregando nueva pregunta a competencia...")
+        
+        data = json.loads(request.body)
+        competencia_id = data.get('competencia_id')
+        tipo_nombre = data.get('tipo')
+        
+        print(f"🏆 Competencia ID: {competencia_id}, Tipo: {tipo_nombre}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Solo permitir si está en configuración
+        if competencia.estado not in ['configuracion']:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se pueden agregar preguntas a una competencia iniciada'
+            })
+        
+        tipo_pregunta = get_object_or_404(TipoPregunta, nombre=tipo_nombre)
+        
+        # Calcular orden - CORREGIR ESTA LÍNEA
+        from django.contrib.contenttypes.models import ContentType
+        competencia_ct = ContentType.objects.get_for_model(Competencia)
+        
+        ultima_pregunta = PreguntaCuestionario.objects.filter(
+            content_type=competencia_ct,
+            object_id=competencia.id
+        ).order_by('-orden').first()
+        
+        orden = ultima_pregunta.orden + 1 if ultima_pregunta else 1
+        
+        print(f"📝 Creando pregunta orden {orden}")
+        
+        # Crear pregunta - CORREGIR ESTA PARTE
+        pregunta = PreguntaCuestionario.objects.create(
+            content_type=competencia_ct,
+            object_id=competencia.id,
+            tipo=tipo_pregunta,
+            enunciado=f"Nueva pregunta {orden}",
+            orden=orden,
+            puntaje=1
+        )
+        
+        print(f"✅ Pregunta creada con ID: {pregunta.id}")
+        
+        # Crear opciones por defecto según el tipo
+        if tipo_nombre in ['opcion_unica', 'opcion_multiple', 'falso_verdadero']:
+            if tipo_nombre == 'falso_verdadero':
+                opciones_default = [('Verdadero', True), ('Falso', False)]
+            else:
+                opciones_default = [('Opción 1', True), ('Opción 2', False)]
+            
+            for texto, es_correcta in opciones_default:
+                OpcionPregunta.objects.create(
+                    pregunta=pregunta,
+                    texto=texto,
+                    es_correcta=es_correcta
+                )
+                print(f"✅ Opción creada: {texto} (correcta: {es_correcta})")
+        
+        return JsonResponse({
+            'success': True,
+            'pregunta_id': pregunta.id,
+            'mensaje': 'Pregunta agregada exitosamente'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al agregar pregunta: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def actualizar_pregunta_competencia(request):
+    """Actualizar una pregunta de competencia - CORREGIDO"""
+    try:
+        print("✏️ Actualizando pregunta de competencia...")
+        
+        # Detectar tipo de contenido
+        data = {}
+        pregunta_id = None
+        
+        if request.content_type and request.content_type.startswith('multipart/form-data'):
+            pregunta_id = request.POST.get('pregunta_id')
+            data.update(dict(request.POST))
+        else:
+            try:
+                json_data = json.loads(request.body)
+                data = json_data
+                pregunta_id = data.get('pregunta_id')
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Formato de datos inválido'
+                })
+        
+        print(f"📝 Actualizando pregunta ID: {pregunta_id}")
+        
+        if not pregunta_id:
+            return JsonResponse({
+                'success': False, 
+                'error': 'ID de pregunta requerido'
+            })
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # CORREGIR: Verificar que pertenece a una competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Esta pregunta no pertenece a una competencia'
+            })
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Solo permitir si está en configuración
+        if competencia.estado not in ['configuracion']:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se pueden modificar preguntas de una competencia iniciada'
+            })
+        
+        with transaction.atomic():
+            # Actualizar campos básicos solo si se proporcionan
+            enunciado = data.get('enunciado', '').strip()
+            if enunciado:
+                pregunta.enunciado = enunciado
+                print(f"📝 Enunciado actualizado: {enunciado[:50]}...")
+            
+            if 'puntaje' in data:
+                try:
+                    pregunta.puntaje = int(data.get('puntaje', 1))
+                    print(f"⭐ Puntaje actualizado: {pregunta.puntaje}")
+                except (ValueError, TypeError):
+                    pregunta.puntaje = 1
+            
+            # Guardar cambios
+            pregunta.save()
+            print("✅ Pregunta actualizada exitosamente")
+            
+            # Actualizar opciones si se proporcionan
+            if 'opciones' in data and isinstance(data['opciones'], list):
+                print(f"🔧 Actualizando {len(data['opciones'])} opciones...")
+                
+                for opcion_data in data['opciones']:
+                    if 'id' in opcion_data:
+                        try:
+                            opcion = OpcionPregunta.objects.get(
+                                id=opcion_data['id'], 
+                                pregunta=pregunta
+                            )
+                            
+                            if 'texto' in opcion_data:
+                                opcion.texto = opcion_data['texto']
+                            
+                            if 'es_correcta' in opcion_data:
+                                opcion.es_correcta = bool(opcion_data['es_correcta'])
+                            
+                            opcion.save()
+                            print(f"✅ Opción {opcion.id} actualizada")
+                            
+                        except OpcionPregunta.DoesNotExist:
+                            print(f"⚠️ Opción {opcion_data['id']} no encontrada")
+                            continue
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Pregunta actualizada exitosamente',
+            'pregunta_id': pregunta.id
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al actualizar pregunta: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error al actualizar pregunta: {str(e)}'
+        }, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def eliminar_pregunta_competencia(request, pregunta_id):
+    """Eliminar una pregunta de competencia - CORREGIDO"""
+    try:
+        print(f"🗑️ Eliminando pregunta de competencia ID: {pregunta_id}")
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # CORREGIR: Verificar que pertenece a una competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Esta pregunta no pertenece a una competencia'
+            })
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Solo permitir si está en configuración
+        if competencia.estado not in ['configuracion']:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se pueden eliminar preguntas de una competencia iniciada'
+            })
+        
+        enunciado = pregunta.enunciado[:50]
+        
+        pregunta.delete()
+        print(f"✅ Pregunta eliminada: {enunciado}")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Pregunta eliminada exitosamente'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al eliminar pregunta: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+    
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def duplicar_pregunta_competencia(request):
+    """Duplicar una pregunta de competencia - CORREGIDO"""
+    try:
+        print("📋 Duplicando pregunta de competencia...")
+        
+        data = json.loads(request.body)
+        pregunta_id = data.get('pregunta_id')
+        
+        pregunta_original = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # CORREGIR: Verificar que pertenece a una competencia
+        if not isinstance(pregunta_original.content_object, Competencia):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Esta pregunta no pertenece a una competencia'
+            })
+        
+        competencia = pregunta_original.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Solo permitir si está en configuración
+        if competencia.estado not in ['configuracion']:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se pueden duplicar preguntas de una competencia iniciada'
+            })
+        
+        # CORREGIR: Calcular nuevo orden
+        from django.contrib.contenttypes.models import ContentType
+        competencia_ct = ContentType.objects.get_for_model(Competencia)
+        
+        ultima_pregunta = PreguntaCuestionario.objects.filter(
+            content_type=competencia_ct,
+            object_id=competencia.id
+        ).order_by('-orden').first()
+        
+        nuevo_orden = ultima_pregunta.orden + 1 if ultima_pregunta else 1
+        
+        with transaction.atomic():
+            # Crear copia de la pregunta
+            nueva_pregunta = PreguntaCuestionario.objects.create(
+                content_type=competencia_ct,
+                object_id=competencia.id,
+                enunciado=f"{pregunta_original.enunciado} (Copia)",
+                tipo=pregunta_original.tipo,
+                orden=nuevo_orden,
+                puntaje=pregunta_original.puntaje
+            )
+            
+            # Duplicar opciones si existen
+            for opcion in pregunta_original.opciones.all():
+                OpcionPregunta.objects.create(
+                    pregunta=nueva_pregunta,
+                    texto=opcion.texto,
+                    es_correcta=opcion.es_correcta
+                )
+        
+        return JsonResponse({
+            'success': True,
+            'pregunta_id': nueva_pregunta.id,
+            'mensaje': 'Pregunta duplicada exitosamente'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al duplicar pregunta: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+    
+
+# =====================================================
+# PANEL DE CONTROL EN VIVO
+# =====================================================
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def panel_control_competencia(request, competencia_id):
+    """Panel de control en tiempo real para la competencia"""
+    print(f"🎮 Panel de control para competencia {competencia_id}")
+    
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    
+    # Verificar permisos
+    if (competencia.recurso.seccion and 
+        competencia.recurso.seccion.curso.profesor != request.user):
+        print("❌ Usuario sin permisos para controlar")
+        return redirect('dashboard-adm')
+    
+    # Obtener datos de la competencia
+    preguntas = competencia.preguntas.all().order_by('orden')
+    participaciones = competencia.participaciones.filter(activo=True).select_related('estudiante', 'grupo')
+    
+    # Obtener grupos si es modalidad grupal
+    grupos = []
+    if competencia.modalidad == 'grupal':
+        grupos = competencia.grupos.all().prefetch_related('participaciones__estudiante')
+    
+    # Estadísticas en tiempo real
+    total_participantes = participaciones.count()
+    participantes_finalizados = participaciones.filter(finalizo=True).count()
+    participantes_activos = total_participantes - participantes_finalizados
+    
+    # Ranking en tiempo real
+    ranking = list(participaciones.order_by('-puntaje_total', 'tiempo_total_segundos')[:10])
+    
+    context = {
+        'competencia': competencia,
+        'preguntas': preguntas,
+        'participaciones': participaciones,
+        'grupos': grupos,
+        'total_participantes': total_participantes,
+        'participantes_activos': participantes_activos,
+        'participantes_finalizados': participantes_finalizados,
+        'ranking': ranking,
+        'tiempo_restante': competencia.tiempo_restante_segundos(),
+        'puede_iniciar': competencia.estado == 'esperando',
+        'puede_finalizar': competencia.estado == 'activa',
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'docente/competencias/panel_control.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def iniciar_competencia_live(request, competencia_id):
+    """Iniciar la competencia en vivo"""
+    try:
+        print(f"🚀 Iniciando competencia en vivo {competencia_id}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Verificar estado
+        if competencia.estado != 'esperando':
+            return JsonResponse({
+                'success': False, 
+                'error': 'La competencia debe estar en estado "esperando" para poder iniciarla'
+            })
+        
+        # Verificar que hay participantes
+        participantes_count = competencia.participaciones.filter(activo=True).count()
+        if participantes_count == 0:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No hay participantes registrados para iniciar la competencia'
+            })
+        
+        # Verificar que hay preguntas
+        if not competencia.preguntas.exists():
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se puede iniciar una competencia sin preguntas'
+            })
+        
+        with transaction.atomic():
+            # Cambiar estado a activa
+            competencia.estado = 'activa'
+            competencia.fecha_inicio_real = timezone.now()
+            
+            # Establecer primera pregunta como actual
+            primera_pregunta = competencia.preguntas.order_by('orden').first()
+            if primera_pregunta:
+                competencia.pregunta_actual = primera_pregunta
+            
+            competencia.save()
+            
+            print(f"✅ Competencia {competencia_id} iniciada exitosamente")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Competencia iniciada exitosamente',
+            'tiempo_limite_segundos': competencia.tiempo_limite * 60,
+            'primera_pregunta_id': primera_pregunta.id if primera_pregunta else None
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al iniciar competencia: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def finalizar_competencia_live(request, competencia_id):
+    """Finalizar la competencia en vivo"""
+    try:
+        print(f"🏁 Finalizando competencia en vivo {competencia_id}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Verificar estado
+        if competencia.estado != 'activa':
+            return JsonResponse({
+                'success': False, 
+                'error': 'Solo se pueden finalizar competencias activas'
+            })
+        
+        with transaction.atomic():
+            # Cambiar estado a finalizada
+            competencia.estado = 'finalizada'
+            competencia.fecha_finalizacion = timezone.now()
+            competencia.pregunta_actual = None
+            competencia.save()
+            
+            # Finalizar todas las participaciones activas
+            participaciones_activas = competencia.participaciones.filter(
+                activo=True, 
+                finalizo=False
+            )
+            
+            for participacion in participaciones_activas:
+                participacion.finalizo = True
+                participacion.fecha_finalizacion = timezone.now()
+                
+                # Calcular tiempo total si no se había calculado
+                if not participacion.tiempo_total_segundos:
+                    tiempo_total = (timezone.now() - participacion.fecha_ingreso).total_seconds()
+                    participacion.tiempo_total_segundos = int(tiempo_total)
+                
+                # Calcular puntaje final
+                participacion.calcular_puntaje_actual()
+                participacion.save()
+            
+            # Calcular posiciones finales
+            calcular_ranking_final(competencia)
+            
+            print(f"✅ Competencia {competencia_id} finalizada exitosamente")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Competencia finalizada exitosamente',
+            'participantes_finalizados': participaciones_activas.count()
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al finalizar competencia: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def siguiente_pregunta_competencia(request, competencia_id):
+    """Avanzar a la siguiente pregunta en la competencia"""
+    try:
+        print(f"➡️ Avanzando a siguiente pregunta en competencia {competencia_id}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Verificar estado
+        if competencia.estado != 'activa':
+            return JsonResponse({
+                'success': False, 
+                'error': 'La competencia debe estar activa'
+            })
+        
+        # Obtener siguiente pregunta
+        pregunta_actual_orden = competencia.pregunta_actual.orden if competencia.pregunta_actual else 0
+        siguiente_pregunta = competencia.preguntas.filter(
+            orden__gt=pregunta_actual_orden
+        ).order_by('orden').first()
+        
+        if not siguiente_pregunta:
+            # No hay más preguntas, finalizar automáticamente
+            return finalizar_competencia_live(request, competencia_id)
+        
+        # Actualizar pregunta actual
+        competencia.pregunta_actual = siguiente_pregunta
+        competencia.save()
+        
+        print(f"✅ Avanzado a pregunta {siguiente_pregunta.orden}: {siguiente_pregunta.enunciado[:50]}")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'Avanzado a pregunta {siguiente_pregunta.orden}',
+            'pregunta_actual': {
+                'id': siguiente_pregunta.id,
+                'orden': siguiente_pregunta.orden,
+                'enunciado': siguiente_pregunta.enunciado,
+                'tipo': siguiente_pregunta.tipo.nombre
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al avanzar pregunta: {str(e)}")
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+def calcular_ranking_final(competencia):
+    """Calcular el ranking final de la competencia"""
+    print(f"🏆 Calculando ranking final para competencia {competencia.id}")
+    
+    if competencia.modalidad == 'individual':
+        # Ranking individual
+        participaciones = competencia.participaciones.filter(
+            finalizo=True
+        ).order_by('-puntaje_total', 'tiempo_total_segundos')
+        
+        for i, participacion in enumerate(participaciones, 1):
+            participacion.posicion = i
+            participacion.save()
+            
+    elif competencia.modalidad == 'grupal':
+        # Ranking grupal (promedio del grupo)
+        grupos_puntajes = []
+        
+        for grupo in competencia.grupos.all():
+            participaciones_grupo = grupo.participaciones.filter(finalizo=True)
+            if participaciones_grupo.exists():
+                # CORREGIR: Usar models.Avg correctamente
+                from django.db.models import Avg
+                puntaje_promedio = participaciones_grupo.aggregate(
+                    promedio=Avg('puntaje_total')
+                )['promedio'] or 0
+                
+                tiempo_promedio = participaciones_grupo.aggregate(
+                    promedio=Avg('tiempo_total_segundos')
+                )['promedio'] or 0
+                
+                grupos_puntajes.append({
+                    'grupo': grupo,
+                    'puntaje_promedio': puntaje_promedio,
+                    'tiempo_promedio': tiempo_promedio,
+                    'participaciones': list(participaciones_grupo)
+                })
+        
+        # Ordenar grupos por puntaje y tiempo
+        grupos_puntajes.sort(key=lambda x: (-x['puntaje_promedio'], x['tiempo_promedio']))
+        
+        # Asignar posiciones
+        for i, grupo_data in enumerate(grupos_puntajes, 1):
+            for participacion in grupo_data['participaciones']:
+                participacion.posicion = i
+                participacion.save()
+    
+    print(f"✅ Ranking final calculado para competencia {competencia.id}")
+
+
+# =====================================================
+# GESTIÓN DE GRUPOS
+# =====================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def formar_grupos_automatico(request, competencia_id):
+    """Formar grupos automáticamente"""
+    try:
+        print(f"🎲 Formando grupos automáticos para competencia {competencia_id}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Sin permisos'
+            }, status=403)
+        
+        # Verificar modalidad
+        if competencia.modalidad != 'grupal':
+            return JsonResponse({
+                'success': False, 
+                'error': 'Solo se pueden formar grupos en competencias grupales'
+            })
+        
+        # Verificar estado
+        if competencia.estado not in ['configuracion', 'esperando']:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se pueden formar grupos en una competencia activa'
+            })
+        
+        # Obtener participantes sin grupo
+        participantes_sin_grupo = competencia.participaciones.filter(
+            grupo__isnull=True,
+            activo=True
+        ).select_related('estudiante')
+        
+        if not participantes_sin_grupo.exists():
+            return JsonResponse({
+                'success': False, 
+                'error': 'No hay participantes sin grupo'
+            })
+        
+        # Eliminar grupos existentes vacíos
+        competencia.grupos.filter(participaciones__isnull=True).delete()
+        
+        with transaction.atomic():
+            participantes_lista = list(participantes_sin_grupo)
+            import random
+            random.shuffle(participantes_lista)  # Mezclar aleatoriamente
+            
+            grupos_creados = 0
+            max_miembros = competencia.max_miembros_grupo
+            
+            for i in range(0, len(participantes_lista), max_miembros):
+                grupo_participantes = participantes_lista[i:i + max_miembros]
+                
+                # Crear grupo
+                grupo = GrupoCompetencia.objects.create(
+                    competencia=competencia,
+                    nombre=f"Grupo {grupos_creados + 1}",
+                    max_miembros=max_miembros,
+                    creado_automaticamente=True
+                )
+                
+                # Asignar participantes al grupo
+                for participacion in grupo_participantes:
+                    participacion.grupo = grupo
+                    participacion.save()
+                
+                grupos_creados += 1
+                print(f"✅ Grupo {grupo.nombre} creado con {len(grupo_participantes)} miembros")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'{grupos_creados} grupos formados automáticamente',
+            'grupos_creados': grupos_creados,
+            'participantes_asignados': len(participantes_lista)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al formar grupos: {str(e)}")
+        return JsonResponse({
+            'success': False, 
+            'error': str(e)
+        }, status=400)
+
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def gestionar_grupos(request, competencia_id):
+    """Vista para gestionar grupos manualmente"""
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    
+    # Verificar permisos
+    if (competencia.recurso.seccion and 
+        competencia.recurso.seccion.curso.profesor != request.user):
+        return redirect('dashboard-adm')
+    
+    # Verificar modalidad
+    if competencia.modalidad != 'grupal':
+        messages.error(request, 'Esta competencia no es grupal')
+        return redirect('editar_competencia', competencia_id=competencia.id)
+    
+    # Obtener datos
+    grupos = competencia.grupos.all().prefetch_related('participaciones__estudiante')
+    participantes_sin_grupo = competencia.participaciones.filter(
+        grupo__isnull=True,
+        activo=True
+    ).select_related('estudiante')
+    
+    context = {
+        'competencia': competencia,
+        'grupos': grupos,
+        'participantes_sin_grupo': participantes_sin_grupo,
+        'puede_modificar': competencia.estado in ['configuracion', 'esperando'],
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'docente/competencias/gestionar_grupos.html', context)
+
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def biblioteca_competencias(request):
+    """Vista para mostrar la biblioteca de competencias"""
+    user = request.user
+    
+    # Obtener competencias del usuario
+    competencias = Competencia.objects.filter(
+        Q(recurso__seccion__curso__profesor=user) |  # Con sección del usuario
+        Q(recurso__seccion__isnull=True)              # Sin sección (biblioteca)
+    ).select_related('recurso', 'recurso__seccion', 'recurso__seccion__curso').order_by('-id')
+    
+    print(f"🔍 Total competencias encontradas: {competencias.count()}")
+    
+    context = {
+        'competencias': competencias,
+        'imgPerfil': user.imgPerfil,
+        'usuario': user.username,
+    }
+    
+    return render(request, 'docente/competencias/biblioteca_competencias.html', context)
+
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def resultados_competencia(request, competencia_id):
+    """Vista para mostrar los resultados finales de la competencia"""
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    
+    # Verificar permisos
+    if (competencia.recurso.seccion and 
+        competencia.recurso.seccion.curso.profesor != request.user):
+        return redirect('dashboard-adm')
+    
+    # Obtener resultados según modalidad
+    if competencia.modalidad == 'individual':
+        participaciones = competencia.participaciones.filter(
+            finalizo=True
+        ).select_related('estudiante').order_by('posicion', '-puntaje_total')
+    else:
+        # Agrupar por grupos
+        grupos_resultados = []
+        for grupo in competencia.grupos.all():
+            participaciones_grupo = grupo.participaciones.filter(finalizo=True)
+            if participaciones_grupo.exists():
+                puntaje_promedio = participaciones_grupo.aggregate(
+                    promedio=models.Avg('puntaje_total')
+                )['promedio'] or 0
+                
+                grupos_resultados.append({
+                    'grupo': grupo,
+                    'participaciones': list(participaciones_grupo),
+                    'puntaje_promedio': puntaje_promedio,
+                    'posicion': participaciones_grupo.first().posicion if participaciones_grupo.exists() else 999
+                })
+        
+        grupos_resultados.sort(key=lambda x: x['posicion'])
+        participaciones = grupos_resultados
+    
+    # Estadísticas generales
+    total_participantes = competencia.participaciones.filter(activo=True).count()
+    participantes_finalizados = competencia.participaciones.filter(finalizo=True).count()
+    
+    if participantes_finalizados > 0:
+        puntaje_promedio = competencia.participaciones.filter(finalizo=True).aggregate(
+            promedio=models.Avg('puntaje_total')
+        )['promedio'] or 0
+        
+        tiempo_promedio = competencia.participaciones.filter(
+            finalizo=True, 
+            tiempo_total_segundos__isnull=False
+        ).aggregate(
+            promedio=models.Avg('tiempo_total_segundos')
+        )['promedio'] or 0
+    else:
+        puntaje_promedio = 0
+        tiempo_promedio = 0
+    
+    context = {
+        'competencia': competencia,
+        'participaciones': participaciones,
+        'total_participantes': total_participantes,
+        'participantes_finalizados': participantes_finalizados,
+        'puntaje_promedio': puntaje_promedio,
+        'tiempo_promedio_minutos': tiempo_promedio / 60 if tiempo_promedio else 0,
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'docente/competencias/resultados_competencia.html', context)
+
+
+# AGREGAR ESTAS FUNCIONES AL ARCHIVO myapp/views.py
+# PARTE 4: VISTAS PARA ESTUDIANTES - ACCESO Y PARTICIPACIÓN
+
+# =====================================================
+# ACCESO DE ESTUDIANTES A COMPETENCIAS
+# =====================================================
+
+@login_required
+@role_required('Estudiante')
+def acceder_competencia(request, pin):
+    """Vista para que estudiantes accedan con PIN"""
+    print(f"🎯 Estudiante {request.user.username} accediendo con PIN: {pin}")
+    
+    try:
+        competencia = get_object_or_404(Competencia, pin_acceso=pin)
+        print(f"🏆 Competencia encontrada: {competencia.recurso.titulo}")
+        
+        # Verificar estado de la competencia
+        if competencia.estado == 'configuracion':
+            return render(request, 'estudiante/competencias/competencia_no_disponible.html', {
+                'competencia': competencia,
+                'mensaje': 'La competencia aún está en configuración. Vuelve más tarde.',
+                'tipo': 'configuracion'
+            })
+        
+        elif competencia.estado == 'finalizada':
+            return render(request, 'estudiante/competencias/competencia_no_disponible.html', {
+                'competencia': competencia,
+                'mensaje': 'Esta competencia ya ha finalizado.',
+                'tipo': 'finalizada'
+            })
+        
+        elif competencia.estado == 'cancelada':
+            return render(request, 'estudiante/competencias/competencia_no_disponible.html', {
+                'competencia': competencia,
+                'mensaje': 'Esta competencia ha sido cancelada.',
+                'tipo': 'cancelada'
+            })
+        
+        # Verificar si ya está participando
+        participacion_existente = ParticipacionCompetencia.objects.filter(
+            competencia=competencia,
+            estudiante=request.user
+        ).first()
+        
+        if participacion_existente:
+            if participacion_existente.finalizo:
+                # Ya finalizó, mostrar resultados
+                return redirect('resultados_participacion', participacion_id=participacion_existente.id)
+            elif competencia.estado == 'activa':
+                # Competencia activa, ir a participar
+                return redirect('participar_competencia', participacion_id=participacion_existente.id)
+            else:
+                # En sala de espera
+                return redirect('sala_espera_competencia', participacion_id=participacion_existente.id)
+        
+        # Primera vez accediendo
+        context = {
+            'competencia': competencia,
+            'pin': pin,
+            'imgPerfil': request.user.imgPerfil,
+            'usuario': request.user.username,
+        }
+        
+        return render(request, 'estudiante/competencias/acceder_competencia.html', context)
+        
+    except Competencia.DoesNotExist:
+        return render(request, 'estudiante/competencias/pin_invalido.html', {
+            'pin': pin,
+            'imgPerfil': request.user.imgPerfil,
+        })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required('Estudiante')
+def unirse_competencia(request, competencia_id):
+    """Unirse a una competencia"""
+    try:
+        print(f"🎯 {request.user.username} uniéndose a competencia {competencia_id}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar estado
+        if competencia.estado not in ['esperando', 'activa']:
+            return JsonResponse({
+                'success': False,
+                'error': 'La competencia no está disponible para unirse'
+            })
+        
+        # Verificar si ya está participando
+        participacion_existente = ParticipacionCompetencia.objects.filter(
+            competencia=competencia,
+            estudiante=request.user
+        ).first()
+        
+        if participacion_existente:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ya estás registrado en esta competencia',
+                'participacion_id': participacion_existente.id
+            })
+        
+        with transaction.atomic():
+            # Crear participación
+            participacion = ParticipacionCompetencia.objects.create(
+                competencia=competencia,
+                estudiante=request.user,
+                activo=True
+            )
+            
+            print(f"✅ Participación creada: {participacion.id}")
+            
+            # Si es modalidad grupal, redirigir a selección de grupo
+            if competencia.modalidad == 'grupal':
+                if competencia.grupos_aleatorios:
+                    # Grupos automáticos - asignar inmediatamente
+                    asignar_grupo_automatico(participacion)
+                elif competencia.grupos_abiertos:
+                    # Grupos libres - permitir selección
+                    return JsonResponse({
+                        'success': True,
+                        'modalidad': 'grupal',
+                        'grupos_libres': True,
+                        'participacion_id': participacion.id,
+                        'redirect_url': f'/competencia/seleccionar-grupo/{competencia.id}/'
+                    })
+        
+        # Individual o grupo ya asignado
+        next_url = f'/competencia/sala-espera/{participacion.id}/'
+        if competencia.estado == 'activa':
+            next_url = f'/competencia/participar/{participacion.id}/'
+        
+        return JsonResponse({
+            'success': True,
+            'modalidad': competencia.modalidad,
+            'participacion_id': participacion.id,
+            'redirect_url': next_url
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al unirse a competencia: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+def asignar_grupo_automatico(participacion):
+    """Asignar automáticamente a un grupo disponible"""
+    competencia = participacion.competencia
+    
+    # Buscar grupo con espacio disponible
+    grupo_disponible = None
+    for grupo in competencia.grupos.all():
+        if grupo.puede_agregar_miembro():
+            grupo_disponible = grupo
+            break
+    
+    # Si no hay grupo disponible, crear uno nuevo
+    if not grupo_disponible:
+        numero_grupo = competencia.grupos.count() + 1
+        grupo_disponible = GrupoCompetencia.objects.create(
+            competencia=competencia,
+            nombre=f"Grupo {numero_grupo}",
+            max_miembros=competencia.max_miembros_grupo,
+            creado_automaticamente=True
+        )
+    
+    # Asignar al grupo
+    participacion.grupo = grupo_disponible
+    participacion.save()
+    
+    print(f"✅ {participacion.estudiante.username} asignado automáticamente a {grupo_disponible.nombre}")
+
+
+# =====================================================
+# GESTIÓN DE GRUPOS PARA ESTUDIANTES
+# =====================================================
+
+@login_required
+@role_required('Estudiante')
+def seleccionar_grupo(request, competencia_id):
+    """Vista para que estudiantes seleccionen grupo"""
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    
+    # Verificar participación
+    participacion = get_object_or_404(
+        ParticipacionCompetencia,
+        competencia=competencia,
+        estudiante=request.user
+    )
+    
+    # Verificar modalidad y configuración
+    if competencia.modalidad != 'grupal' or not competencia.grupos_abiertos:
+        return redirect('sala_espera_competencia', participacion_id=participacion.id)
+    
+    # Obtener grupos disponibles
+    grupos_disponibles = []
+    for grupo in competencia.grupos.all():
+        grupos_disponibles.append({
+            'grupo': grupo,
+            'miembros': list(grupo.participaciones.select_related('estudiante')),
+            'puede_unirse': grupo.puede_agregar_miembro(),
+            'es_completo': grupo.esta_completo()
+        })
+    
+    context = {
+        'competencia': competencia,
+        'participacion': participacion,
+        'grupos_disponibles': grupos_disponibles,
+        'puede_crear_grupo': True,  # Permitir crear grupos nuevos
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'estudiante/competencias/seleccionar_grupo.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required('Estudiante')
+def crear_grupo_estudiante(request, competencia_id):
+    """Crear nuevo grupo por estudiante"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar participación
+        participacion = get_object_or_404(
+            ParticipacionCompetencia,
+            competencia=competencia,
+            estudiante=request.user
+        )
+        
+        # Verificar que no tenga grupo
+        if participacion.grupo:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ya tienes un grupo asignado'
+            })
+        
+        # Verificar configuración
+        if not competencia.grupos_abiertos:
+            return JsonResponse({
+                'success': False,
+                'error': 'No se permite crear grupos en esta competencia'
+            })
+        
+        data = json.loads(request.body)
+        nombre_grupo = data.get('nombre_grupo', '').strip()
+        
+        if not nombre_grupo:
+            return JsonResponse({
+                'success': False,
+                'error': 'El nombre del grupo es obligatorio'
+            })
+        
+        # Verificar que no exista un grupo con el mismo nombre
+        if competencia.grupos.filter(nombre=nombre_grupo).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'Ya existe un grupo con ese nombre'
+            })
+        
+        with transaction.atomic():
+            # Crear grupo
+            grupo = GrupoCompetencia.objects.create(
+                competencia=competencia,
+                nombre=nombre_grupo,
+                max_miembros=competencia.max_miembros_grupo,
+                creado_automaticamente=False
+            )
+            
+            # Asignar al creador
+            participacion.grupo = grupo
+            participacion.save()
+            
+            print(f"✅ Grupo '{nombre_grupo}' creado por {request.user.username}")
+        
+        return JsonResponse({
+            'success': True,
+            'grupo_id': grupo.id,
+            'mensaje': f'Grupo "{nombre_grupo}" creado exitosamente'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al crear grupo: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required('Estudiante')
+def unirse_grupo(request, grupo_id):
+    """Unirse a un grupo existente"""
+    try:
+        grupo = get_object_or_404(GrupoCompetencia, id=grupo_id)
+        
+        # Verificar participación
+        participacion = get_object_or_404(
+            ParticipacionCompetencia,
+            competencia=grupo.competencia,
+            estudiante=request.user
+        )
+        
+        # Verificar que no tenga grupo
+        if participacion.grupo:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ya tienes un grupo asignado'
+            })
+        
+        # Verificar espacio disponible
+        if not grupo.puede_agregar_miembro():
+            return JsonResponse({
+                'success': False,
+                'error': 'Este grupo ya está completo'
+            })
+        
+        # Asignar al grupo
+        participacion.grupo = grupo
+        participacion.save()
+        
+        print(f"✅ {request.user.username} se unió a {grupo.nombre}")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'Te has unido al grupo "{grupo.nombre}"'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al unirse a grupo: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+# =====================================================
+# PARTICIPACIÓN EN COMPETENCIA
+# =====================================================
+
+@login_required
+@role_required('Estudiante')
+def sala_espera_competencia(request, participacion_id):
+    """Sala de espera antes de que inicie la competencia"""
+    participacion = get_object_or_404(
+        ParticipacionCompetencia,
+        id=participacion_id,
+        estudiante=request.user
+    )
+    
+    competencia = participacion.competencia
+    
+    # Si ya está activa, redirigir a participar
+    if competencia.estado == 'activa':
+        return redirect('participar_competencia', participacion_id=participacion.id)
+    
+    # Si ya finalizó, redirigir a resultados
+    if participacion.finalizo or competencia.estado == 'finalizada':
+        return redirect('resultados_participacion', participacion_id=participacion.id)
+    
+    # Obtener información de otros participantes
+    if competencia.modalidad == 'grupal' and participacion.grupo:
+        companeros = participacion.grupo.participaciones.exclude(
+            id=participacion.id
+        ).select_related('estudiante')
+        total_participantes = participacion.grupo.participaciones.count()
+        grupo_info = participacion.grupo
+    else:
+        companeros = []
+        total_participantes = competencia.participaciones.filter(activo=True).count()
+        grupo_info = None
+    
+    context = {
+        'participacion': participacion,
+        'competencia': competencia,
+        'companeros': companeros,
+        'total_participantes': total_participantes,
+        'grupo_info': grupo_info,
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'estudiante/competencias/sala_espera.html', context)
+
+
+@login_required
+@role_required('Estudiante')
+def participar_competencia(request, participacion_id):
+    """Interfaz para participar en la competencia activa"""
+    participacion = get_object_or_404(
+        ParticipacionCompetencia,
+        id=participacion_id,
+        estudiante=request.user
+    )
+    
+    competencia = participacion.competencia
+    
+    # Verificar estado
+    if competencia.estado != 'activa':
+        if competencia.estado == 'esperando':
+            return redirect('sala_espera_competencia', participacion_id=participacion.id)
+        elif participacion.finalizo or competencia.estado == 'finalizada':
+            return redirect('resultados_participacion', participacion_id=participacion.id)
+        else:
+            return render(request, 'estudiante/competencias/competencia_no_disponible.html', {
+                'competencia': competencia,
+                'mensaje': 'La competencia no está disponible en este momento.',
+                'tipo': 'no_disponible'
+            })
+    
+    # Verificar si ya finalizó su participación
+    if participacion.finalizo:
+        return redirect('resultados_participacion', participacion_id=participacion.id)
+    
+    # Obtener preguntas
+    if competencia.orden_preguntas_aleatorio:
+        # Orden aleatorio (usando seed basado en participación para consistencia)
+        import random
+        random.seed(participacion.id)
+        preguntas = list(competencia.preguntas.all())
+        random.shuffle(preguntas)
+    else:
+        preguntas = competencia.preguntas.all().order_by('orden')
+    
+    # Obtener respuestas existentes
+    respuestas_existentes = {}
+    for respuesta in participacion.respuestas.all():
+        respuestas_existentes[respuesta.pregunta.id] = respuesta
+    
+    # Calcular tiempo restante
+    tiempo_restante = competencia.tiempo_restante_segundos()
+    
+    if tiempo_restante <= 0:
+        # Tiempo agotado, finalizar automáticamente
+        return redirect('finalizar_participacion', participacion_id=participacion.id)
+    
+    context = {
+        'participacion': participacion,
+        'competencia': competencia,
+        'preguntas': preguntas,
+        'respuestas_existentes': respuestas_existentes,
+        'tiempo_restante': int(tiempo_restante),
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'estudiante/competencias/participar_competencia.html', context)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required('Estudiante')
+def responder_competencia(request):
+    """Guardar respuesta en competencia vía AJAX"""
+    try:
+        data = json.loads(request.body)
+        participacion_id = data.get('participacion_id')
+        pregunta_id = data.get('pregunta_id')
+        respuesta = data.get('respuesta')
+        
+        print(f"💾 Guardando respuesta de competencia - Participación: {participacion_id}, Pregunta: {pregunta_id}")
+        
+        participacion = get_object_or_404(
+            ParticipacionCompetencia,
+            id=participacion_id,
+            estudiante=request.user
+        )
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # Verificar que la competencia esté activa
+        if participacion.competencia.estado != 'activa':
+            return JsonResponse({
+                'success': False,
+                'error': 'La competencia no está activa'
+            })
+        
+        # Verificar que no haya finalizado
+        if participacion.finalizo:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tu participación ya ha finalizado'
+            })
+        
+        # Crear o actualizar respuesta
+        respuesta_obj, created = RespuestaCompetencia.objects.get_or_create(
+            participacion=participacion,
+            pregunta=pregunta,
+            defaults={'fecha_respuesta': timezone.now()}
+        )
+        
+        # Procesar según tipo de pregunta
+        if pregunta.tipo.nombre in ['opcion_unica', 'falso_verdadero']:
+            if respuesta:
+                try:
+                    opcion = get_object_or_404(OpcionPregunta, id=respuesta)
+                    respuesta_obj.opcion_seleccionada = opcion
+                    print(f"✅ Opción única guardada")
+                except:
+                    respuesta_obj.opcion_seleccionada = None
+            else:
+                respuesta_obj.opcion_seleccionada = None
+        
+        elif pregunta.tipo.nombre == 'opcion_multiple':
+            if isinstance(respuesta, list) and respuesta:
+                respuesta_obj.opciones_multiples = ','.join(map(str, respuesta))
+                print(f"✅ Opción múltiple guardada")
+            else:
+                respuesta_obj.opciones_multiples = ''
+        
+        elif pregunta.tipo.nombre == 'respuesta_abierta':
+            respuesta_texto = str(respuesta) if respuesta else ''
+            if len(respuesta_texto) > 2000:
+                respuesta_texto = respuesta_texto[:2000]
+            respuesta_obj.respuesta_texto = respuesta_texto
+            print(f"✅ Respuesta abierta guardada - {len(respuesta_texto)} caracteres")
+        
+        # Calcular puntaje automáticamente
+        try:
+            puntaje_obtenido = respuesta_obj.calcular_puntaje_automatico()
+            print(f"📊 Puntaje calculado: {puntaje_obtenido}")
+        except:
+            print("❌ Error al calcular puntaje automático")
+            puntaje_obtenido = 0
+        
+        respuesta_obj.save()
+        
+        # Actualizar puntaje total de la participación
+        participacion.calcular_puntaje_actual()
+        
+        return JsonResponse({
+            'success': True,
+            'puntaje_obtenido': float(puntaje_obtenido)
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al guardar respuesta de competencia: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required('Estudiante')
+def finalizar_participacion(request, participacion_id):
+    """Finalizar participación del estudiante"""
+    try:
+        participacion = get_object_or_404(
+            ParticipacionCompetencia,
+            id=participacion_id,
+            estudiante=request.user
+        )
+        
+        if not participacion.finalizo:
+            # Finalizar participación
+            participacion.finalizo = True
+            participacion.fecha_finalizacion = timezone.now()
+            
+            # Calcular tiempo total
+            tiempo_total = (participacion.fecha_finalizacion - participacion.fecha_ingreso).total_seconds()
+            participacion.tiempo_total_segundos = int(tiempo_total)
+            
+            # Calcular puntaje final
+            participacion.calcular_puntaje_actual()
+            participacion.save()
+            
+            print(f"✅ Participación finalizada: {participacion.estudiante.username}")
+        
+        return redirect('resultados_participacion', participacion_id=participacion.id)
+        
+    except Exception as e:
+        print(f"❌ Error al finalizar participación: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@login_required
+@role_required('Estudiante')
+def resultados_participacion(request, participacion_id):
+    """Mostrar resultados de la participación"""
+    participacion = get_object_or_404(
+        ParticipacionCompetencia,
+        id=participacion_id,
+        estudiante=request.user
+    )
+    
+    competencia = participacion.competencia
+    
+    # Obtener respuestas con detalles
+    respuestas = participacion.respuestas.select_related(
+        'pregunta', 'opcion_seleccionada'
+    ).prefetch_related('pregunta__opciones').all()
+    
+    # Procesar respuestas para el template
+    for respuesta in respuestas:
+        if respuesta.pregunta.puntaje > 0:
+            respuesta.porcentaje_pregunta = int(
+                (respuesta.puntaje_obtenido / respuesta.pregunta.puntaje) * 100
+            )
+        else:
+            respuesta.porcentaje_pregunta = 0
+        
+        if respuesta.opciones_multiples:
+            respuesta.opciones_ids = [
+                int(x.strip()) for x in respuesta.opciones_multiples.split(',') if x.strip()
+            ]
+        else:
+            respuesta.opciones_ids = []
+    
+    # Calcular porcentaje total
+    puntaje_total_posible = competencia.calcular_puntaje_total()
+    puntaje_porcentaje = 0
+    if puntaje_total_posible > 0:
+        puntaje_porcentaje = (participacion.puntaje_total / puntaje_total_posible * 100)
+    
+    # Obtener ranking si está disponible
+    mejor_que_porcentaje = 0
+    if participacion.posicion and competencia.estado == 'finalizada':
+        total_participantes = competencia.participaciones.filter(finalizo=True).count()
+        if total_participantes > 1:
+            mejor_que_porcentaje = int(
+                ((total_participantes - participacion.posicion) / (total_participantes - 1)) * 100
+            )
+    
+    context = {
+        'participacion': participacion,
+        'competencia': competencia,
+        'respuestas': respuestas,
+        'puntaje_porcentaje': puntaje_porcentaje,
+        'mejor_que_porcentaje': mejor_que_porcentaje,
+        'tiempo_minutos': participacion.tiempo_total_segundos / 60 if participacion.tiempo_total_segundos else 0,
+        'mostrar_resultados': competencia.mostrar_resultados_inmediatos,
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'estudiante/competencias/resultados_participacion.html', context)
+
+
+# =====================================================
+# ENDPOINTS AJAX PARA TIEMPO REAL
+# =====================================================
+
+@require_http_methods(["GET"])
+@login_required
+def obtener_estado_competencia(request, competencia_id):
+    """Obtener estado actual de la competencia (AJAX)"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        return JsonResponse({
+            'success': True,
+            'estado': competencia.estado,
+            'tiempo_restante': competencia.tiempo_restante_segundos(),
+            'pregunta_actual': {
+                'id': competencia.pregunta_actual.id,
+                'orden': competencia.pregunta_actual.orden,
+            } if competencia.pregunta_actual else None,
+            'participantes_activos': competencia.participaciones.filter(
+                activo=True, finalizo=False
+            ).count()
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@require_http_methods(["GET"])
+@login_required
+def obtener_ranking_tiempo_real(request, competencia_id):
+    """Obtener ranking en tiempo real (AJAX)"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        if competencia.modalidad == 'individual':
+            participaciones = competencia.participaciones.filter(
+                activo=True
+            ).select_related('estudiante').order_by(
+                '-puntaje_total', 'fecha_ingreso'
+            )[:10]
+            
+            ranking = []
+            for i, participacion in enumerate(participaciones, 1):
+                ranking.append({
+                    'posicion': i,
+                    'nombre': f"{participacion.estudiante.first_name} {participacion.estudiante.last_name}".strip() or participacion.estudiante.username,
+                    'puntaje': float(participacion.puntaje_total),
+                    'finalizo': participacion.finalizo
+                })
+        else:
+            # Ranking grupal - calcular promedios
+            grupos_ranking = []
+            for grupo in competencia.grupos.all():
+                participaciones_grupo = grupo.participaciones.filter(activo=True)
+                if participaciones_grupo.exists():
+                    puntaje_promedio = participaciones_grupo.aggregate(
+                        promedio=models.Avg('puntaje_total')
+                    )['promedio'] or 0
+                    
+                    grupos_ranking.append({
+                        'grupo': grupo,
+                        'puntaje_promedio': puntaje_promedio,
+                        'miembros_finalizados': participaciones_grupo.filter(finalizo=True).count(),
+                        'total_miembros': participaciones_grupo.count()
+                    })
+            
+            grupos_ranking.sort(key=lambda x: -x['puntaje_promedio'])
+            
+            ranking = []
+            for i, grupo_data in enumerate(grupos_ranking[:10], 1):
+                ranking.append({
+                    'posicion': i,
+                    'nombre': grupo_data['grupo'].nombre,
+                    'puntaje': float(grupo_data['puntaje_promedio']),
+                    'finalizo': grupo_data['miembros_finalizados'] == grupo_data['total_miembros']
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'ranking': ranking
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def abrir_sala_espera(request, competencia_id):
+    """Abrir sala de espera para que estudiantes se conecten"""
+    try:
+        print(f"🚪 Abriendo sala de espera para competencia {competencia_id}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Verificar estado actual
+        if competencia.estado != 'configuracion':
+            return JsonResponse({
+                'success': False, 
+                'error': 'La competencia debe estar en configuración para abrir sala de espera'
+            })
+        
+        # Verificar que tenga preguntas
+        from django.contrib.contenttypes.models import ContentType
+        competencia_ct = ContentType.objects.get_for_model(Competencia)
+        preguntas_count = PreguntaCuestionario.objects.filter(
+            content_type=competencia_ct,
+            object_id=competencia.id
+        ).count()
+        
+        if preguntas_count == 0:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se puede abrir sala de espera sin preguntas'
+            })
+        
+        # Cambiar estado a esperando
+        competencia.estado = 'esperando'
+        competencia.save()
+        
+        print(f"✅ Sala de espera abierta para competencia {competencia_id}")
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Sala de espera abierta. Los estudiantes pueden unirse ahora.',
+            'pin_acceso': competencia.pin_acceso
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al abrir sala de espera: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def crear_grupo_manual(request, competencia_id):
+    """Crear grupo manualmente por el profesor"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        data = json.loads(request.body)
+        nombre_grupo = data.get('nombre_grupo', '').strip()
+        
+        if not nombre_grupo:
+            return JsonResponse({'success': False, 'error': 'Nombre del grupo requerido'})
+        
+        # Verificar que no exista
+        if competencia.grupos.filter(nombre=nombre_grupo).exists():
+            return JsonResponse({'success': False, 'error': 'Ya existe un grupo con ese nombre'})
+        
+        grupo = GrupoCompetencia.objects.create(
+            competencia=competencia,
+            nombre=nombre_grupo,
+            max_miembros=competencia.max_miembros_grupo,
+            creado_automaticamente=False
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'grupo_id': grupo.id,
+            'mensaje': f'Grupo "{nombre_grupo}" creado exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def mover_estudiante_grupo(request):
+    """Mover estudiante de un grupo a otro"""
+    try:
+        data = json.loads(request.body)
+        participacion_id = data.get('participacion_id')
+        nuevo_grupo_id = data.get('nuevo_grupo_id')
+        
+        participacion = get_object_or_404(ParticipacionCompetencia, id=participacion_id)
+        
+        # Verificar permisos
+        if (participacion.competencia.recurso.seccion and 
+            participacion.competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        if nuevo_grupo_id:
+            nuevo_grupo = get_object_or_404(GrupoCompetencia, id=nuevo_grupo_id)
+            
+            # Verificar espacio disponible
+            if not nuevo_grupo.puede_agregar_miembro():
+                return JsonResponse({'success': False, 'error': 'El grupo está completo'})
+            
+            participacion.grupo = nuevo_grupo
+        else:
+            # Remover del grupo
+            participacion.grupo = None
+        
+        participacion.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Estudiante movido exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def eliminar_grupo(request, grupo_id):
+    """Eliminar un grupo y liberar a sus miembros"""
+    try:
+        grupo = get_object_or_404(GrupoCompetencia, id=grupo_id)
+        
+        # Verificar permisos
+        if (grupo.competencia.recurso.seccion and 
+            grupo.competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Verificar estado de competencia
+        if grupo.competencia.estado not in ['configuracion', 'esperando']:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se pueden eliminar grupos de una competencia activa'
+            })
+        
+        # Liberar participantes del grupo
+        participaciones = grupo.participaciones.all()
+        for participacion in participaciones:
+            participacion.grupo = None
+            participacion.save()
+        
+        nombre_grupo = grupo.nombre
+        grupo.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'Grupo "{nombre_grupo}" eliminado y participantes liberados'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@require_http_methods(["GET"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def obtener_participantes_competencia(request, competencia_id):
+    """Obtener lista de participantes (AJAX)"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        participaciones = competencia.participaciones.filter(activo=True).select_related('estudiante', 'grupo')
+        
+        participantes = []
+        for participacion in participaciones:
+            participantes.append({
+                'id': participacion.id,
+                'nombre': f"{participacion.estudiante.first_name} {participacion.estudiante.last_name}".strip() or participacion.estudiante.username,
+                'email': participacion.estudiante.email,
+                'grupo': participacion.grupo.nombre if participacion.grupo else None,
+                'grupo_id': participacion.grupo.id if participacion.grupo else None,
+                'fecha_ingreso': participacion.fecha_ingreso.isoformat(),
+                'finalizo': participacion.finalizo,
+                'puntaje': float(participacion.puntaje_total)
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'participantes': participantes,
+            'total': len(participantes)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def exportar_resultados_competencia(request, competencia_id):
+    """Exportar resultados de competencia a CSV"""
+    import csv
+    from django.http import HttpResponse
+    
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    
+    # Verificar permisos
+    if (competencia.recurso.seccion and 
+        competencia.recurso.seccion.curso.profesor != request.user):
+        return redirect('dashboard-adm')
+    
+    # Crear respuesta CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="resultados_{competencia.recurso.titulo}_{competencia.id}.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Encabezados
+    if competencia.modalidad == 'individual':
+        writer.writerow([
+            'Posición', 'Nombre', 'Email', 'Puntaje', 'Tiempo (min)', 
+            'Finalizado', 'Fecha Ingreso', 'Fecha Finalización'
+        ])
+        
+        participaciones = competencia.participaciones.filter(
+            finalizo=True
+        ).select_related('estudiante').order_by('posicion', '-puntaje_total')
+        
+        for participacion in participaciones:
+            tiempo_min = participacion.tiempo_total_segundos / 60 if participacion.tiempo_total_segundos else 0
+            writer.writerow([
+                participacion.posicion or '',
+                f"{participacion.estudiante.first_name} {participacion.estudiante.last_name}".strip() or participacion.estudiante.username,
+                participacion.estudiante.email,
+                participacion.puntaje_total,
+                f"{tiempo_min:.1f}",
+                'Sí' if participacion.finalizo else 'No',
+                participacion.fecha_ingreso.strftime('%Y-%m-%d %H:%M'),
+                participacion.fecha_finalizacion.strftime('%Y-%m-%d %H:%M') if participacion.fecha_finalizacion else ''
+            ])
+    else:
+        # Modalidad grupal
+        writer.writerow([
+            'Posición Grupo', 'Nombre Grupo', 'Nombre Estudiante', 'Email', 
+            'Puntaje Individual', 'Puntaje Promedio Grupo', 'Tiempo (min)', 'Finalizado'
+        ])
+        
+        for grupo in competencia.grupos.all().order_by('participaciones__posicion'):
+            participaciones_grupo = grupo.participaciones.filter(finalizo=True)
+            puntaje_promedio = participaciones_grupo.aggregate(
+                promedio=models.Avg('puntaje_total')
+            )['promedio'] or 0
+            
+            for participacion in participaciones_grupo:
+                tiempo_min = participacion.tiempo_total_segundos / 60 if participacion.tiempo_total_segundos else 0
+                writer.writerow([
+                    participacion.posicion or '',
+                    grupo.nombre,
+                    f"{participacion.estudiante.first_name} {participacion.estudiante.last_name}".strip() or participacion.estudiante.username,
+                    participacion.estudiante.email,
+                    participacion.puntaje_total,
+                    f"{puntaje_promedio:.2f}",
+                    f"{tiempo_min:.1f}",
+                    'Sí' if participacion.finalizo else 'No'
+                ])
+    
+    return response
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def reiniciar_competencia(request, competencia_id):
+    """Reiniciar competencia (volver a configuración)"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Solo permitir reiniciar si no está activa
+        if competencia.estado == 'activa':
+            return JsonResponse({
+                'success': False, 
+                'error': 'No se puede reiniciar una competencia activa'
+            })
+        
+        with transaction.atomic():
+            # Eliminar todas las participaciones y respuestas
+            competencia.participaciones.all().delete()
+            
+            # Eliminar todos los grupos
+            competencia.grupos.all().delete()
+            
+            # Resetear estado
+            competencia.estado = 'configuracion'
+            competencia.fecha_inicio_real = None
+            competencia.fecha_finalizacion = None
+            competencia.pregunta_actual = None
+            competencia.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Competencia reiniciada exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def cancelar_competencia(request, competencia_id):
+    """Cancelar competencia"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        competencia.estado = 'cancelada'
+        competencia.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Competencia cancelada'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def duplicar_competencia(request, competencia_id):
+    """Duplicar competencia completa"""
+    try:
+        competencia_original = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia_original.recurso.seccion and 
+            competencia_original.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        with transaction.atomic():
+            # Crear nuevo recurso
+            recurso_nuevo = Recurso.objects.create(
+                seccion=competencia_original.recurso.seccion,
+                tipo=competencia_original.recurso.tipo,
+                titulo=f"{competencia_original.recurso.titulo} (Copia)",
+                descripcion=competencia_original.recurso.descripcion,
+                orden=competencia_original.recurso.seccion.recursos.count() + 1 if competencia_original.recurso.seccion else 1,
+                creado_por=request.user
+            )
+            
+            # Crear nueva competencia
+            nueva_competencia = Competencia.objects.create(
+                recurso=recurso_nuevo,
+                instrucciones=competencia_original.instrucciones,
+                modalidad=competencia_original.modalidad,
+                max_miembros_grupo=competencia_original.max_miembros_grupo,
+                grupos_aleatorios=competencia_original.grupos_aleatorios,
+                grupos_abiertos=competencia_original.grupos_abiertos,
+                tiempo_limite=competencia_original.tiempo_limite,
+                estado='configuracion',
+                mostrar_resultados_inmediatos=competencia_original.mostrar_resultados_inmediatos,
+                permitir_reingreso=competencia_original.permitir_reingreso,
+                orden_preguntas_aleatorio=competencia_original.orden_preguntas_aleatorio
+            )
+            
+            # Duplicar preguntas
+            from django.contrib.contenttypes.models import ContentType
+            competencia_ct = ContentType.objects.get_for_model(Competencia)
+            
+            preguntas_originales = PreguntaCuestionario.objects.filter(
+                content_type=ContentType.objects.get_for_model(Competencia),
+                object_id=competencia_original.id
+            ).order_by('orden')
+            
+            for pregunta_original in preguntas_originales:
+                nueva_pregunta = PreguntaCuestionario.objects.create(
+                    content_type=competencia_ct,
+                    object_id=nueva_competencia.id,
+                    enunciado=pregunta_original.enunciado,
+                    tipo=pregunta_original.tipo,
+                    orden=pregunta_original.orden,
+                    puntaje=pregunta_original.puntaje,
+                    # Copiar campos específicos por tipo
+                    respuesta_modelo=getattr(pregunta_original, 'respuesta_modelo', None),
+                    criterios_evaluacion=getattr(pregunta_original, 'criterios_evaluacion', None),
+                    longitud_minima=getattr(pregunta_original, 'longitud_minima', None),
+                    longitud_maxima=getattr(pregunta_original, 'longitud_maxima', None),
+                    texto_completar=getattr(pregunta_original, 'texto_completar', None),
+                    respuestas_completar=getattr(pregunta_original, 'respuestas_completar', None),
+                    sensible_mayusculas=getattr(pregunta_original, 'sensible_mayusculas', False),
+                    ignorar_espacios=getattr(pregunta_original, 'ignorar_espacios', True),
+                    permitir_alternativas=getattr(pregunta_original, 'permitir_alternativas', False),
+                    respuestas_alternativas=getattr(pregunta_original, 'respuestas_alternativas', None),
+                    columna_izquierda=getattr(pregunta_original, 'columna_izquierda', None),
+                    columna_derecha=getattr(pregunta_original, 'columna_derecha', None),
+                    conexiones_correctas=getattr(pregunta_original, 'conexiones_correctas', None),
+                    mezclar_opciones=getattr(pregunta_original, 'mezclar_opciones', True),
+                    permitir_conexiones_multiples=getattr(pregunta_original, 'permitir_conexiones_multiples', False),
+                    smiles_objetivo=getattr(pregunta_original, 'smiles_objetivo', None),
+                    descripcion_molecula=getattr(pregunta_original, 'descripcion_molecula', None),
+                    tolerancia_similitud=getattr(pregunta_original, 'tolerancia_similitud', None),
+                    permitir_isomeros=getattr(pregunta_original, 'permitir_isomeros', False)
+                )
+                
+                # Duplicar opciones
+                for opcion in pregunta_original.opciones.all():
+                    OpcionPregunta.objects.create(
+                        pregunta=nueva_pregunta,
+                        texto=opcion.texto,
+                        es_correcta=opcion.es_correcta
+                    )
+        
+        return JsonResponse({
+            'success': True,
+            'competencia_id': nueva_competencia.id,
+            'mensaje': 'Competencia duplicada exitosamente',
+            'redirect_url': f'/docente/editar_competencia/{nueva_competencia.id}/'
+        })
+        
+    except Exception as e:
+        print(f"❌ Error al duplicar competencia: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    
+
+# ============== 9. AGREGARA AL FINAL - FUNCIONES AUXILIARES ==============
+
+def obtener_estadisticas_competencia(competencia):
+    """Obtener estadísticas completas de una competencia"""
+    from django.db.models import Avg, Min, Max, Count
+    
+    participaciones = competencia.participaciones.filter(finalizo=True)
+    
+    if not participaciones.exists():
+        return {
+            'total_participantes': 0,
+            'participantes_finalizados': 0,
+            'puntaje_promedio': 0,
+            'puntaje_maximo': 0,
+            'puntaje_minimo': 0,
+            'tiempo_promedio': 0,
+            'tiempo_minimo': 0,
+            'tiempo_maximo': 0
+        }
+    
+    estadisticas = participaciones.aggregate(
+        puntaje_promedio=Avg('puntaje_total'),
+        puntaje_maximo=Max('puntaje_total'),
+        puntaje_minimo=Min('puntaje_total'),
+        tiempo_promedio=Avg('tiempo_total_segundos'),
+        tiempo_minimo=Min('tiempo_total_segundos'),
+        tiempo_maximo=Max('tiempo_total_segundos')
+    )
+    
+    estadisticas.update({
+        'total_participantes': competencia.participaciones.filter(activo=True).count(),
+        'participantes_finalizados': participaciones.count(),
+    })
+    
+    return estadisticas
+
+
+def validar_configuracion_competencia(competencia):
+    """Validar que una competencia esté correctamente configurada"""
+    errores = []
+    
+    if not competencia.recurso.titulo.strip():
+        errores.append("La competencia debe tener un título")
+    
+    if not competencia.instrucciones.strip():
+        errores.append("La competencia debe tener instrucciones")
+    
+    # CORREGIR: Validar preguntas usando ContentType
+    from django.contrib.contenttypes.models import ContentType
+    competencia_ct = ContentType.objects.get_for_model(Competencia)
+    preguntas_count = PreguntaCuestionario.objects.filter(
+        content_type=competencia_ct,
+        object_id=competencia.id
+    ).count()
+    
+    if preguntas_count == 0:
+        errores.append("La competencia debe tener al menos una pregunta")
+    
+    if competencia.tiempo_limite < 1 or competencia.tiempo_limite > 180:
+        errores.append("El tiempo límite debe estar entre 1 y 180 minutos")
+    
+    if competencia.modalidad == 'grupal':
+        if competencia.max_miembros_grupo < 2 or competencia.max_miembros_grupo > 10:
+            errores.append("Los grupos deben tener entre 2 y 10 miembros")
+    
+    # Validar preguntas
+    preguntas = PreguntaCuestionario.objects.filter(
+        content_type=competencia_ct,
+        object_id=competencia.id
+    )
+    
+    for pregunta in preguntas:
+        if not pregunta.enunciado.strip():
+            errores.append(f"La pregunta {pregunta.orden} debe tener enunciado")
+        
+        if pregunta.tipo.nombre in ['opcion_unica', 'opcion_multiple', 'falso_verdadero']:
+            if not pregunta.opciones.exists():
+                errores.append(f"La pregunta {pregunta.orden} debe tener opciones")
+            
+            if not pregunta.opciones.filter(es_correcta=True).exists():
+                errores.append(f"La pregunta {pregunta.orden} debe tener al menos una respuesta correcta")
+    
+    return errores
+
+
+
+# AGREGAR ESTAS FUNCIONES AL FINAL DEL ARCHIVO views.py
+
+# =====================================================
+# FUNCIONES FALTANTES PARA COMPETENCIAS
+# =====================================================
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def panel_competencia(request, competencia_id):
+    """Panel de control principal para la competencia - NUEVA FUNCIÓN"""
+    print(f"🎮 Panel de competencia {competencia_id}")
+    
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    
+    # Verificar permisos
+    if (competencia.recurso.seccion and 
+        competencia.recurso.seccion.curso.profesor != request.user):
+        print("❌ Usuario sin permisos para ver panel")
+        return redirect('dashboard-adm')
+    
+    # Obtener preguntas de la competencia
+    from django.contrib.contenttypes.models import ContentType
+    competencia_ct = ContentType.objects.get_for_model(Competencia)
+    preguntas = PreguntaCuestionario.objects.filter(
+        content_type=competencia_ct,
+        object_id=competencia.id
+    ).order_by('orden')
+    
+    # Obtener participaciones
+    participaciones = competencia.participaciones.filter(activo=True).select_related('estudiante', 'grupo')
+    
+    # Obtener grupos si es modalidad grupal
+    grupos = []
+    if competencia.modalidad == 'grupal':
+        grupos = competencia.grupos.all().prefetch_related('participaciones__estudiante')
+    
+    # Estadísticas
+    total_participantes = participaciones.count()
+    participantes_finalizados = participaciones.filter(finalizo=True).count()
+    participantes_activos = total_participantes - participantes_finalizados
+    
+    # Ranking top 10
+    ranking = list(participaciones.order_by('-puntaje_total', 'fecha_ingreso')[:10])
+    
+    context = {
+        'competencia': competencia,
+        'preguntas': preguntas,
+        'participaciones': participaciones,
+        'grupos': grupos,
+        'total_participantes': total_participantes,
+        'participantes_activos': participantes_activos,
+        'participantes_finalizados': participantes_finalizados,
+        'ranking': ranking,
+        'tiempo_restante': competencia.tiempo_restante_segundos(),
+        'puede_iniciar': competencia.puede_iniciar(),
+        'puede_finalizar': competencia.puede_finalizar(),
+        'esta_activa': competencia.esta_activa(),
+        'esta_esperando': competencia.esta_esperando(),
+        'esta_finalizada': competencia.esta_finalizada(),
+        'imgPerfil': request.user.imgPerfil,
+        'usuario': request.user.username,
+    }
+    
+    return render(request, 'docente/competencias/panel_competencia.html', context)
+
+
+@login_required
+@role_required(['Admin', 'Docente'])
+def agregar_pregunta_competencia_legacy(request, competencia_id):
+    """Función legacy para agregar preguntas - NUEVA FUNCIÓN"""
+    competencia = get_object_or_404(Competencia, id=competencia_id)
+    
+    # Verificar permisos
+    if (competencia.recurso.seccion and 
+        competencia.recurso.seccion.curso.profesor != request.user):
+        return redirect('dashboard-adm')
+    
+    if request.method == 'POST':
+        enunciado = request.POST.get('enunciado')
+        tipo_id = request.POST.get('tipo_pregunta')
+        orden = request.POST.get('orden')
+        puntaje = request.POST.get('puntaje', 1)
+        
+        tipo = get_object_or_404(TipoPregunta, id=tipo_id)
+        
+        # Crear la pregunta usando relación genérica
+        from django.contrib.contenttypes.models import ContentType
+        competencia_ct = ContentType.objects.get_for_model(Competencia)
+        
+        pregunta = PreguntaCuestionario.objects.create(
+            content_type=competencia_ct,
+            object_id=competencia.id,
+            enunciado=enunciado,
+            tipo=tipo,
+            orden=orden,
+            puntaje=puntaje
+        )
+        
+        # Crear opciones según el tipo
+        tipo_nombre = tipo.nombre.lower()
+        
+        if tipo_nombre in ['opcion_unica', 'opcion_multiple']:
+            for i in range(1, 5):
+                texto = request.POST.get(f'opcion_{i}')
+                es_correcta = request.POST.get('correcta') == str(i)
+                if texto:
+                    OpcionPregunta.objects.create(
+                        pregunta=pregunta, 
+                        texto=texto, 
+                        es_correcta=es_correcta
+                    )
+        
+        elif tipo_nombre == 'falso_verdadero':
+            respuesta = request.POST.get('vf_respuesta')
+            if respuesta:
+                OpcionPregunta.objects.create(
+                    pregunta=pregunta, 
+                    texto='Verdadero', 
+                    es_correcta=(respuesta == 'verdadero')
+                )
+                OpcionPregunta.objects.create(
+                    pregunta=pregunta, 
+                    texto='Falso', 
+                    es_correcta=(respuesta == 'falso')
+                )
+        
+        messages.success(request, 'Pregunta agregada exitosamente')
+        return redirect('panel_competencia', competencia.id)
+    
+    tipos = TipoPregunta.objects.all()
+    return render(request, 'docente/competencias/agregar_pregunta.html', {
+        'competencia': competencia,
+        'tipos': tipos
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def iniciar_competencia(request, competencia_id):
+    """Iniciar competencia - NUEVA FUNCIÓN (diferente de iniciar_competencia_live)"""
+    try:
+        print(f"🚀 Iniciando competencia {competencia_id}")
+        
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Verificar que pueda iniciarse
+        if not competencia.puede_iniciar():
+            return JsonResponse({
+                'success': False, 
+                'error': 'La competencia no está lista para iniciar'
+            })
+        
+        # Verificar que hay participantes
+        participantes_count = competencia.participaciones.filter(activo=True).count()
+        if participantes_count == 0:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No hay participantes para iniciar la competencia'
+            })
+        
+        with transaction.atomic():
+            # Cambiar estado a activa
+            competencia.estado = 'activa'
+            competencia.fecha_inicio_real = timezone.now()
+            competencia.save()
+            
+            print(f"✅ Competencia {competencia_id} iniciada")
+        
+        if request.headers.get('Content-Type') == 'application/json':
+            return JsonResponse({
+                'success': True,
+                'mensaje': 'Competencia iniciada exitosamente'
+            })
+        else:
+            messages.success(request, 'Competencia iniciada exitosamente')
+            return redirect('panel_competencia', competencia_id)
+        
+    except Exception as e:
+        print(f"❌ Error al iniciar competencia: {str(e)}")
+        if request.headers.get('Content-Type') == 'application/json':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f'Error al iniciar competencia: {str(e)}')
+            return redirect('panel_competencia', competencia_id)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def enviar_pregunta(request, pregunta_id):
+    """Enviar/mostrar una pregunta específica - NUEVA FUNCIÓN"""
+    try:
+        print(f"📋 Enviando pregunta {pregunta_id}")
+        
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # Verificar que pertenece a una competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Esta pregunta no pertenece a una competencia'
+            })
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Verificar que la competencia esté activa
+        if competencia.estado != 'activa':
+            return JsonResponse({
+                'success': False, 
+                'error': 'La competencia debe estar activa'
+            })
+        
+        # Actualizar pregunta actual
+        competencia.pregunta_actual = pregunta
+        competencia.save()
+        
+        print(f"✅ Pregunta {pregunta_id} enviada como actual")
+        
+        if request.headers.get('Content-Type') == 'application/json':
+            return JsonResponse({
+                'success': True,
+                'mensaje': f'Pregunta {pregunta.orden} enviada',
+                'pregunta_actual': {
+                    'id': pregunta.id,
+                    'orden': pregunta.orden,
+                    'enunciado': pregunta.enunciado
+                }
+            })
+        else:
+            messages.success(request, f'Pregunta {pregunta.orden} enviada')
+            return redirect('panel_competencia', competencia.id)
+        
+    except Exception as e:
+        print(f"❌ Error al enviar pregunta: {str(e)}")
+        if request.headers.get('Content-Type') == 'application/json':
+            return JsonResponse({'success': False, 'error': str(e)})
+        else:
+            messages.error(request, f'Error al enviar pregunta: {str(e)}')
+            return redirect('panel_competencia', competencia.content_object.id if hasattr(pregunta, 'content_object') else 1)
+
+
+# =====================================================
+# FUNCIONES AUXILIARES ADICIONALES
+# =====================================================
+
+@require_http_methods(["GET"])
+@login_required
+def obtener_info_participacion(request, participacion_id):
+    """Obtener información de participación (AJAX)"""
+    try:
+        participacion = get_object_or_404(
+            ParticipacionCompetencia,
+            id=participacion_id,
+            estudiante=request.user
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'participacion': {
+                'id': participacion.id,
+                'finalizo': participacion.finalizo,
+                'puntaje_total': float(participacion.puntaje_total),
+                'tiempo_transcurrido': (timezone.now() - participacion.fecha_ingreso).total_seconds(),
+                'grupo': {
+                    'id': participacion.grupo.id,
+                    'nombre': participacion.grupo.nombre
+                } if participacion.grupo else None
+            },
+            'competencia': {
+                'id': participacion.competencia.id,
+                'estado': participacion.competencia.estado,
+                'tiempo_restante': participacion.competencia.tiempo_restante_segundos()
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+def ping_participacion(request, participacion_id):
+    """Ping para mantener participación activa"""
+    try:
+        participacion = get_object_or_404(
+            ParticipacionCompetencia,
+            id=participacion_id,
+            estudiante=request.user
+        )
+        
+        # Actualizar última actividad
+        participacion.fecha_ultima_actividad = timezone.now()
+        participacion.save()
+        
+        return JsonResponse({
+            'success': True,
+            'timestamp': timezone.now().isoformat()
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+# =====================================================
+# FUNCIONES ADICIONALES QUE FALTAN EN URLS
+# =====================================================
+
+def pausar_competencia(request, competencia_id):
+    """Pausar competencia (placeholder)"""
+    messages.info(request, 'Función pausar en desarrollo')
+    return redirect('panel_competencia', competencia_id)
+
+def reanudar_competencia(request, competencia_id):
+    """Reanudar competencia (placeholder)"""
+    messages.info(request, 'Función reanudar en desarrollo')
+    return redirect('panel_competencia', competencia_id)
+
+def pregunta_anterior_competencia(request, competencia_id):
+    """Ir a pregunta anterior (placeholder)"""
+    messages.info(request, 'Función pregunta anterior en desarrollo')
+    return redirect('panel_competencia', competencia_id)
+
+def ir_a_pregunta_competencia(request, competencia_id, pregunta_orden):
+    """Ir a pregunta específica (placeholder)"""
+    messages.info(request, f'Función ir a pregunta {pregunta_orden} en desarrollo')
+    return redirect('panel_competencia', competencia_id)
+
+def editar_grupo(request, grupo_id):
+    """Editar grupo (placeholder)"""
+    messages.info(request, 'Función editar grupo en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def asignar_estudiante_grupo(request):
+    """Asignar estudiante a grupo (placeholder)"""
+    messages.info(request, 'Función asignar estudiante en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def remover_estudiante_grupo(request, participacion_id):
+    """Remover estudiante de grupo (placeholder)"""
+    messages.info(request, 'Función remover estudiante en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def resultados_detallados_competencia(request, competencia_id):
+    """Resultados detallados (placeholder)"""
+    messages.info(request, 'Función resultados detallados en desarrollo')
+    return redirect('resultados_competencia', competencia_id)
+
+def exportar_resultados_excel(request, competencia_id):
+    """Exportar a Excel (placeholder)"""
+    messages.info(request, 'Función exportar Excel en desarrollo')
+    return redirect('resultados_competencia', competencia_id)
+
+def estadisticas_competencia(request, competencia_id):
+    """Estadísticas de competencia (placeholder)"""
+    messages.info(request, 'Función estadísticas en desarrollo')
+    return redirect('resultados_competencia', competencia_id)
+
+def archivar_competencia(request, competencia_id):
+    """Archivar competencia (placeholder)"""
+    messages.info(request, 'Función archivar en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def restaurar_competencia(request, competencia_id):
+    """Restaurar competencia (placeholder)"""
+    messages.info(request, 'Función restaurar en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def crear_desde_plantilla(request, plantilla_id):
+    """Crear desde plantilla (placeholder)"""
+    messages.info(request, 'Función crear desde plantilla en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def guardar_como_plantilla(request, competencia_id):
+    """Guardar como plantilla (placeholder)"""
+    messages.info(request, 'Función guardar plantilla en desarrollo')
+    return redirect('biblioteca_competencias')
+
+# ESTUDIANTE - Funciones faltantes
+
+def buscar_competencia_codigo(request):
+    """Buscar competencia por código (placeholder)"""
+    messages.info(request, 'Función buscar por código en desarrollo')
+    return redirect('student_dashboard')
+
+def salir_competencia(request, participacion_id):
+    """Salir de competencia (placeholder)"""
+    messages.info(request, 'Función salir competencia en desarrollo')
+    return redirect('student_dashboard')
+
+def salir_grupo(request, participacion_id):
+    """Salir de grupo (placeholder)"""
+    messages.info(request, 'Función salir grupo en desarrollo')
+    return redirect('student_dashboard')
+
+def info_grupo(request, grupo_id):
+    """Info de grupo (placeholder)"""
+    messages.info(request, 'Función info grupo en desarrollo')
+    return redirect('student_dashboard')
+
+def abandonar_competencia(request, participacion_id):
+    """Abandonar competencia (placeholder)"""
+    messages.info(request, 'Función abandonar en desarrollo')
+    return redirect('student_dashboard')
+
+def resultados_grupo(request, grupo_id):
+    """Resultados de grupo (placeholder)"""
+    messages.info(request, 'Función resultados grupo en desarrollo')
+    return redirect('student_dashboard')
+
+def historial_competencias_estudiante(request):
+    """Historial de competencias (placeholder)"""
+    messages.info(request, 'Función historial en desarrollo')
+    return redirect('student_dashboard')
+
+def generar_certificado(request, participacion_id):
+    """Generar certificado (placeholder)"""
+    messages.info(request, 'Función certificado en desarrollo')
+    return redirect('student_dashboard')
+
+# Funciones AJAX adicionales
+
+def obtener_pregunta_actual(request, competencia_id):
+    """Obtener pregunta actual (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def info_siguiente_pregunta(request, competencia_id):
+    """Info siguiente pregunta (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def tiempo_restante_competencia(request, competencia_id):
+    """Tiempo restante (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def obtener_ranking_grupos(request, competencia_id):
+    """Ranking de grupos (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def obtener_progreso_competencia(request, competencia_id):
+    """Progreso de competencia (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def estadisticas_live(request, competencia_id):
+    """Estadísticas en vivo (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def heartbeat_competencia(request, competencia_id):
+    """Heartbeat (placeholder)"""
+    return JsonResponse({'success': True, 'timestamp': timezone.now().isoformat()})
+
+# Chat y comunicación
+
+def chat_competencia(request, competencia_id):
+    """Chat de competencia (placeholder)"""
+    messages.info(request, 'Función chat en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def enviar_mensaje_chat(request):
+    """Enviar mensaje (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def obtener_mensajes_chat(request, competencia_id):
+    """Obtener mensajes (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+# APIs
+
+def api_listar_competencias(request):
+    """API listar (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def api_info_competencia(request, competencia_id):
+    """API info (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def api_unirse_competencia(request):
+    """API unirse (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def api_responder_competencia(request):
+    """API responder (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def buscar_competencias(request):
+    """Buscar competencias (placeholder)"""
+    messages.info(request, 'Función buscar en desarrollo')
+    return redirect('biblioteca_competencias')
+
+def filtrar_competencias(request):
+    """Filtrar competencias (placeholder)"""
+    messages.info(request, 'Función filtrar en desarrollo')
+    return redirect('biblioteca_competencias')
+
+# Notificaciones y webhooks
+
+def notificar_inicio_competencia(request, competencia_id):
+    """Notificar inicio (placeholder)"""
+    messages.info(request, 'Función notificar en desarrollo')
+    return redirect('panel_competencia', competencia_id)
+
+def enviar_recordatorio(request, competencia_id):
+    """Enviar recordatorio (placeholder)"""
+    messages.info(request, 'Función recordatorio en desarrollo')
+    return redirect('panel_competencia', competencia_id)
+
+def webhook_inicio_competencia(request):
+    """Webhook inicio (placeholder)"""
+    return JsonResponse({'success': True})
+
+def webhook_finalizacion_competencia(request):
+    """Webhook finalización (placeholder)"""
+    return JsonResponse({'success': True})
+
+# Funciones adicionales para competencias que pueden faltar
+
+def cambiar_tipo_pregunta_competencia(request):
+    """Cambiar tipo pregunta competencia (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def agregar_opcion_competencia(request):
+    """Agregar opción competencia (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def actualizar_opcion_competencia(request):
+    """Actualizar opción competencia (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+
+def eliminar_opcion_competencia(request, opcion_id):
+    """Eliminar opción competencia (placeholder)"""
+    return JsonResponse({'success': False, 'error': 'En desarrollo'})
