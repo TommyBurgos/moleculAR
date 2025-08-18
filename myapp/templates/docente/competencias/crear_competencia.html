@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Eduport - Crear Competencia</title>
+
+        <!-- Hotjar - Seguimiento usuarios -->
+    <script>
+        (function(h,o,t,j,a,r){
+            h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+            h._hjSettings={hjid:6485293,hjsv:6};
+            a=o.getElementsByTagName('head')[0];
+            r=o.createElement('script');r.async=1;
+            r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+            a.appendChild(r);
+        })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+    </script>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Webestica.com">
+    <meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/choices/css/choices.min.css' %}">
+
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+    
+    <!-- Librerías adicionales para simuladores moleculares -->
+    <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsme/2020-03-15/jsme.nocache.js"></script>
+
+    <!-- Custom CSS - Estilo profesional y limpio para competencias -->
+    <style>
+        /* ===== CONFIGURACIÓN BASE ===== */
+        body {
+            font-size: 17px;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+        
+        .fs-4 { font-size: 2rem !important; }
+        .fs-5 { font-size: 1.5rem !important; }
+        .fs-6 { font-size: 1.3rem !important; }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .form-label {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #34495e;
+        }
+        
+        .form-control {
+            font-size: 1.05rem;
+            padding: 14px 18px;
+            border: 2px solid #fde8e8;
+            border-radius: 8px;
+            background-color: #ffffff;
+        }
+        
+        .form-control:focus {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 0.2rem rgba(231,76,60,0.15);
+            background-color: #ffffff;
+        }
+        
+        .btn {
+            font-size: 1.05rem;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        /* ===== CONTENEDOR PRINCIPAL DE LA COMPETENCIA ===== */
+        .plantilla-pregunta {
+            border: 2px solid #fde8e8;
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(231,76,60,0.06);
+            transition: all 0.3s ease;
+        }
+        
+        .plantilla-pregunta:hover {
+            box-shadow: 0 4px 15px rgba(231,76,60,0.1);
+            border-color: #e74c3c;
+        }
+
+        /* ===== CONTENEDORES DE OPCIONES MEJORADOS ===== */
+        .opcion-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+            padding: 18px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 2px solid #f8f9fa;
+            background-color: #ffffff;
+        }
+
+        .opcion-container.opcion-correcta {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+            border: 2px solid #e74c3c;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .opcion-container:not(.opcion-correcta) {
+            background-color: #fafbfc;
+            border: 2px solid #e9ecef;
+        }
+        
+        .opcion-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #e74c3c;
+        }
+        
+        .opcion-input {
+            flex: 1;
+            font-size: 1.05rem;
+        }
+
+        /* ===== BOTONES DE ACCIÓN MEJORADOS ===== */
+        .btn-agregar-opcion {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px dashed #e74c3c;
+            background: transparent;
+            color: #e74c3c;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-agregar-opcion:hover {
+            background-color: #e74c3c;
+            color: white;
+            transform: scale(1.1);
+            border-style: solid;
+        }
+
+        .btn-eliminar-opcion {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-eliminar-opcion:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: scale(1.1);
+        }
+        
+        /* ===== ACCIONES DE PREGUNTA ===== */
+        .pregunta-actions {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid #f8f9fa;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        /* ===== ACORDEÓN DE PREGUNTAS ===== */
+        .accordion-pregunta {
+            margin-bottom: 20px;
+            border: 2px solid #fde8e8;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .accordion-pregunta .accordion-header button {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            color: #2c3e50;
+            font-size: 1.1rem;
+            padding: 20px 25px;
+            border: none;
+            font-weight: 600;
+        }
+        
+        .accordion-pregunta .accordion-header button:not(.collapsed) {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+            color: #c0392b;
+        }
+        
+        .accordion-pregunta .accordion-header button:hover {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+        }
+        
+        /* ===== BOTÓN AGREGAR PREGUNTA ESTILO PUNTEADO ===== */
+        .btn-agregar-pregunta {
+            margin-top: 25px;
+            width: 100%;
+            padding: 25px;
+            border: 3px dashed #e74c3c;
+            background: transparent;
+            color: #e74c3c;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.15rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-agregar-pregunta:hover {
+            background: linear-gradient(135deg, #ffe8e8 0%, #ffeaea 100%);
+            color: #c0392b;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(231,76,60,0.15);
+            border-color: #c0392b;
+        }
+        
+        /* ===== BADGE DE TIPO DE PREGUNTA ===== */
+        .tipo-pregunta-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #ffe8e8 0%, #ffeaea 100%);
+            color: #c0392b;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-left: 15px;
+        }
+
+        /* ===== BREADCRUMB ===== */
+        .breadcrumb-curso {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 18px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .breadcrumb-curso .breadcrumb-item {
+            font-size: 1.05rem;
+        }
+
+        .breadcrumb-curso .breadcrumb-item a {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .breadcrumb-curso .breadcrumb-item a:hover {
+            color: #c0392b;
+            text-decoration: underline;
+        }
+
+        /* ===== BOTÓN CONFIGURACIÓN ELEGANTE ===== */
+        .btn-configuracion {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            border: none;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(231,76,60,0.25);
+            font-weight: 600;
+        }
+
+        .btn-configuracion:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(231,76,60,0.35);
+            color: white;
+        }
+
+        .btn-configuracion:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== DESCRIPCIÓN DE LA COMPETENCIA SUTIL ===== */
+        .descripcion-cuestionario {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .descripcion-cuestionario .form-label {
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+
+        .descripcion-cuestionario .form-control {
+            font-size: 1.05rem;
+            border: 2px solid #e9ecef;
+            background-color: #ffffff;
+        }
+
+        .descripcion-cuestionario .form-control:focus {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 0.2rem rgba(231,76,60,0.15);
+        }
+
+        /* ===== BOTÓN PRINCIPAL DE GUARDADO ===== */
+        .btn-guardar-competencia {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            border: none;
+            color: white;
+            padding: 18px 40px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            box-shadow: 0 6px 15px rgba(231,76,60,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-guardar-competencia:hover:not(:disabled) {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(231,76,60,0.4);
+            color: white;
+        }
+
+        .btn-guardar-competencia:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ===== ESTADOS DE LA COMPETENCIA ===== */
+        .estado-competencia {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .estado-competencia.nuevo {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border: 2px solid #f39c12;
+        }
+
+        .estado-competencia.guardado {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+            color: #721c24;
+            border: 2px solid #e74c3c;
+        }
+
+        /* ===== SECCIÓN SIN COMPETENCIA ===== */
+        .sin-cuestionario {
+            text-align: center;
+            padding: 60px 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 15px;
+            border: 3px dashed #bdc3c7;
+        }
+
+        .sin-cuestionario .icon {
+            font-size: 4.5rem;
+            color: #e74c3c;
+            margin-bottom: 25px;
+        }
+
+        .sin-cuestionario h4 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .sin-cuestionario p {
+            font-size: 1.15rem;
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+        /* ===== MODALIDAD DE COMPETENCIA ===== */
+        .modalidad-selection {
+            background: linear-gradient(135deg, #fef9e7 0%, #fffbf0 100%);
+            border: 2px solid #f39c12;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .modalidad-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .modalidad-card:hover {
+            border-color: #e74c3c;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(231,76,60,0.15);
+        }
+
+        .modalidad-card.selected {
+            border-color: #e74c3c;
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+            box-shadow: 0 8px 20px rgba(231,76,60,0.2);
+        }
+
+        .modalidad-icono {
+            font-size: 3.5rem;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+
+        .modalidad-titulo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .modalidad-descripcion {
+            font-size: 0.95rem;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        /* ===== CONFIGURACIÓN GRUPAL ===== */
+        .configuracion-grupal {
+            background: linear-gradient(135deg, #e8f6f3 0%, #d5f4e6 100%);
+            border: 2px solid #27ae60;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .configuracion-grupal.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== PIN DE ACCESO ===== */
+        .pin-section {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+            border: 2px solid #e74c3c;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .pin-display {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            box-shadow: 0 4px 12px rgba(231,76,60,0.3);
+        }
+
+        .pin-codigo {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* ===== PANEL DE CONTROL ===== */
+        .panel-control {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .estado-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .estado-badge.configuracion {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+
+        .estado-badge.esperando {
+            background: linear-gradient(135deg, #cce5ff 0%, #99d6ff 100%);
+            color: #0066cc;
+        }
+
+        .estado-badge.activa {
+            background: linear-gradient(135deg, #d5f4e6 0%, #a8e6cf 100%);
+            color: #155724;
+        }
+
+        .estado-badge.finalizada {
+            background: linear-gradient(135deg, #e9ecef 0%, #d6d8db 100%);
+            color: #495057;
+        }
+
+        /* ===== TIPOS DE PREGUNTA ===== */
+        .tipos-pregunta-container {
+            padding: 20px 0;
+        }
+
+        .tipo-pregunta-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .tipo-pregunta-card:hover {
+            border-color: #e74c3c;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(231,76,60,0.15);
+        }
+
+        .tipo-pregunta-card.disabled {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .tipo-pregunta-card.disabled:hover {
+            transform: none;
+            border-color: #dee2e6;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .tipo-icono img {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+            margin-bottom: 15px;
+        }
+
+        .tipo-titulo {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .tipo-estado {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .tipo-estado.disponible {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fdeaea 100%);
+            color: #721c24;
+        }
+
+        .tipo-estado.proximamente {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+
+        /* ===== MODALES ELEGANTES Y CENTRADOS ===== */
+        .modal-custom {
+            z-index: 10000;
+        }
+
+        .modal-custom .modal-dialog {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 60px);
+            margin: 30px auto;
+        }
+
+        .modal-custom .modal-content {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .modal-custom .modal-header {
+            border-bottom: 2px solid #e9ecef;
+            padding: 2rem 2rem 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-custom .modal-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .modal-custom .modal-body {
+            padding: 2rem;
+            font-size: 1.05rem;
+        }
+
+        .modal-custom .modal-footer {
+            border-top: 2px solid #e9ecef;
+            padding: 1.5rem 2rem 2rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+        /* ===== TÍTULO DE LA COMPETENCIA SIN ICONO ===== */
+        .titulo-competencia-sin-icono {
+            border: none;
+            background: transparent;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            width: 100%;
+            padding: 8px 0;
+        }
+
+        .titulo-competencia-sin-icono:focus {
+            outline: none;
+            border-bottom: 3px solid #e74c3c;
+        }
+
+        .titulo-competencia-sin-icono::placeholder {
+            color: #bdc3c7;
+            font-weight: 500;
+        }
+
+        /* ===== RADIO BUTTONS Y CHECKBOXES MÁS GRANDES ===== */
+        .opcion-container input[type="radio"],
+        .opcion-container input[type="checkbox"] {
+            transform: scale(1.4);
+            margin-right: 8px;
+            accent-color: #e74c3c;
+        }
+
+        /* ===== RESPONSIVE MEJORADO ===== */
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+            
+            .btn-configuracion {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+            
+            .pregunta-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .pregunta-actions > * {
+                margin-bottom: 10px;
+                width: 100%;
+            }
+
+            .opcion-container {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .tipo-pregunta-card {
+                height: 140px;
+                padding: 20px 15px;
+            }
+            
+            .tipo-icono img {
+                width: 45px;
+                height: 45px;
+                margin-bottom: 10px;
+            }
+            
+            .tipo-titulo {
+                font-size: 1rem;
+            }
+
+            .modalidad-card {
+                height: 180px;
+                padding: 25px 15px;
+            }
+
+            .modalidad-icono {
+                font-size: 3rem;
+            }
+
+            .pin-codigo {
+                font-size: 2.5rem;
+                letter-spacing: 8px;
+            }
+
+            .modal-custom .modal-dialog {
+                margin: 15px;
+                min-height: calc(100vh - 30px);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+    <!-- Sidebar START -->
+    {% include 'docente/baseSideBar.html' %}
+    <!-- Sidebar END -->	
+        
+    <!-- =======================
+    Inner part START -->
+    <div class="page-content">
+
+        <!-- Top bar START -->
+        {% include 'docente/navBar.html' %}
+        <!-- Top bar END -->
+         <!-- Page main content START -->
+        <div class="page-content-wrapper border">
+            <section class="pt-0">
+                <div class="container">
+                    <div class="row">
+                        <!-- Main content START -->
+                        <div class="col-xl-12">
+
+                            <!-- Breadcrumb del curso -->
+                            {% if competencia and competencia.recurso.seccion %}
+                            <div class="breadcrumb-curso">
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb mb-0">
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'detalle_curso' competencia.recurso.seccion.curso.id %}">
+                                                <i class="fas fa-book me-2"></i>{{ competencia.recurso.seccion.curso.titulo }}
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'detalle_curso' competencia.recurso.seccion.curso.id %}">
+                                                <i class="fas fa-folder me-2"></i>{{ competencia.recurso.seccion.titulo }}
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item active" aria-current="page">
+                                            <i class="fas fa-trophy me-2"></i>{{ competencia.recurso.titulo }}
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+                            {% elif seccion %}
+                            <div class="breadcrumb-curso">
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb mb-0">
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'detalle_curso' seccion.curso.id %}">
+                                                <i class="fas fa-book me-2"></i>{{ seccion.curso.titulo }}
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item">
+                                            <a href="{% url 'detalle_curso' seccion.curso.id %}">
+                                                <i class="fas fa-folder me-2"></i>{{ seccion.titulo }}
+                                            </a>
+                                        </li>
+                                        <li class="breadcrumb-item active" aria-current="page">
+                                            <i class="fas fa-plus-circle me-2"></i>Nueva Competencia
+                                        </li>
+                                    </ol>
+                                </nav>
+                            </div>
+                            {% endif %}
+
+                            <!-- Input hidden para seccion_id -->
+                            {% if seccion_id %}
+                            <input type="hidden" id="seccion_id" value="{{ seccion_id }}">
+                            {% endif %}
+
+                            <!-- Card START -->
+                            <div class="card border bg-transparent rounded-3">
+                                <!-- Card header START -->
+                                <div class="card-header bg-transparent border-bottom px-4 py-4">
+                                    <div class="row g-4 align-items-center">
+                                        <div class="col-md-8">
+                                            <!-- Title SIN ICONO -->
+                                            <h3 class="card-title mb-3">
+                                                <input type="text" class="titulo-competencia-sin-icono" 
+                                                       value="{% if competencia %}{{ competencia.recurso.titulo }}{% else %}{% endif %}" 
+                                                       placeholder="Ingresa el título de tu competencia"
+                                                       id="titulo-competencia"
+                                                       {% if not competencia %}required{% endif %}>
+                                            </h3>
+                                            
+                                            <!-- Estado y información -->
+                                            <div class="d-flex flex-wrap gap-3 align-items-center">
+                                                <!-- Estado de la competencia -->
+                                                {% if competencia %}
+                                                <div class="estado-competencia guardado">
+                                                    <i class="fas fa-trophy"></i>
+                                                    <span>Competencia guardada</span>
+                                                </div>
+                                                {% else %}
+                                                <div class="estado-competencia nuevo">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                    <span>Nueva competencia</span>
+                                                </div>
+                                                {% endif %}
+                                                
+                                                <!-- Información básica SOLO SI HAY COMPETENCIA -->
+                                                {% if competencia %}
+                                                <div id="info-competencia" class="d-flex flex-wrap gap-3 text-muted">
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-clock me-2 text-danger"></i>
+                                                        <strong>{{ competencia.tiempo_limite|default:"30" }} min</strong>
+                                                    </span>
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-users me-2 text-warning"></i>
+                                                        <strong>{{ competencia.get_modalidad_display }}</strong>
+                                                    </span>
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-list me-2 text-info"></i>
+                                                        <strong>{{ preguntas.count|default:"0" }} pregunta{{ preguntas.count|pluralize:"s" }}</strong>
+                                                    </span>
+                                                    <span class="d-flex align-items-center">
+                                                        <i class="fas fa-play-circle me-2 text-success"></i>
+                                                        <strong>{{ competencia.get_estado_display }}</strong>
+                                                    </span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <!-- Botón de configuración SOLO SI HAY COMPETENCIA -->
+                                            {% if competencia %}
+                                            <button class="btn btn-configuracion" 
+                                                    data-bs-toggle="modal" data-bs-target="#modalConfiguracion">
+                                                <i class="fas fa-cog"></i>
+                                                <span>Configuración</span>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Card header END -->
+                                 <!-- Card body START -->
+                <div class="card-body p-4">
+
+                    <!-- PIN DE ACCESO - SOLO SI HAY COMPETENCIA -->
+                    {% if competencia %}
+                    <div class="pin-section">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5 class="text-danger mb-3">
+                                    <i class="fas fa-key me-2"></i>
+                                    PIN de Acceso para Estudiantes
+                                </h5>
+                                <div class="pin-display">
+                                    <div class="pin-codigo">{{ competencia.pin_acceso }}</div>
+                                    <small class="d-block mt-2">Comparte este PIN con tus estudiantes</small>
+                                </div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="copiarPin('{{ competencia.pin_acceso }}')">
+                                        <i class="fas fa-copy me-2"></i>Copiar PIN
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm ms-2" onclick="compartirPin('{{ competencia.pin_acceso }}')">
+                                        <i class="fas fa-share me-2"></i>Compartir
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-info border-0">
+                                    <h6 class="alert-heading">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Instrucciones para estudiantes:
+                                    </h6>
+                                    <ol class="mb-0 small">
+                                        <li>Ingresa al portal estudiantil</li>
+                                        <li>Busca "Unirse a Competencia"</li>
+                                        <li>Introduce el PIN: <strong>{{ competencia.pin_acceso }}</strong></li>
+                                        <li>Espera a que inicies la competencia</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel de control - SOLO SI HAY COMPETENCIA -->
+                    <div class="panel-control">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center p-3">
+                                        <h6 class="text-danger mb-2">
+                                            <i class="fas fa-users me-2"></i>
+                                            Participantes
+                                        </h6>
+                                        <h4 class="mb-0">{{ participantes_count|default:0 }}</h4>
+                                        <small class="text-muted">estudiantes</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center p-3">
+                                        <h6 class="text-info mb-2">
+                                            <i class="fas fa-trophy me-2"></i>
+                                            Estado
+                                        </h6>
+                                        <span class="estado-badge {{ competencia.estado }}">
+                                            {{ competencia.get_estado_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if competencia.modalidad == 'grupal' %}
+                            <div class="col-md-3">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center p-3">
+                                        <h6 class="text-warning mb-2">
+                                            <i class="fas fa-layer-group me-2"></i>
+                                            Grupos
+                                        </h6>
+                                        <h4 class="mb-0">{{ grupos.count|default:0 }}</h4>
+                                        <small class="text-muted">creados</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center p-3">
+                                        <h6 class="text-success mb-2">
+                                            <i class="fas fa-hashtag me-2"></i>
+                                            Max/Grupo
+                                        </h6>
+                                        <h4 class="mb-0">{{ competencia.max_miembros_grupo }}</h4>
+                                        <small class="text-muted">miembros</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="col-md-6">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body text-center p-3">
+                                        <h6 class="text-success mb-2">
+                                            <i class="fas fa-clock me-2"></i>
+                                            Modalidad
+                                        </h6>
+                                        <h5 class="mb-0">{{ competencia.get_modalidad_display }}</h5>
+                                        <small class="text-muted">tiempo real</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <!-- Botones de control -->
+                        <div class="d-flex gap-3 mt-4 justify-content-center flex-wrap">
+                            {% if competencia.estado == 'configuracion' %}
+                            {% if preguntas.count > 0 %}
+                            <button type="button" class="btn btn-warning" onclick="abrirSalaEspera({{ competencia.id }})">
+                                <i class="fas fa-door-open me-2"></i>
+                                Abrir Sala de Espera
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-secondary" disabled>
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Agrega preguntas primero
+                            </button>
+                            {% endif %}
+                            {% elif competencia.estado == 'esperando' %}
+                            <button type="button" class="btn btn-success" onclick="iniciarCompetencia({{ competencia.id }})">
+                                <i class="fas fa-play me-2"></i>
+                                Iniciar Competencia
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="abrirPanelControl({{ competencia.id }})">
+                                <i class="fas fa-tv me-2"></i>
+                                Ver Panel
+                            </button>
+                            {% elif competencia.estado == 'activa' %}
+                            <button type="button" class="btn btn-primary" onclick="abrirPanelControl({{ competencia.id }})">
+                                <i class="fas fa-tv me-2"></i>
+                                Panel de Control
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="finalizarCompetencia({{ competencia.id }})">
+                                <i class="fas fa-stop me-2"></i>
+                                Finalizar
+                            </button>
+                            {% elif competencia.estado == 'finalizada' %}
+                            <button type="button" class="btn btn-info" onclick="verResultados({{ competencia.id }})">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Ver Resultados
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Descripción de la competencia - SIEMPRE VISIBLE -->
+                    <div class="descripcion-cuestionario">
+                        <label class="form-label fw-bold mb-3">
+                            <i class="fas fa-align-left me-2 text-danger"></i>
+                            Descripción e instrucciones de la competencia
+                        </label>
+                        <textarea class="form-control" rows="4" 
+                                  placeholder="Escriba las instrucciones y descripción de la competencia que verán los estudiantes..."
+                                  id="descripcion-competencia"
+                                  {% if not competencia %}required{% endif %}>{% if competencia %}{{ competencia.instrucciones|default:"" }}{% endif %}</textarea>
+                        <small class="text-muted mt-3 d-block">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            Esta descripción será visible para los estudiantes antes de unirse a la competencia.
+                        </small>
+                    </div>
+                    <!-- SELECCIÓN DE MODALIDAD - SOLO PARA NUEVAS COMPETENCIAS -->
+                    {% if not competencia %}
+                    <div class="modalidad-selection">
+                        <h5 class="mb-4 text-warning">
+                            <i class="fas fa-users me-2"></i>
+                            Modalidad de la Competencia
+                        </h5>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="modalidad-card" data-modalidad="individual" onclick="seleccionarModalidad('individual')">
+                                    <div class="modalidad-icono">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="modalidad-titulo">Individual</div>
+                                    <div class="modalidad-descripcion">
+                                        Cada estudiante compite por su cuenta. 
+                                        Ranking individual basado en puntos y tiempo.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="modalidad-card" data-modalidad="grupal" onclick="seleccionarModalidad('grupal')">
+                                    <div class="modalidad-icono">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="modalidad-titulo">Grupal</div>
+                                    <div class="modalidad-descripcion">
+                                        Los estudiantes forman equipos. 
+                                        Ranking por grupos basado en promedio del equipo.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuración grupal (oculta por defecto) -->
+                        <div class="configuracion-grupal" id="configuracion-grupal">
+                            <h6 class="mb-3 text-success">
+                                <i class="fas fa-cogs me-2"></i>
+                                Configuración de Grupos
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-hashtag me-2"></i>
+                                        Máximo de miembros por grupo
+                                    </label>
+                                    <select class="form-select" id="max-miembros-grupo">
+                                        <option value="2">2 miembros</option>
+                                        <option value="3">3 miembros</option>
+                                        <option value="4" selected>4 miembros</option>
+                                        <option value="5">5 miembros</option>
+                                        <option value="6">6 miembros</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-random me-2"></i>
+                                        Formación de grupos
+                                    </label>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="grupos-aleatorios">
+                                        <label class="form-check-label" for="grupos-aleatorios">
+                                            Formar grupos automáticamente
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Los estudiantes se asignarán aleatoriamente</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                        <i class="fas fa-unlock me-2"></i>
+                                        Acceso a grupos
+                                    </label>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="grupos-abiertos" checked>
+                                        <label class="form-check-label" for="grupos-abiertos">
+                                            Permitir grupos abiertos
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">Los estudiantes pueden elegir sus grupos</small>
+                                </div>
+                            </div>
+                            <div class="alert alert-warning border-0 mt-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Nota:</strong> Si activas "grupos automáticos", se ignorará la configuración de "grupos abiertos".
+                                Los estudiantes se asignarán aleatoriamente según lleguen.
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- SECCIÓN PRINCIPAL: COMPETENCIA NO GUARDADA -->
+                    {% if not competencia %}
+                    <div class="sin-cuestionario" id="seccion-sin-competencia">
+                        <div class="icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h4 class="mb-4">Crea tu competencia en tiempo real</h4>
+                        <p class="text-muted mb-4">
+                            Selecciona la modalidad, ingresa un título y descripción para tu competencia. 
+                            Una vez guardada, se generará un PIN único para que los estudiantes puedan unirse.
+                        </p>
+                        
+                        <!-- Botón guardar competencia inicial -->
+                        <button type="button" class="btn btn-guardar-competencia" onclick="crearCompetenciaInicial()">
+                            <i class="fas fa-save me-2"></i>
+                            Crear Competencia
+                        </button>
+                        
+                        <div class="mt-4">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Después de guardar podrás agregar preguntas y configurar opciones avanzadas
+                            </small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- SECCIÓN PRINCIPAL: COMPETENCIA GUARDADA -->
+                    {% if competencia %}
+                    <div id="seccion-competencia-existente">
+
+                        <!-- Acordeón de preguntas -->
+                        <div class="accordion" id="acordeonPreguntas">
+                            {% if preguntas %}
+                                {% for pregunta in preguntas %}
+                                    <div class="accordion-item accordion-pregunta" data-pregunta-id="{{ pregunta.id }}">
+                                        <h6 class="accordion-header" id="heading{{ pregunta.id }}">
+                                            <button class="accordion-button collapsed" type="button" 
+                                                    data-bs-toggle="collapse" data-bs-target="#collapse{{ pregunta.id }}" 
+                                                    aria-expanded="false" aria-controls="collapse{{ pregunta.id }}">
+                                                <span class="text-secondary fw-bold me-3">{{ pregunta.orden|stringformat:"02d" }}</span>  
+                                                <span class="fw-bold">{{ pregunta.enunciado|truncatechars:60 }}</span>
+                                                <span class="tipo-pregunta-badge">{{ pregunta.tipo.descripcion|title }}</span>
+                                                <small class="text-muted ms-auto me-3">{{ pregunta.puntaje }} pts</small>
+                                            </button>
+                                        </h6>
+                                        <div id="collapse{{ pregunta.id }}" class="accordion-collapse collapse" 
+                                             aria-labelledby="heading{{ pregunta.id }}" data-bs-parent="#acordeonPreguntas">
+                                            <div class="accordion-body mt-3">
+                                                {% include 'docente/plantilla_pregunta_adaptada.html' with pregunta=pregunta %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <!-- Mensaje cuando no hay preguntas -->
+                                <div class="text-center py-5" id="mensajeSinPreguntas">
+                                    <div class="alert alert-info border-2">
+                                        <i class="fas fa-question-circle fa-3x mb-4 d-block text-danger"></i>
+                                        <h5 class="mb-3">No hay preguntas aún</h5>
+                                        <p class="mb-0 fs-6">Agrega tu primera pregunta para comenzar a construir tu competencia</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botón agregar pregunta ESTILO PUNTEADO -->
+                        <button type="button" class="btn btn-agregar-pregunta" data-bs-toggle="modal" data-bs-target="#modalTiposPregunta">
+                            <i class="fas fa-plus me-3"></i>
+                            {% if not preguntas %}Agregar primera pregunta{% else %}Agregar nueva pregunta{% endif %}
+                        </button>
+
+                    </div>
+                    {% endif %}
+                    </div>
+                <!-- Botón finalizar competencia -->
+                {% if competencia %}
+                <div class="guardar-cuestionario-final mt-4 p-4 border-top">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-2">
+                                <i class="fas fa-save me-2 text-danger"></i>
+                                Finalizar Competencia
+                            </h6>
+                            <p class="text-muted mb-0">
+                                Guarda todos los cambios y finaliza la edición de la competencia
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button type="button" class="btn btn-success btn-lg" 
+                                    onclick="finalizarCompetencia({{ competencia.id }})">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Finalizar y Guardar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Card body END -->
+            </div>
+            <!-- Card END -->
+
+        </div>
+        <!-- Main content END -->
+    </div><!-- Row END -->
+</div>
+</section>
+</div>
+</div>
+<!-- =======================
+Inner part END -->
+
+</main>
+<!-- **************** MAIN CONTENT END **************** -->
+
+ <!-- Modal de Configuración de la Competencia -->
+<div class="modal fade modal-custom" id="modalConfiguracion" tabindex="-1" aria-labelledby="modalConfiguracionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalConfiguracionLabel">
+                    <i class="fas fa-cog me-3"></i>
+                    Configuración de la Competencia
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formConfiguracion">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-clock me-2"></i>
+                                    Tiempo límite (minutos)
+                                </label>
+                                <input type="number" class="form-control" id="config-tiempo" 
+                                       value="{% if competencia %}{{ competencia.tiempo_limite }}{% else %}30{% endif %}" 
+                                       min="1" max="180">
+                                <small class="text-muted">Tiempo máximo para completar la competencia</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-users me-2"></i>
+                                    Modalidad
+                                </label>
+                                <select class="form-select" id="config-modalidad" disabled>
+                                    <option value="individual" {% if competencia.modalidad == 'individual' %}selected{% endif %}>Individual</option>
+                                    <option value="grupal" {% if competencia.modalidad == 'grupal' %}selected{% endif %}>Grupal</option>
+                                </select>
+                                <small class="text-muted">No se puede cambiar después de crear la competencia</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Configuración grupal -->
+                    {% if competencia.modalidad == 'grupal' %}
+                    <div id="config-grupal-section">
+                        <h6 class="mb-3 text-warning">
+                            <i class="fas fa-users me-2"></i>
+                            Configuración de Grupos
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-hashtag me-2"></i>
+                                        Máximo miembros por grupo
+                                    </label>
+                                    <input type="number" class="form-control" id="config-max-miembros" 
+                                           value="{% if competencia %}{{ competencia.max_miembros_grupo }}{% else %}4{% endif %}" 
+                                           min="2" max="10">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="config-grupos-aleatorios" 
+                                               {% if competencia.grupos_aleatorios %}checked{% endif %}>
+                                        <label class="form-check-label" for="config-grupos-aleatorios">
+                                            <strong>
+                                                <i class="fas fa-random me-2"></i>
+                                                Grupos automáticos
+                                            </strong>
+                                            <small class="d-block text-muted">Formar grupos aleatoriamente</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-4">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="config-grupos-abiertos" 
+                                               {% if competencia.grupos_abiertos %}checked{% endif %}>
+                                        <label class="form-check-label" for="config-grupos-abiertos">
+                                            <strong>
+                                                <i class="fas fa-unlock me-2"></i>
+                                                Grupos abiertos
+                                            </strong>
+                                            <small class="d-block text-muted">Estudiantes eligen sus grupos</small>
+                                        </label>
+                                    </div>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-calendar-plus me-2"></i>
+                                    Fecha de inicio programada
+                                </label>
+                                <input type="datetime-local" class="form-control" id="config-fecha-inicio" 
+                                       value="{% if competencia.fecha_inicio %}{{ competencia.fecha_inicio|date:'Y-m-d\TH:i' }}{% endif %}">
+                                <small class="text-muted">Opcional: programar inicio automático</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="config-mostrar-resultados" 
+                                           {% if competencia.mostrar_resultados_inmediatos %}checked{% endif %}>
+                                    <label class="form-check-label" for="config-mostrar-resultados">
+                                        <strong>
+                                            <i class="fas fa-eye me-2"></i>
+                                            Mostrar resultados inmediatamente
+                                        </strong>
+                                        <small class="d-block text-muted">Los estudiantes verán resultados al finalizar</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-4">
+                                <input type="checkbox" class="form-check-input" id="config-permitir-reingreso"
+                                       {% if competencia.permitir_reingreso %}checked{% endif %}>
+                                <label class="form-check-label" for="config-permitir-reingreso">
+                                    <strong>
+                                        <i class="fas fa-door-open me-2"></i>
+                                        Permitir reingreso
+                                    </strong>
+                                    <small class="d-block text-muted">Reconexión en caso de desconexión</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mb-4">
+                                <input type="checkbox" class="form-check-input" id="config-orden-aleatorio"
+                                       {% if competencia.orden_preguntas_aleatorio %}checked{% endif %}>
+                                <label class="form-check-label" for="config-orden-aleatorio">
+                                    <strong>
+                                        <i class="fas fa-random me-2"></i>
+                                        Orden aleatorio de preguntas
+                                    </strong>
+                                    <small class="d-block text-muted">Cada estudiante verá orden diferente</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Competencias en tiempo real:</strong> A diferencia de los cuestionarios, las competencias se realizan en vivo. 
+                        Los estudiantes deben estar conectados al mismo tiempo y el profesor controla el inicio y finalización.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" onclick="guardarConfiguracionCompetencia()">
+                    <i class="fas fa-save me-2"></i>
+                    Guardar Configuración
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal tipos de pregunta -->
+<div class="modal fade modal-custom" id="modalTiposPregunta" tabindex="-1" aria-labelledby="modalTiposPreguntaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-dark">
+                <h5 class="modal-title text-white" id="modalTiposPreguntaLabel">
+                    <i class="fas fa-plus-circle me-3"></i>
+                    Seleccionar Tipo de Pregunta para Competencia
+                </h5>
+                <button type="button" class="btn btn-sm btn-light mb-0 ms-auto" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="tipos-pregunta-container">
+                    <!-- TIPOS DINÁMICOS DESDE LA BASE DE DATOS -->
+                    <div class="row g-4">
+                        {% for tipo in tipos_pregunta %}
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="tipo-pregunta-card {% if tipo.nombre not in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}disabled{% endif %}" 
+                                 data-tipo="{{ tipo.nombre }}"
+                                 onclick="{% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}seleccionarTipoPreguntaCompetencia('{{ tipo.nombre }}'){% else %}mostrarMensajeProximamente('{{ tipo.descripcion }}'){% endif %}">
+                                <div class="tipo-icono">
+                                    {% if tipo.nombre == 'opcion_unica' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/709/709510.png" alt="Opción única">
+                                    {% elif tipo.nombre == 'opcion_multiple' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/845/845646.png" alt="Opción múltiple">
+                                    {% elif tipo.nombre == 'falso_verdadero' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/1168/1168610.png" alt="Verdadero/Falso">
+                                    {% elif tipo.nombre == 'respuesta_abierta' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/2921/2921222.png" alt="Respuesta abierta">
+                                    {% elif tipo.nombre == 'unir_lineas' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/2920/2920277.png" alt="Unir con líneas">
+                                    {% elif tipo.nombre == 'completar' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="Completar texto">
+                                    {% elif tipo.nombre == 'simulador_2d' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/2920/2920255.png" alt="Simulador 2D">
+                                    {% elif tipo.nombre == 'simulador_3d' %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/2920/2920255.png" alt="Simulador 3D">
+                                    {% else %}
+                                        <img src="https://cdn-icons-png.flaticon.com/512/3062/3062634.png" alt="{{ tipo.nombre }}">
+                                    {% endif %}
+                                </div>
+                                <h6 class="tipo-titulo">{{ tipo.descripcion|title }}</h6>
+                                <div class="tipo-estado {% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}disponible{% else %}proximamente{% endif %}">
+                                    {% if tipo.nombre in 'opcion_unica,opcion_multiple,falso_verdadero,respuesta_abierta,simulador_2d,simulador_3d,unir_lineas,completar' %}
+                                        <i class="fas fa-check-circle"></i>
+                                    {% else %}
+                                        <i class="fas fa-clock"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-warning text-center">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                No se encontraron tipos de pregunta. 
+                                <button type="button" class="btn btn-warning btn-sm ms-3" onclick="crearTiposAutomaticamente()">
+                                    <i class="fas fa-magic me-2"></i>
+                                    Crear tipos automáticamente
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- Información adicional -->
+                <div class="mt-5 p-4 bg-light rounded-3">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <h6 class="text-danger mb-2">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Preguntas para Competencias
+                            </h6>
+                            <p class="text-muted mb-0">
+                                Las preguntas en competencias se evalúan en tiempo real. Recomendamos preguntas de respuesta rápida 
+                                como opción única, múltiple o verdadero/falso para mantener el dinamismo.
+                            </p>
+                        </div>
+                        <div class="col-4 text-end">
+                            <div class="d-flex justify-content-end gap-4">
+                                <div class="text-center">
+                                    <div class="tipo-estado disponible mb-2" style="width: 20px; height: 20px; margin: 0 auto;">
+                                        <i class="fas fa-check-circle" style="font-size: 12px;"></i>
+                                    </div>
+                                    <small class="text-muted">Disponible</small>
+                                </div>
+                                <div class="text-center">
+                                    <div class="tipo-estado proximamente mb-2" style="width: 20px; height: 20px; margin: 0 auto;">
+                                        <i class="fas fa-clock" style="font-size: 12px;"></i>
+                                    </div>
+                                    <small class="text-muted">Próximamente</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'assets/vendor/choices/js/choices.min.js' %}"></script>
+<script src="{% static 'assets/js/functions.js' %}"></script>
+
+<script>
+// =====================================================
+// SISTEMA DE COMPETENCIAS - VERSIÓN BASADA EN CUESTIONARIOS
+// =====================================================
+
+// =====================================================
+// VARIABLES GLOBALES ÚNICAS PARA COMPETENCIAS
+// =====================================================
+
+let competenciaId = {% if competencia %}{{ competencia.id }}{% else %}null{% endif %};
+let modalidadSeleccionada = {% if competencia %}'{{ competencia.modalidad }}'{% else %}null{% endif %};
+let preguntaParaCambiarTipo = null;
+let preguntaActual = null;
+let tipoRecursoActual = null;
+let cambiosSinGuardar = false;
+
+console.log('🏆 Variables globales de competencias inicializadas:', {
+    competenciaId,
+    modalidadSeleccionada,
+    preguntaParaCambiarTipo,
+    preguntaActual,
+    tipoRecursoActual
+});
+
+// =====================================================
+// FUNCIONES PRINCIPALES DE COMPETENCIAS
+// =====================================================
+
+/**
+ * Selecciona la modalidad de la competencia
+ */
+function seleccionarModalidad(modalidad) {
+    console.log(`🎯 Seleccionando modalidad: ${modalidad}`);
+    
+    // Remover selección anterior
+    document.querySelectorAll('.modalidad-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    
+    // Agregar selección actual
+    const cardSeleccionada = document.querySelector(`[data-modalidad="${modalidad}"]`);
+    if (cardSeleccionada) {
+        cardSeleccionada.classList.add('selected');
+    }
+    
+    modalidadSeleccionada = modalidad;
+    
+    // Mostrar/ocultar configuración grupal
+    const configGrupal = document.getElementById('configuracion-grupal');
+    if (configGrupal) {
+        if (modalidad === 'grupal') {
+            configGrupal.classList.add('show');
+        } else {
+            configGrupal.classList.remove('show');
+        }
+    }
+    
+    console.log(`✅ Modalidad seleccionada: ${modalidad}`);
+}
+
+/**
+ * Crea una competencia inicial - ADAPTADA DE CUESTIONARIOS
+ */
+function crearCompetenciaInicial() {
+    console.log("🏆 Iniciando creación de competencia...");
+    
+    const titulo = document.getElementById('titulo-competencia')?.value?.trim();
+    const descripcion = document.getElementById('descripcion-competencia')?.value?.trim();
+    
+    // Validaciones (iguales a cuestionarios)
+    if (!titulo) {
+        mostrarErrorElegante('El título de la competencia es obligatorio');
+        document.getElementById('titulo-competencia')?.focus();
+        return;
+    }
+    
+    if (titulo.length < 3) {
+        mostrarErrorElegante('El título debe tener al menos 3 caracteres');
+        document.getElementById('titulo-competencia')?.focus();
+        return;
+    }
+    
+    if (!descripcion) {
+        mostrarErrorElegante('La descripción de la competencia es obligatoria');
+        document.getElementById('descripcion-competencia')?.focus();
+        return;
+    }
+    
+    if (descripcion.length < 10) {
+        mostrarErrorElegante('La descripción debe tener al menos 10 caracteres');
+        document.getElementById('descripcion-competencia')?.focus();
+        return;
+    }
+    
+    if (!modalidadSeleccionada) {
+        mostrarErrorElegante('Debes seleccionar una modalidad (Individual o Grupal)');
+        return;
+    }
+    
+    const loadingToast = mostrarCargandoElegante('Creando competencia...');
+    
+    // Preparar datos (similar a cuestionarios pero con modalidad)
+    const formData = new FormData();
+    formData.append('titulo', titulo);
+    formData.append('descripcion', descripcion);
+    formData.append('modalidad', modalidadSeleccionada);
+    formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
+    
+    // Configuración grupal si aplica
+    if (modalidadSeleccionada === 'grupal') {
+        const maxMiembros = document.getElementById('max-miembros-grupo')?.value || '4';
+        const gruposAleatorios = document.getElementById('grupos-aleatorios')?.checked || false;
+        const gruposAbiertos = document.getElementById('grupos-abiertos')?.checked || true;
+        
+        formData.append('max_miembros', maxMiembros);
+        formData.append('grupos_aleatorios', gruposAleatorios);
+        formData.append('grupos_abiertos', gruposAbiertos);
+    }
+    
+    // Agregar sección si existe
+    const seccionIdInput = document.getElementById('seccion_id');
+    if (seccionIdInput?.value) {
+        formData.append('seccion_id', seccionIdInput.value);
+    }
+    
+    console.log("📤 Enviando datos de la competencia...");
+    
+    fetch('/docente/competencia/guardar-competencia/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log("📥 Respuesta recibida:", response.status);
+        return response.json();
+    })
+    .then(data => {
+        loadingToast.hide();
+        console.log("🏆 Datos de respuesta:", data);
+        
+        if (data.success) {
+            competenciaId = data.competencia_id;
+            mostrarExitoElegante('¡Competencia creada exitosamente!');
+            mostrarInfoElegante(`PIN generado: ${data.pin_acceso}`);
+            marcarComoGuardado();
+            
+            console.log(`✅ Competencia creada con ID: ${competenciaId}, PIN: ${data.pin_acceso}`);
+            
+            // Redirigir a la página de edición
+            setTimeout(() => {
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                } else {
+                    window.location.href = `/docente/editar_competencia/${competenciaId}/`;
+                }
+            }, 1500);
+        } else {
+            console.error("❌ Error en respuesta:", data.error);
+            mostrarErrorElegante('Error: ' + (data.error || 'Error desconocido al crear la competencia'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('❌ Error de red:', error);
+        mostrarErrorElegante('Error de conexión al crear la competencia');
+    });
+}
+
+/**
+ * Guarda la configuración avanzada de la competencia - ADAPTADA DE CUESTIONARIOS
+ */
+function guardarConfiguracionCompetencia() {
+    console.log("⚙️ Guardando configuración de competencia...");
+    
+    if (!competenciaId) {
+        mostrarErrorElegante('Error: No hay una competencia válida para configurar');
+        return;
+    }
+    
+    // Recopilar datos de configuración (adaptado de cuestionarios)
+    const configuracion = {
+        tiempo_limite: parseInt(document.getElementById('config-tiempo')?.value || 30),
+        fecha_inicio: document.getElementById('config-fecha-inicio')?.value || '',
+        mostrar_resultados_inmediatos: document.getElementById('config-mostrar-resultados')?.checked || false,
+        permitir_reingreso: document.getElementById('config-permitir-reingreso')?.checked || false,
+        orden_preguntas_aleatorio: document.getElementById('config-orden-aleatorio')?.checked || false
+    };
+    
+    // Configuración grupal específica de competencias
+    {% if competencia.modalidad == 'grupal' %}
+    configuracion.max_miembros_grupo = parseInt(document.getElementById('config-max-miembros')?.value || 4);
+    configuracion.grupos_aleatorios = document.getElementById('config-grupos-aleatorios')?.checked || false;
+    configuracion.grupos_abiertos = document.getElementById('config-grupos-abiertos')?.checked || true;
+    {% endif %}
+    
+    console.log("🏆 Configuración a guardar:", configuracion);
+    
+    // Validaciones (similar a cuestionarios)
+    if (configuracion.tiempo_limite < 1 || configuracion.tiempo_limite > 180) {
+        mostrarErrorElegante('El tiempo límite debe estar entre 1 y 180 minutos');
+        return;
+    }
+    
+    const loadingToast = mostrarCargandoElegante('Guardando configuración...');
+    
+    fetch('/docente/competencia/actualizar-configuracion-competencia/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            competencia_id: competenciaId,
+            configuracion: configuracion
+        })
+    })
+    .then(response => {
+        console.log("📥 Respuesta configuración:", response.status);
+        return response.json();
+    })
+    .then(data => {
+        loadingToast.hide();
+        console.log("⚙️ Respuesta configuración:", data);
+        
+        if (data.success) {
+            const modalElement = document.getElementById('modalConfiguracion');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+            }
+            mostrarExitoElegante('Configuración guardada exitosamente');
+            
+            // Actualizar información en la página
+            actualizarVistaConfiguracionCompetencia(configuracion);
+        } else {
+            console.error("❌ Error configuración:", data.error);
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al guardar la configuración'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('❌ Error red configuración:', error);
+        mostrarErrorElegante('Error de conexión al guardar la configuración');
+    });
+}
+
+/**
+ * Selecciona un tipo de pregunta para competencia - ADAPTADA DE CUESTIONARIOS
+ */
+function seleccionarTipoPreguntaCompetencia(tipo) {
+    console.log(`🎯 Seleccionando tipo de pregunta para competencia: ${tipo}`);
+    
+    if (!competenciaId) {
+        mostrarErrorElegante('Error: Debes guardar la competencia primero antes de agregar preguntas');
+        return;
+    }
+    
+    // Cerrar modal
+    const modalElement = document.getElementById('modalTiposPregunta');
+    if (modalElement) {
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) modal.hide();
+    }
+    
+    // Si estamos cambiando tipo de pregunta existente
+    if (preguntaParaCambiarTipo) {
+        cambiarTipoPregunta(preguntaParaCambiarTipo, tipo);
+        preguntaParaCambiarTipo = null;
+        return;
+    }
+    
+    // Crear nueva pregunta
+    crearNuevaPreguntaCompetencia(tipo);
+}
+
+/**
+ * Crea una nueva pregunta del tipo especificado para competencia - ADAPTADA DE CUESTIONARIOS
+ */
+function crearNuevaPreguntaCompetencia(tipo) {
+    console.log(`➕ Creando nueva pregunta de competencia tipo: ${tipo}`);
+    
+    const loadingToast = mostrarCargandoElegante('Creando pregunta...');
+    
+    fetch('/docente/competencia/agregar-pregunta-competencia/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            competencia_id: competenciaId,
+            tipo: tipo
+        })
+    })
+    .then(response => {
+        console.log("📥 Respuesta agregar pregunta:", response.status);
+        return response.json();
+    })
+    .then(data => {
+        loadingToast.hide();
+        console.log("📝 Respuesta pregunta:", data);
+        
+        if (data.success) {
+            mostrarExitoElegante('Pregunta creada exitosamente');
+            console.log(`✅ Pregunta creada con ID: ${data.pregunta_id}`);
+            
+            // Guardar ID para mantener acordeón abierto
+            localStorage.setItem('mantenerAbierto', `collapse${data.pregunta_id}`);
+            
+            // Recargar la página para mostrar la nueva pregunta
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            console.error("❌ Error crear pregunta:", data.error);
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al crear la pregunta'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('❌ Error red pregunta:', error);
+        mostrarErrorElegante('Error de conexión al crear la pregunta');
+    });
+}
+
+// =====================================================
+// FUNCIONES DE CONTROL DE COMPETENCIAS EN VIVO
+// =====================================================
+
+/**
+ * Abre la sala de espera (cambia estado a 'esperando')
+ */
+function abrirSalaEspera(competenciaId) {
+    console.log(`🚪 Abriendo sala de espera para competencia ${competenciaId}`);
+    
+    mostrarConfirmacionElegante(
+        'Abrir Sala de Espera',
+        '¿Estás listo para abrir la sala de espera? Los estudiantes podrán unirse con el PIN, pero la competencia aún no iniciará.',
+        function() {
+            const loadingToast = mostrarCargandoElegante('Abriendo sala de espera...');
+            
+            // Esta función necesitará implementarse en las views
+            fetch(`/docente/competencia/abrir-sala-espera/${competenciaId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                if (data.success) {
+                    mostrarExitoElegante('Sala de espera abierta. Los estudiantes pueden unirse ahora.');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    mostrarErrorElegante(data.error || 'Error al abrir sala de espera');
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                mostrarErrorElegante('Error de conexión');
+            });
+        }
+    );
+}
+
+/**
+ * Inicia la competencia (cambia estado a 'activa')
+ */
+function iniciarCompetencia(competenciaId) {
+    console.log(`🏁 Iniciando competencia ${competenciaId}`);
+    
+    mostrarConfirmacionElegante(
+        'Iniciar Competencia',
+        '¿Estás listo para iniciar la competencia? Una vez iniciada, los estudiantes comenzarán a responder las preguntas.',
+        function() {
+            const loadingToast = mostrarCargandoElegante('Iniciando competencia...');
+            
+            fetch(`/docente/competencia/iniciar/${competenciaId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                if (data.success) {
+                    mostrarExitoElegante('¡Competencia iniciada! Redirigiendo al panel de control...');
+                    setTimeout(() => {
+                        window.location.href = `/docente/competencia/panel/${competenciaId}/`;
+                    }, 1500);
+                } else {
+                    mostrarErrorElegante(data.error || 'Error al iniciar competencia');
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                mostrarErrorElegante('Error de conexión');
+            });
+        }
+    );
+}
+
+/**
+ * Abre el panel de control
+ */
+function abrirPanelControl(competenciaId) {
+    console.log(`🎮 Abriendo panel de control para competencia ${competenciaId}`);
+    window.location.href = `/docente/competencia/panel/${competenciaId}/`;
+}
+
+/**
+ * Finaliza la competencia
+ */
+function finalizarCompetencia(competenciaId) {
+    console.log(`🏁 Finalizando competencia ${competenciaId}`);
+    
+    mostrarConfirmacionElegante(
+        'Finalizar Competencia',
+        '¿Estás seguro de que quieres finalizar esta competencia? Se guardarán todos los cambios.',
+        function() {
+            const loadingToast = mostrarCargandoElegante('Finalizando competencia...');
+            
+            fetch(`/docente/competencia/finalizar/${competenciaId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingToast.hide();
+                if (data.success) {
+                    mostrarExitoElegante('Competencia finalizada exitosamente');
+                    setTimeout(() => {
+                        window.location.href = `/docente/competencia/resultados/${competenciaId}/`;
+                    }, 1500);
+                } else {
+                    mostrarErrorElegante(data.error || 'Error al finalizar competencia');
+                }
+            })
+            .catch(error => {
+                loadingToast.hide();
+                mostrarErrorElegante('Error de conexión');
+            });
+        }
+    );
+}
+
+/**
+ * Ver resultados de la competencia
+ */
+function verResultados(competenciaId) {
+    console.log(`📊 Viendo resultados de competencia ${competenciaId}`);
+    window.location.href = `/docente/competencia/resultados/${competenciaId}/`;
+}
+
+/**
+ * Copiar PIN al portapapeles
+ */
+function copiarPin(pin) {
+    navigator.clipboard.writeText(pin).then(() => {
+        mostrarExitoElegante(`PIN ${pin} copiado al portapapeles`);
+    }).catch(() => {
+        mostrarErrorElegante('Error al copiar PIN');
+    });
+}
+
+/**
+ * Compartir PIN
+ */
+function compartirPin(pin) {
+    const url = `${window.location.origin}/competencia/acceder/${pin}/`;
+    const texto = `¡Únete a mi competencia! PIN: ${pin}\nEnlace: ${url}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Competencia - PIN de Acceso',
+            text: texto,
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(texto).then(() => {
+            mostrarExitoElegante('Información de la competencia copiada al portapapeles');
+        });
+    }
+}
+
+// =====================================================
+// SISTEMA DE NOTIFICACIONES ELEGANTES - ADAPTADO
+// =====================================================
+
+/**
+ * Muestra un popup de confirmación elegante y centrado
+ */
+function mostrarConfirmacionElegante(titulo, mensaje, callback) {
+    // Crear overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'confirmacion-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99998;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Crear popup centrado
+    const popup = document.createElement('div');
+    popup.className = 'confirmacion-popup';
+    popup.style.cssText = `
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        transform: scale(0.7);
+        opacity: 0;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 99999;
+    `;
+    
+    popup.innerHTML = `
+        <div class="icono" style="margin-bottom: 20px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #f39c12;"></i>
+        </div>
+        <div class="titulo" style="font-size: 1.5rem; font-weight: bold; margin-bottom: 15px; color: #2c3e50;">
+            ${titulo}
+        </div>
+        <div class="mensaje" style="color: #7f8c8d; margin-bottom: 25px; line-height: 1.5;">
+            ${mensaje}
+        </div>
+        <div class="botones" style="display: flex; gap: 15px; justify-content: center;">
+            <button class="btn-cancelar" style="
+                padding: 10px 20px;
+                border: 2px solid #95a5a6;
+                background: transparent;
+                color: #95a5a6;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: all 0.2s ease;
+            ">Cancelar</button>
+            <button class="btn-confirmar" style="
+                padding: 10px 20px;
+                border: 2px solid #e74c3c;
+                background: #e74c3c;
+                color: white;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: all 0.2s ease;
+            ">Confirmar</button>
+        </div>
+    `;
+    
+    // Agregar al DOM
+    document.body.appendChild(overlay);
+    overlay.appendChild(popup);
+    
+    // Animación de entrada
+    setTimeout(() => {
+        popup.style.transform = 'scale(1)';
+        popup.style.opacity = '1';
+    }, 10);
+    
+    // Funciones de manejo
+    const cerrar = function() {
+        popup.style.transform = 'scale(0.7)';
+        popup.style.opacity = '0';
+        setTimeout(() => {
+            if (document.body.contains(overlay)) {
+                document.body.removeChild(overlay);
+            }
+        }, 300);
+    };
+    
+    const confirmar = function() {
+        cerrar();
+        if (callback && typeof callback === 'function') {
+            callback();
+        }
+    };
+    
+    // Event listeners
+    popup.querySelector('.btn-cancelar').addEventListener('click', cerrar);
+    popup.querySelector('.btn-confirmar').addEventListener('click', confirmar);
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) cerrar();
+    });
+    
+    // Escape key
+    const escapeHandler = function(e) {
+        if (e.key === 'Escape') {
+            cerrar();
+            document.removeEventListener('keydown', escapeHandler);
+        }
+    };
+    document.addEventListener('keydown', escapeHandler);
+}
+
+/**
+ * Muestra un toast de carga elegante
+ */
+function mostrarCargandoElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-primary border-0';
+    toast.style.cssText = 'position: fixed !important; top: 20px !important; right: 20px !important; z-index: 10001 !important; min-width: 300px;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm me-3" role="status"></div>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { autohide: false });
+    bsToast.show();
+    
+    return {
+        hide: function() {
+            bsToast.hide();
+            setTimeout(() => {
+                if (document.body.contains(toast)) {
+                    document.body.removeChild(toast);
+                }
+            }, 300);
+        }
+    };
+}
+
+/**
+ * Muestra un toast de error elegante
+ */
+function mostrarErrorElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-danger border-0';
+    toast.style.cssText = 'position: fixed !important; top: 20px !important; right: 20px !important; z-index: 10001 !important; min-width: 300px;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-3"></i>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 6000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    });
+    
+    console.log(`❌ Error: ${mensaje}`);
+}
+
+/**
+ * Muestra un toast de éxito elegante
+ */
+function mostrarExitoElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-success border-0';
+    toast.style.cssText = 'position: fixed !important; top: 20px !important; right: 20px !important; z-index: 10001 !important; min-width: 300px;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle me-3"></i>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    });
+    
+    console.log(`✅ Éxito: ${mensaje}`);
+}
+
+/**
+ * Muestra un toast informativo elegante
+ */
+function mostrarInfoElegante(mensaje) {
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-custom align-items-center text-white bg-info border-0';
+    toast.style.cssText = 'position: fixed !important; top: 20px !important; right: 20px !important; z-index: 10001 !important; min-width: 300px;';
+    toast.innerHTML = `
+        <div class="toast-body">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-3"></i>
+                <span>${mensaje}</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        if (document.body.contains(toast)) {
+            document.body.removeChild(toast);
+        }
+    });
+}
+
+// =====================================================
+// FUNCIONES AUXILIARES Y UTILIDADES
+// =====================================================
+
+/**
+ * Actualiza la vista con la nueva configuración de competencia
+ */
+function actualizarVistaConfiguracionCompetencia(config) {
+    const infoContainer = document.getElementById('info-competencia');
+    if (!infoContainer) return;
+    
+    // Formatear información específica de competencias
+    const numPreguntas = document.querySelectorAll('.accordion-pregunta').length;
+    
+    infoContainer.innerHTML = `
+        <span class="d-flex align-items-center">
+            <i class="fas fa-clock me-2 text-danger"></i>
+            <strong>${config.tiempo_limite || 30} min</strong>
+        </span>
+        <span class="d-flex align-items-center">
+            <i class="fas fa-users me-2 text-warning"></i>
+            <strong>${modalidadSeleccionada === 'grupal' ? 'Grupal' : 'Individual'}</strong>
+        </span>
+        <span class="d-flex align-items-center">
+            <i class="fas fa-list me-2 text-info"></i>
+            <strong>${numPreguntas} pregunta(s)</strong>
+        </span>
+        <span class="d-flex align-items-center">
+            <i class="fas fa-play-circle me-2 text-success"></i>
+            <strong>Configuración</strong>
+        </span>
+    `;
+}
+
+/**
+ * Función para marcar como guardado
+ */
+function marcarComoGuardado() {
+    cambiosSinGuardar = false;
+}
+
+/**
+ * Obtiene el valor de una cookie
+ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+/**
+ * Muestra mensaje para tipos de pregunta no disponibles
+ */
+function mostrarMensajeProximamente(tipoNombre) {
+    mostrarInfoElegante(`${tipoNombre} estará disponible próximamente`);
+}
+
+// =====================================================
+// FUNCIONES ADAPTADAS DE CUESTIONARIOS PARA COMPETENCIAS
+// =====================================================
+
+/**
+ * Función para obtener el ID de pregunta desde un elemento
+ */
+function obtenerPreguntaId(element) {
+    let current = element;
+    while (current && current !== document) {
+        if (current.dataset && current.dataset.preguntaId) {
+            return current.dataset.preguntaId;
+        }
+        
+        if (current.getAttribute && current.getAttribute('data-pregunta-id')) {
+            return current.getAttribute('data-pregunta-id');
+        }
+        
+        if (current.id) {
+            const match = current.id.match(/_(\d+)$/);
+            if (match) {
+                return match[1];
+            }
+        }
+        
+        const preguntaParent = current.closest('[data-pregunta-id]');
+        if (preguntaParent) {
+            return preguntaParent.dataset.preguntaId || preguntaParent.getAttribute('data-pregunta-id');
+        }
+        
+        current = current.parentElement;
+    }
+    
+    console.warn("⚠️ No se pudo obtener el ID de pregunta desde:", element);
+    return null;
+}
+
+/**
+ * Guarda los cambios de una pregunta - ADAPTADA PARA COMPETENCIAS
+ */
+function guardarPregunta(element) {
+    const preguntaId = obtenerPreguntaId(element);
+    if (!preguntaId) {
+        mostrarErrorElegante('No se pudo obtener el ID de pregunta');
+        return;
+    }
+    
+    console.log(`💾 Guardando pregunta de competencia ${preguntaId}...`);
+    
+    // Recopilar datos de la pregunta (similar a cuestionarios)
+    const preguntaElement = document.querySelector(`[data-pregunta-id="${preguntaId}"]`);
+    if (!preguntaElement) {
+        mostrarErrorElegante('No se encontró el elemento de pregunta');
+        return;
+    }
+    
+    const enunciadoTextarea = preguntaElement.querySelector('[data-field="enunciado"]');
+    const puntajeInput = preguntaElement.querySelector('[data-field="puntaje"]');
+    
+    if (!enunciadoTextarea || !puntajeInput) {
+        mostrarErrorElegante('No se encontraron los campos requeridos');
+        return;
+    }
+    
+    const enunciado = enunciadoTextarea.value.trim();
+    const puntaje = parseInt(puntajeInput.value) || 1;
+
+    if (!enunciado) {
+        mostrarErrorElegante('El enunciado de la pregunta es obligatorio');
+        enunciadoTextarea.focus();
+        return;
+    }
+
+    // Recopilar opciones si existen
+    const opciones = [];
+    const opcionesElements = preguntaElement.querySelectorAll('.opcion-container');
+    
+    opcionesElements.forEach(opcionElement => {
+        const textoInput = opcionElement.querySelector('input[type="text"], textarea');
+        const correctaInput = opcionElement.querySelector('input[type="radio"], input[type="checkbox"]');
+        const opcionId = opcionElement.getAttribute('data-opcion-id');
+        
+        if (textoInput && correctaInput) {
+            opciones.push({
+                id: opcionId,
+                texto: textoInput.value.trim(),
+                es_correcta: correctaInput.checked
+            });
+        }
+    });
+
+    const loadingToast = mostrarCargandoElegante('Guardando pregunta...');
+    
+    fetch('/docente/competencia/actualizar-pregunta-competencia/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            pregunta_id: preguntaId,
+            enunciado: enunciado,
+            puntaje: puntaje,
+            opciones: opciones
+        })
+    })
+    .then(response => {
+        console.log("📥 Respuesta guardar pregunta:", response.status);
+        return response.json();
+    })
+    .then(data => {
+        loadingToast.hide();
+        console.log("💾 Respuesta guardado:", data);
+        
+        if (data.success) {
+            mostrarExitoElegante('Pregunta guardada exitosamente');
+            console.log(`✅ Pregunta ${preguntaId} guardada`);
+            
+            // Marcar acordeón para mantener abierto
+            localStorage.setItem('mantenerAbierto', `collapse${preguntaId}`);
+            
+            // Recargar página para mostrar cambios
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            console.error("❌ Error guardar pregunta:", data.error);
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al guardar la pregunta'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('❌ Error red guardar:', error);
+        mostrarErrorElegante('Error de conexión al guardar la pregunta');
+    });
+}
+
+/**
+ * Crear tipos de pregunta automáticamente
+ */
+function crearTiposAutomaticamente() {
+    console.log("🔧 Creando tipos automáticamente...");
+    
+    const loadingToast = mostrarCargandoElegante('Creando tipos de pregunta...');
+    
+    fetch('/docente/cuestionario/crear-tipos/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => {
+        console.log("📥 Respuesta crear tipos:", response.status);
+        return response.json();
+    })
+    .then(data => {
+        loadingToast.hide();
+        console.log("🔧 Respuesta tipos:", data);
+        
+        if (data.success) {
+            mostrarExitoElegante('Tipos de pregunta creados exitosamente');
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            console.error("❌ Error crear tipos:", data.error);
+            mostrarErrorElegante('Error: ' + (data.error || 'Error al crear los tipos de pregunta'));
+        }
+    })
+    .catch(error => {
+        loadingToast.hide();
+        console.error('❌ Error red tipos:', error);
+        mostrarErrorElegante('Error de conexión al crear los tipos de pregunta');
+    });
+}
+
+// =====================================================
+// INICIALIZACIÓN Y EVENT LISTENERS
+// =====================================================
+
+/**
+ * Inicialización principal del sistema
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando sistema de competencias...');
+    
+    // Restaurar acordeón abierto después de cualquier operación
+    const mantenerAbierto = localStorage.getItem('mantenerAbierto');
+    if (mantenerAbierto) {
+        setTimeout(() => {
+            const elemento = document.getElementById(mantenerAbierto);
+            if (elemento) {
+                console.log(`🔓 Restaurando acordeón: ${mantenerAbierto}`);
+                const collapse = new bootstrap.Collapse(elemento, { show: true });
+                
+                setTimeout(() => {
+                    elemento.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 500);
+            }
+            localStorage.removeItem('mantenerAbierto');
+        }, 1000);
+    }
+    
+    // Validación en tiempo real para títulos
+    const tituloInput = document.getElementById('titulo-competencia');
+    if (tituloInput) {
+        tituloInput.addEventListener('input', function() {
+            cambiosSinGuardar = true;
+            if (this.value.trim().length < 3) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+    
+    // Validación para descripción
+    const descripcionInput = document.getElementById('descripcion-competencia');
+    if (descripcionInput) {
+        descripcionInput.addEventListener('input', function() {
+            cambiosSinGuardar = true;
+            if (this.value.trim().length < 10) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+    
+    console.log('✅ Sistema de competencias inicializado correctamente');
+    console.log('🏆 Variables globales: competenciaId =', competenciaId);
+});
+
+// Manejar teclas de acceso rápido
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + S para guardar
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        
+        if (!competenciaId) {
+            crearCompetenciaInicial();
+        } else {
+            const titulo = document.getElementById('titulo-competencia')?.value?.trim();
+            const descripcion = document.getElementById('descripcion-competencia')?.value?.trim();
+            
+            if (titulo && descripcion) {
+                mostrarInfoElegante('Información guardada automáticamente');
+            }
+        }
+    }
+    
+    // Escape para cerrar confirmaciones y modales
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal.show').forEach(modal => {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+    }
+});
+
+// Prevenir pérdida de datos
+window.addEventListener('beforeunload', function(e) {
+    if (cambiosSinGuardar) {
+        e.preventDefault();
+        e.returnValue = '¿Estás seguro de que deseas salir? Hay cambios sin guardar.';
+    }
+});
+
+console.log('🏆 Sistema de Competencias - Versión Completa');
+console.log('🎨 Interfaz adaptada de cuestionarios para competencias');
+console.log('📌 PIN de acceso automático generado');
+console.log('👥 Soporte para modalidades individual y grupal');
+console.log('⚡ Control en tiempo real implementado');
+console.log('🚀 Sistema listo para usar - ¡COMPLETADO!');
+
+</script>
+
+</body>
+</html>
