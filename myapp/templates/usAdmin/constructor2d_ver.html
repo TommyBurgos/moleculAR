@@ -1,0 +1,446 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>Práctica: {{ objetivo_nombre|default:"Molécula objetivo" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Konva -->
+  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #0b132b;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --ring: #f59e0b;
+      --border: #e5e7eb;
+      --ink: #0f172a;
+      --accent: #2563eb;
+    }
+    body{ background: #f6f8fb; color: var(--ink); }
+    .app-header {
+      background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 22px 20px;
+    }
+    .app-title { display:flex; gap:.5rem; align-items:center; }
+    .app-title .dot {
+      width: 10px; height:10px; border-radius: 50%;
+      background: #22d3ee; box-shadow: 0 0 0 6px rgba(34,211,238,.25);
+    }
+    .subtitle { color: #e2e8f0; }
+    .toolbelt {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .toolbar .btn{ min-width:44px; }
+    #konvaStage{
+      width:100%; height:560px; background:#fff;
+      border:1px solid var(--border); border-radius:16px;
+      box-shadow: 0 4px 22px rgba(2,6,23,.05);
+    }
+    .panel {
+      background:#fff; border:1px solid var(--border); border-radius:16px; padding:14px;
+    }
+    .panel h6{ font-weight:700; letter-spacing:.2px; }
+    .info-row{ display:flex; justify-content:space-between; gap:8px; margin:.25rem 0; }
+    .pill {
+      display:inline-flex; align-items:center; gap:.4rem;
+      padding:.35rem .7rem; border-radius:999px; font-weight:600; font-size:.85rem;
+    }
+    .pill-muted { background:#f3f4f6; color:#374151; }
+    .divider { height:1px; background:var(--border); margin:.5rem 0 1rem; }
+    .ghost { opacity:.85 }
+    .shadow-soft { box-shadow: 0 10px 40px rgba(2,6,23,.06); }
+    .btn-soft {
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    .btn-soft:hover { border-color:#c7cbd1; background:#f9fafb; }
+    /* Offcanvas help */
+    .tip-list li{ margin:.35rem 0; }
+  </style>
+</head>
+<body class="p-3 p-md-4">
+  <div class="container-xxl">
+    <!-- Header -->
+    <div class="app-header shadow-soft mb-3">
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="app-title mb-1">
+            <span class="dot"></span>
+            <h1 class="h4 m-0">Práctica: {{ objetivo_nombre|default:"Construcción 2D" }}</h1>
+          </div>
+          <div class="subtitle small">
+            Arma la molécula objetivo desde cero. El lienzo inicia vacío — puedes solicitar una <b>pista</b> con el inventario de átomos.
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <span class="pill pill-muted">
+            🎯 Objetivo
+            <span class="badge text-bg-light border">{{ objetivo_nombre|default:"(sin nombre)" }}</span>
+          </span>
+          <button class="btn btn-light btn-sm" data-bs-toggle="offcanvas" data-bs-target="#ayudaCanvas" aria-controls="ayudaCanvas">
+            ❓ Ayuda
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbelt -->
+    <div class="toolbelt mb-3">
+      <div class="d-flex align-items-center gap-2 flex-wrap toolbar">
+        <div class="btn-group me-2" role="group" aria-label="Átomos">
+          <button type="button" class="btn btn-outline-dark" data-atom="C">C</button>
+          <button type="button" class="btn btn-outline-primary" data-atom="N">N</button>
+          <button type="button" class="btn btn-outline-danger" data-atom="O">O</button>
+          <button type="button" class="btn btn-outline-secondary" data-atom="H">H</button>
+        </div>
+        <button class="btn btn-soft" id="btn-clear">🧹 Limpiar</button>
+
+        <div class="ms-auto d-flex gap-2 align-items-center">
+          <button class="btn btn-warning" id="btn-pista">👀 Ver pista (inventario)</button>
+
+          <div class="d-flex align-items-center gap-2">
+            <label for="sel-eval" class="small text-muted mb-0">Modo de evaluación</label>
+            <select id="sel-eval" class="form-select form-select-sm" style="width:auto">
+              <option value="strict">SMILES (estricto)</option>
+              <option value="counts">Conteo (átomos/enlaces)</option>
+            </select>
+          </div>
+
+          <button class="btn btn-success" id="btn-check">✅ Comprobar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="konvaStage" class="mb-3"></div>
+
+    <!-- Panels -->
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="panel h-100">
+          <h6 class="mb-2">Detalles del átomo</h6>
+          <div class="divider"></div>
+          <div id="info" class="ghost">
+            <div class="info-row">Selecciona un átomo para ver detalles.</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="panel h-100">
+          <h6 class="mb-2">Resultado de la comprobación</h6>
+          <div class="divider"></div>
+          <div id="feedback" class="ghost"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Offcanvas Ayuda -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="ayudaCanvas" aria-labelledby="ayudaCanvasLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="ayudaCanvasLabel">¿Cómo armar la molécula?</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+      <ol class="tip-list">
+        <li>Agrega átomos con los botones <b>C, N, O, H</b>. Se crearán cerca del centro.</li>
+        <li>Haz <b>clic</b> en un átomo y luego en otro para crear un <b>enlace simple</b>.</li>
+        <li>Haz <b>clic sobre el enlace</b> para alternar su orden: <code>simple → doble → triple</code>.</li>
+        <li>Puedes <b>arrastrar</b> los átomos para reorganizarlos mientras construyes.</li>
+        <li>Usa <b>“Ver pista (inventario)”</b> para ver solo las “bolitas” necesarias (sin uniones).</li>
+        <li>Al final, presiona <b>“Comprobar”</b> para validar tu resultado contra el objetivo.</li>
+      </ol>
+      <div class="small text-muted">Consejo: La evaluación por conteo no exige la misma conectividad exacta, solo coincide en el número de átomos y la cantidad de enlaces por orden.</div>
+    </div>
+  </div>
+
+  <!-- Lógica -->
+  <script>
+  (function(){
+    // --- CSRF ---
+    function getCookie(name){
+      const v = `; ${document.cookie}`.split(`; ${name}=`); 
+      return v.length===2 ? decodeURIComponent(v.pop().split(';').shift()) : '';
+    }
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || getCookie('csrftoken') || '';
+
+    // --- Config química ---
+    const VALENCE = { H:1, O:2, N:3, C:4 };
+    const COLORS  = { H:'#94a3b8', C:'#111827', O:'#ef4444', N:'#3b82f6' };
+
+    // --- Estado ---
+    const atoms = [];  // {id, el, x, y, group, ring}
+    const bonds = [];  // {id, a1, a2, order, konvaLine}
+    let nextAtomId = 1, nextBondId = 1, pendingBondStart = null;
+
+    // --- Konva ---
+    const stageEl = document.getElementById('konvaStage');
+    const stage = new Konva.Stage({ container:'konvaStage', width:stageEl.clientWidth, height:stageEl.clientHeight });
+    const layer = new Konva.Layer(); stage.add(layer);
+    window.addEventListener('resize', ()=>{ stage.width(stageEl.clientWidth); stage.height(stageEl.clientHeight); layer.draw(); });
+
+    // --- Helpers UI ---
+    function valenceUsed(id){ return bonds.reduce((s,b)=> s + ((b.a1===id||b.a2===id)?b.order:0), 0); }
+    function updateInfo(atom){
+      const box = document.getElementById('info');
+      if (!atom) { box.innerHTML = '<div class="info-row">Selecciona un átomo para ver detalles.</div>'; return; }
+      const used = valenceUsed(atom.id), max = VALENCE[atom.el]||0;
+      const warn = used>max ? ' style="color:#ef4444;font-weight:600;"' : '';
+      box.innerHTML = `
+        <div class="info-row"><span>Elemento</span><span class="fw-semibold">${atom.el}</span></div>
+        <div class="info-row"><span>ID</span><span class="fw-semibold">${atom.id}</span></div>
+        <div class="info-row"${warn}><span>Enlaces usados</span><span class="fw-semibold">${used} / ${max}</span></div>
+        <div class="info-row"><span>Posición</span><span class="fw-semibold">(${atom.x|0}, ${atom.y|0})</span></div>`;
+    }
+    function setPendingAtom(atom){ atoms.forEach(a=>a.ring.visible(false)); if(atom) atom.ring.visible(true); pendingBondStart = atom; layer.draw(); }
+
+    // --- Enlaces ---
+    function drawBondVisual(bond){
+      if (bond.konvaLine) bond.konvaLine.destroy();
+      const a1 = atoms.find(a=>a.id===bond.a1), a2 = atoms.find(a=>a.id===bond.a2);
+      if (!a1 || !a2) return;
+
+      const g = new Konva.Group({ listening:true });
+      const dx = a2.x - a1.x, dy = a2.y - a1.y, L = Math.hypot(dx,dy)||1;
+      const ux = -dy/L, uy = dx/L;
+      const offs = (bond.order===1)? [0] : (bond.order===2)? [-5,5] : [-7,0,7];
+
+      offs.forEach(off=>{
+        g.add(new Konva.Line({
+          points:[a1.x+ux*off, a1.y+uy*off, a2.x+ux*off, a2.y+uy*off],
+          stroke:'#111827', strokeWidth:3, lineCap:'round'
+        }));
+      });
+
+      const hit = new Konva.Line({ points:[a1.x,a1.y,a2.x,a2.y], stroke:'transparent', strokeWidth:16 });
+      g.add(hit);
+      g.on('click tap', ()=>{ bond.order = bond.order===3 ? 1 : bond.order+1; drawBondVisual(bond); layer.draw(); updateInfo(a1); });
+
+      bond.konvaLine = g; layer.add(g);
+    }
+    function redrawBondsForAtom(id){ bonds.forEach(b=>{ if (b.a1===id || b.a2===id) drawBondVisual(b); }); }
+
+    // --- Átomos ---
+    function createAtom(el, x, y){
+      const id = nextAtomId++;
+      const circle = new Konva.Circle({ x:0, y:0, radius:18, fill:COLORS[el]||'#64748b', stroke:'#111827', strokeWidth:1.5 });
+      const label  = new Konva.Text({ x:-8, y:-7, text:el, fontSize:16, fontStyle:'bold', fill:'#fff' });
+      const ring   = new Konva.Circle({ x:0, y:0, radius:24, stroke:'#f59e0b', strokeWidth:2, visible:false });
+      const group = new Konva.Group({ x, y, draggable:true });
+      group.add(ring); group.add(circle); group.add(label); layer.add(group);
+
+      const atom = { id, el, x, y, group, ring }; atoms.push(atom);
+      group.on('dragmove', ()=>{ atom.x = group.x(); atom.y = group.y(); redrawBondsForAtom(atom.id); layer.batchDraw(); });
+      group.on('click tap', ()=>{
+        if (!pendingBondStart) { setPendingAtom(atom); updateInfo(atom); return; }
+        if (pendingBondStart.id === atom.id) { setPendingAtom(null); updateInfo(atom); return; }
+        const exists = bonds.some(b=> (b.a1===pendingBondStart.id && b.a2===atom.id) || (b.a1===atom.id && b.a2===pendingBondStart.id));
+        if (!exists){ bonds.push({ id:++nextBondId, a1:pendingBondStart.id, a2:atom.id, order:1, konvaLine:null }); drawBondVisual(bonds[bonds.length-1]); }
+        setPendingAtom(null); updateInfo(atom); layer.draw();
+      });
+
+      updateInfo(atom); layer.draw(); return atom;
+    }
+
+    function clearAll(){
+      atoms.splice(0,atoms.length); bonds.splice(0,bonds.length);
+      layer.destroyChildren(); layer.draw();
+      document.getElementById('info').innerHTML = '<div class="info-row">Selecciona un átomo para ver detalles.</div>';
+      document.getElementById('feedback').innerHTML = '';
+      nextAtomId = 1; nextBondId = 1; pendingBondStart = null;
+    }
+
+    // --- Toolbar ---
+    document.querySelectorAll('.toolbar .btn[data-atom]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const el = btn.getAttribute('data-atom');
+        const x = stage.width()/2 + (Math.random()*80-40);
+        const y = stage.height()/2 + (Math.random()*80-40);
+        createAtom(el, x, y);
+      });
+    });
+    document.getElementById('btn-clear').addEventListener('click', clearAll);
+
+    // --- Grafo actual ---
+    function currentGraph(){
+      return {
+        atoms: atoms.map(a=>({ id:a.id, el:a.el, x:Math.round(a.x), y:Math.round(a.y) })),
+        bonds: bonds.map(b=>({ a1:b.a1, a2:b.a2, order:b.order }))
+      };
+    }
+
+    // --- Conteos ---
+    function countElements(graph){ const c={}; (graph.atoms||[]).forEach(a=>{ c[a.el]=(c[a.el]||0)+1; }); return c; }
+    function bondOrderHistogram(graph){ const h={1:0,2:0,3:0}; (graph.bonds||[]).forEach(b=>{ if(h[b.order]!=null) h[b.order]++; }); return h; }
+
+    // --- Backend helpers ---
+    async function smilesToGraph(smiles){
+      const headers = { 'Content-Type':'application/json' };
+      if (CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+      const resp = await fetch("{% url 'smiles_a_grafo' %}", { method:'POST', headers, body: JSON.stringify({ smiles }) });
+      if (!resp.ok) throw new Error('smiles_a_grafo error '+resp.status);
+      return await resp.json(); // {atoms,bonds}
+    }
+
+    function loadInventoryFromGraph(graph){
+      clearAll();
+      const counts = countElements(graph);
+      const elems = Object.entries(counts); // [['C',6], ...]
+      const cx = stage.width()/2, cy = stage.height()/2;
+      const radii = [0, 70, 120, 170];
+      let ring = 0, idxOnRing = 0;
+
+      elems.forEach(([el, n])=>{
+        for (let i=0;i<n;i++){
+          const r = radii[Math.min(ring, radii.length-1)];
+          const angle = (idxOnRing/(n+1)) * 2*Math.PI + (Math.random()*0.5);
+          const x = cx + r*Math.cos(angle) + (Math.random()*14-7);
+          const y = cy + r*Math.sin(angle) + (Math.random()*14-7);
+          createAtom(el, x, y);
+          idxOnRing++;
+          if (idxOnRing > n) { idxOnRing = 0; ring++; }
+        }
+      });
+      layer.draw();
+    }
+
+    // --- Ver pista (inventario) ---
+    document.getElementById('btn-pista').addEventListener('click', async ()=>{
+      const objetivo = `{{ objetivo_smiles|default:'' }}`.trim();
+      if (!objetivo) { alert('No hay objetivo configurado por el docente.'); return; }
+      try{
+        const g = await smilesToGraph(objetivo);
+        loadInventoryFromGraph(g); // solo bolitas
+      }catch(e){
+        console.error(e); alert('No se pudo cargar pista.');
+      }
+    });
+
+    // --- Comprobar ---
+    document.getElementById('sel-eval').value = 'strict';
+    document.getElementById('btn-check').addEventListener('click', async ()=>{
+      const mode = document.getElementById('sel-eval').value;
+      const objetivo = `{{ objetivo_smiles|default:'' }}`.trim();
+      if (!objetivo) { alert('No hay objetivo configurado.'); return; }
+
+      const graphNow = currentGraph();
+
+      if (mode === 'counts') {
+        try {
+          const gGoal = await smilesToGraph(objetivo);
+          const sameElems = JSON.stringify(countElements(gGoal)) === JSON.stringify(countElements(graphNow));
+          const sameBonds = JSON.stringify(bondOrderHistogram(gGoal)) === JSON.stringify(bondOrderHistogram(graphNow));
+          const ok = sameElems && sameBonds;
+          document.getElementById('feedback').innerHTML = ok
+            ? `<div class="text-success fw-semibold">✅ Conteos coinciden</div>`
+            : `<div class="text-danger fw-semibold">❌ Diferencias en conteos</div>`;
+        } catch(e){ console.error(e); document.getElementById('feedback').innerHTML = `<div class="text-danger">Error al evaluar.</div>`; }
+        return;
+      }
+
+      // Estricto (SMILES)
+      try{
+        const headers = { 'Content-Type':'application/json' };
+        if (CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+        const resp = await fetch("{% url 'validar_molecula_armada' practica.id %}", {
+          method:'POST', headers, body: JSON.stringify({ atoms: graphNow.atoms, bonds: graphNow.bonds, objetivo_smiles: objetivo })
+        });
+        const data = await resp.json();
+        document.getElementById('feedback').innerHTML = data.ok
+          ? `<div class="text-success fw-semibold">✅ Correcto (SMILES)</div>`
+          : `<div class="text-danger fw-semibold">❌ Aún no coincide (SMILES)</div>`;
+      }catch(e){ console.error(e); document.getElementById('feedback').innerHTML = `<div class="text-danger">Error de validación.</div>`; }
+    });
+
+    // --- Lienzo vacío al cargar ---
+    clearAll();
+  })();
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+// --- CSRF helper ---
+function getCookie(name){
+  const v = `; ${document.cookie}`.split(`; ${name}=`); 
+  return v.length===2 ? decodeURIComponent(v.pop().split(';').shift()) : '';
+}
+const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || getCookie('csrftoken') || '';
+
+// --- Obtiene el grafo actual del lienzo (usa tus arrays reales: atoms/bonds) ---
+function currentGraph(){
+  return {
+    atoms: (window.atoms||[]).map(a => ({ id:a.id, el:a.el, x:Math.round(a.x), y:Math.round(a.y) })),
+    bonds: (window.bonds||[]).map(b => ({ a1:b.a1, a2:b.a2, order:b.order }))
+  };
+}
+
+// --- Handler del botón "Comprobar" (reusa validar_molecula_armada) ---
+document.getElementById('btn-check')?.addEventListener('click', async ()=>{
+  const feedback = document.getElementById('feedback');
+  const btn = document.getElementById('btn-check');
+  const mode = document.getElementById('sel-eval')?.value || 'strict';
+
+  // modo conteo ya lo puedes manejar aparte; aquí cubrimos el estricto (SMILES)
+  if (mode !== 'strict') {
+    feedback.innerHTML = '<div class="text-muted">Usa el botón de conteo si lo implementaste en otro handler.</div>';
+    return;
+  }
+
+  // objetivo opcional: la vista lo resuelve sola si no lo mandas
+  const objetivo = `{{ objetivo_smiles|default:'' }}`.trim();
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+
+  const graph = currentGraph();
+
+  btn.disabled = true;
+  feedback.innerHTML = '<div class="text-muted">Comprobando…</div>';
+
+  try {
+    const resp = await fetch("{% url 'validar_molecula_armada' recurso.id %}", {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        atoms: graph.atoms,
+        bonds: graph.bonds,
+        // Puedes omitir objetivo_smiles: la vista lo resuelve.
+        // objetivo_smiles: objetivo
+      })
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text(); // puede venir HTML si es 404/500
+      console.error('validar_molecula_armada status', resp.status, text);
+      feedback.innerHTML = `<div class="text-danger">Error ${resp.status} al validar.</div>`;
+      return;
+    }
+
+    const data = await resp.json();
+    feedback.innerHTML = data.ok
+      ? `<div class="text-success fw-semibold">✅ Correcto (SMILES)</div>`
+      : `<div class="text-danger fw-semibold">❌ Aún no coincide (SMILES)</div>`;
+  } catch (e) {
+    console.error(e);
+    feedback.innerHTML = `<div class="text-danger">Error de red o JSON.</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+
+
+</body>
+</html>

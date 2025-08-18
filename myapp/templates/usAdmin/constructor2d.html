@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Constructor de moléculas (2D)</title>
+
+  <!-- CSRF para fetch -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+
+  <!-- Konva -->
+  <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+
+  <style>
+    body { background:#f7f8fa; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+    .wrap { max-width:1200px; margin:24px auto; padding:0 16px; display:grid; grid-template-columns: 1fr 300px; gap:16px; }
+    .panel { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:12px; }
+    .toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+    .btn { padding:8px 10px; border-radius:10px; border:1px solid #cbd5e1; background:#fff; cursor:pointer; font-weight:600; }
+    .btn.success { background:#10b981; color:#fff; border-color:#10b981; }
+    .btn.warn { background:#f59e0b; color:#fff; border-color:#f59e0b; }
+    .btn.input { padding:7px 10px; min-width:260px; text-align:left; font-weight:400; }
+    .canvas-box { background:#fafafa; border:1px dashed #d1d5db; border-radius:12px; padding:8px; }
+    #konvaStage { width:100%; height:520px; }
+    .info-row { font-size:14px; margin:4px 0; }
+    @media (max-width:900px){ .wrap { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Izquierda -->
+  <div class="panel">
+    <h3>🔧 Constructor de moléculas</h3>
+
+    <div class="toolbar">
+      <span><b>Añadir átomo:</b></span>
+      <button class="btn" data-atom="C">C</button>
+      <button class="btn" data-atom="H">H</button>
+      <button class="btn" data-atom="O">O</button>
+      <button class="btn" data-atom="N">N</button>
+
+      <span style="flex:1;"></span>
+
+      <!-- Cargar por SMILES / PubChem (unificado) -->
+      <input id="inp-query" class="btn input" list="pubchem_suggestions" placeholder="Nombre / SMILES / CID">
+    <datalist id="pubchem_suggestions"></datalist>
+      <label style="display:flex;align-items:center;gap:6px;">
+        <input type="checkbox" id="chk-inventario"> Cargar como inventario
+      </label>
+      <button id="btn-cargar" class="btn">Cargar</button>
+
+      <label style="display:flex;align-items:center;gap:6px;margin-left:8px;">
+        Evaluación:
+        <select id="sel-eval" class="btn">
+          <option value="strict">Estricta (SMILES)</option>
+          <option value="counts">Por conteo</option>
+        </select>
+      </label>
+
+      <button id="btn-clear" class="btn warn">Limpiar</button>
+      <button id="btn-check" class="btn success">Comprobar</button>
+      <!-- Objetivo SMILES + Guardar práctica -->
+        <input id="inp-objetivo" class="btn input" placeholder="SMILES objetivo (opcional)" value="{{ objetivo_smiles }}">
+        <button id="btn-save" class="btn">Guardar práctica</button>
+
+    </div>
+
+    <div class="canvas-box">
+      <div id="konvaStage"></div>
+    </div>
+  </div>
+
+  <!-- Derecha -->
+  <div class="panel">
+    <h3>ℹ️ Información</h3>
+    <div id="info">
+      <div class="info-row">Selecciona un átomo para ver detalles.</div>
+      <small>Tip: clic en un átomo (se marca en naranja) y luego en otro para crear un enlace. Clic sobre el enlace para alternar simple ⇄ doble ⇄ triple.</small>
+    </div>
+    <hr>
+    <h3>🎯 Objetivo</h3>
+    <div class="info-row"><b>Título:</b> {{ practica.titulo_objetivo|default:practica.titulo }}</div>
+    <div class="info-row"><b>SMILES objetivo:</b> {{ objetivo_smiles }}</div>
+    <hr>
+    <div id="feedback"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------------- CSRF helpers ----------------
+  function getCookie(name){
+    const v = `; ${document.cookie}`.split(`; ${name}=`);
+    return v.length===2 ? decodeURIComponent(v.pop().split(';').shift()) : null;
+  }
+  const CSRF_TOKEN =
+    document.querySelector('meta[name="csrf-token"]')?.content ||
+    getCookie('csrftoken') || '';
+
+  // ---------------- Config química ----------------
+  const VALENCE = { H:1, O:2, N:3, C:4 };
+  const COLORS  = { H:'#94a3b8', C:'#111827', O:'#ef4444', N:'#3b82f6' };
+
+  // ---------------- Estado ----------------
+  const atoms = [];  // {id, el, x, y, group, ring}
+  const bonds = [];  // {id, a1, a2, order, konvaLine}
+  let nextAtomId = 1, nextBondId = 1, pendingBondStart = null;
+
+  // ---------------- Konva ----------------
+  const container = document.getElementById('konvaStage');
+  const stage = new Konva.Stage({ container:'konvaStage', width:container.clientWidth, height:container.clientHeight });
+  const layer = new Konva.Layer();
+  stage.add(layer);
+  stage.draggable(false);
+  window.addEventListener('resize', ()=>{ stage.width(container.clientWidth); stage.height(container.clientHeight); layer.draw(); });
+
+  // ---------------- Helpers UI ----------------
+  function valenceUsed(id){ return bonds.reduce((s,b)=> s + ((b.a1===id||b.a2===id)?b.order:0), 0); }
+  function updateInfo(atom){
+    const box = document.getElementById('info');
+    if (!atom) {
+      box.innerHTML = '<div class="info-row">Selecciona un átomo para ver detalles.</div><small>Tip: clic en un átomo (se marca en naranja) y luego en otro para crear un enlace. Clic sobre el enlace para alternar simple ⇄ doble ⇄ triple.</small>';
+      return;
+    }
+    const used = valenceUsed(atom.id), max = VALENCE[atom.el]||0;
+    const warn = used>max ? ' style="color:#ef4444;font-weight:600;"' : '';
+    box.innerHTML = `
+      <div class="info-row"><b>Elemento:</b> ${atom.el}</div>
+      <div class="info-row"><b>ID:</b> ${atom.id}</div>
+      <div class="info-row"${warn}><b>Enlaces usados:</b> ${used} / ${max}</div>
+      <div class="info-row"><b>Posición:</b> (${atom.x|0}, ${atom.y|0})</div>
+      <small>Tip: clic en dos átomos para crear un enlace. Clic en el enlace para cambiar orden (1→2→3).</small>
+    `;
+  }
+  function setPendingAtom(atom){ atoms.forEach(a=>a.ring.visible(false)); if(atom) atom.ring.visible(true); pendingBondStart = atom; layer.draw(); }
+
+  // ---------------- Enlaces ----------------
+  function drawBondVisual(bond){
+    if (bond.konvaLine) bond.konvaLine.destroy();
+    const a1 = atoms.find(a=>a.id===bond.a1), a2 = atoms.find(a=>a.id===bond.a2);
+    if (!a1 || !a2) return;
+
+    const g = new Konva.Group({ listening:true });
+    const dx = a2.x - a1.x, dy = a2.y - a1.y, L = Math.hypot(dx,dy)||1;
+    const ux = -dy/L, uy = dx/L; // perpendicular
+
+    const offs = (bond.order===1)? [0] : (bond.order===2)? [-5,5] : [-7,0,7];
+    offs.forEach(off=>{
+      g.add(new Konva.Line({
+        points:[a1.x+ux*off, a1.y+uy*off, a2.x+ux*off, a2.y+uy*off],
+        stroke:'#111827', strokeWidth:3, lineCap:'round'
+      }));
+    });
+
+    // hit grande
+    const hit = new Konva.Line({ points:[a1.x,a1.y,a2.x,a2.y], stroke:'transparent', strokeWidth:16 });
+    g.add(hit);
+    g.on('click tap', ()=>{ bond.order = bond.order===3 ? 1 : bond.order+1; drawBondVisual(bond); layer.draw(); updateInfo(a1); });
+
+    bond.konvaLine = g; layer.add(g);
+  }
+  function redrawBondsForAtom(id){ bonds.forEach(b=>{ if (b.a1===id || b.a2===id) drawBondVisual(b); }); }
+
+  // ---------------- Átomos ----------------
+  function createAtom(el, x, y){
+    const id = nextAtomId++;
+    const circle = new Konva.Circle({ x:0, y:0, radius:18, fill:COLORS[el]||'#64748b', stroke:'#111827', strokeWidth:1.5 });
+    const label  = new Konva.Text({ x:-8, y:-7, text:el, fontSize:16, fontStyle:'bold', fill:'#fff' });
+    const ring   = new Konva.Circle({ x:0, y:0, radius:24, stroke:'#f59e0b', strokeWidth:2, visible:false });
+
+    const group = new Konva.Group({ x, y, draggable:true });
+    group.add(ring); group.add(circle); group.add(label); layer.add(group);
+
+    const atom = { id, el, x, y, group, ring }; atoms.push(atom);
+
+    group.on('dragmove', ()=>{ atom.x = group.x(); atom.y = group.y(); redrawBondsForAtom(atom.id); layer.batchDraw(); });
+    group.on('click tap', ()=>{
+      if (!pendingBondStart) { setPendingAtom(atom); updateInfo(atom); return; }
+      if (pendingBondStart.id === atom.id) { setPendingAtom(null); updateInfo(atom); return; }
+      const exists = bonds.some(b=> (b.a1===pendingBondStart.id && b.a2===atom.id) || (b.a1===atom.id && b.a2===pendingBondStart.id));
+      if (!exists){ bonds.push({ id:nextBondId++, a1:pendingBondStart.id, a2:atom.id, order:1, konvaLine:null }); drawBondVisual(bonds[bonds.length-1]); }
+      setPendingAtom(null); updateInfo(atom); layer.draw();
+    });
+
+    updateInfo(atom); layer.draw(); return atom;
+  }
+
+  function clearAll(){
+    atoms.splice(0,atoms.length); bonds.splice(0,bonds.length);
+    layer.destroyChildren(); layer.draw();
+    document.getElementById('info').innerHTML = '<div class="info-row">Selecciona un átomo para ver detalles.</div>';
+    document.getElementById('feedback').innerHTML = '';
+  }
+
+  // ---------------- Toolbar básica ----------------
+  document.querySelectorAll('.toolbar .btn[data-atom]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const el = btn.getAttribute('data-atom');
+      const x = stage.width()/2 + (Math.random()*80-40);
+      const y = stage.height()/2 + (Math.random()*80-40);
+      createAtom(el, x, y);
+    });
+  });
+  document.getElementById('btn-clear').addEventListener('click', clearAll);
+
+  // ---------------- Grafo actual ----------------
+  function currentGraph(){
+    return {
+      atoms: atoms.map(a=>({ id:a.id, el:a.el, x:Math.round(a.x), y:Math.round(a.y) })),
+      bonds: bonds.map(b=>({ a1:b.a1, a2:b.a2, order:b.order }))
+    };
+  }
+
+  // ---------------- Conteos ----------------
+  function countElements(graph){
+    const c = {};
+    (graph.atoms||[]).forEach(a => { c[a.el] = (c[a.el]||0) + 1; });
+    return c;
+  }
+  function bondOrderHistogram(graph){
+    const h = {1:0, 2:0, 3:0};
+    (graph.bonds||[]).forEach(b => { if (h[b.order] != null) h[b.order]++; });
+    return h;
+  }
+
+  // ---------------- Resolver entrada a SMILES ----------------
+  async function fetchJSON(url){
+    const r = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  }
+
+  // Nombre → SMILES (3 intentos: property, cids, autocomplete)
+  async function resolveNameToSmiles(name){
+    try {
+      const j = await fetchJSON(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/property/CanonicalSMILES/JSON`);
+      const s = j?.PropertyTable?.Properties?.[0]?.CanonicalSMILES;
+      if (s) return s;
+    } catch {}
+
+    try {
+      const j1 = await fetchJSON(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/cids/JSON`);
+      const cid = j1?.IdentifierList?.CID?.[0];
+      if (cid){
+        const j2 = await fetchJSON(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/CanonicalSMILES/JSON`);
+        const s2 = j2?.PropertyTable?.Properties?.[0]?.CanonicalSMILES;
+        if (s2) return s2;
+      }
+    } catch {}
+
+    try {
+      const ac = await fetchJSON(`https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(name)}/json?limit=5`);
+      const term = ac?.dictionary_terms?.compound?.[0];
+      if (term){
+        const j3 = await fetchJSON(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(term)}/property/CanonicalSMILES/JSON`);
+        const s3 = j3?.PropertyTable?.Properties?.[0]?.CanonicalSMILES;
+        if (s3) return s3;
+      }
+    } catch {}
+
+    return null;
+  }
+
+  // ⚠️ No aceptamos palabras solo con letras como SMILES.
+  function looksLikeSmiles(s){
+    // Requiere al menos un caracter típicamente "SMILES": dígitos o símbolos de enlace/anillo
+    return /[0-9=\[\]#()@+\-\\/]/.test(s || '');
+  }
+
+  // Principal: Nombre/CID/SMILES → Canonical SMILES
+function looksLikeSmiles(s){
+  return !!(s && /[A-Za-z0-9@+\-\[\]\(\)=#$\\/]/.test(s) && !/\s{2,}/.test(s));
+}
+
+// --- resolver a SMILES con fallback: si parece SMILES, lo retorna sin pedir nada ---
+async function resolveToSmiles(query){
+  const raw = (query || '').trim();
+  if (!raw) return null;
+
+  // 1) si ya parece SMILES -> úsalo directo
+  if (looksLikeSmiles(raw)) return raw;
+
+  // 2) intentar resolver en backend (si falla, devolvemos null)
+  try{
+    const headers = { 'Content-Type': 'application/json' };
+    if (typeof CSRF_TOKEN !== 'undefined' && CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+
+    const resp = await fetch('/api/resolve-smiles/', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query: raw })
+    });
+
+    if (!resp.ok) {
+      console.warn('resolve_smiles status', resp.status);
+      return null;
+    }
+    const data = await resp.json();
+    return data?.smiles || null;
+  }catch(e){
+    console.warn('resolveToSmiles backend error:', e);
+    return null;
+  }
+}
+  // ---------------- Backend: SMILES -> grafo ----------------
+// Caché simple en memoria para evitar repetir llamadas iguales
+const __graphCache = new Map();
+
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+// Reemplaza tu loadGraphFromSmiles por esta
+async function loadGraphFromSmiles(smiles, { retries=2, backoffMs=900 } = {}){
+  if (!smiles) throw new Error('smiles vacío');
+
+  if (__graphCache.has(smiles)) {
+    return __graphCache.get(smiles);
+  }
+
+  const headers = { 'Content-Type':'application/json' };
+  if (CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+
+  let lastErrText = '';
+  for (let attempt=0; attempt<=retries; attempt++){
+    try{
+      const resp = await fetch("{% url 'smiles_a_grafo' %}", {
+        method:'POST', headers, body: JSON.stringify({ smiles })
+      });
+
+      if (resp.ok) {
+        const data = await resp.json(); // {atoms,bonds}
+        __graphCache.set(smiles, data);
+        return data;
+      }
+
+      // Guarda texto para log
+      lastErrText = await resp.text();
+
+      // Si es timeout del backend o gateway (502/503/504), reintenta
+      if ([502,503,504].includes(resp.status) && attempt < retries) {
+        await sleep(backoffMs * (attempt+1)); // backoff exponencial simple
+        continue;
+      }
+
+      // Si es 400 (SMILES inválido) u otro, corta
+      console.error('smiles_a_grafo error:', resp.status, lastErrText);
+      throw new Error('smiles_a_grafo falló');
+
+    } catch (e){
+      // Errores de red: reintenta
+      if (attempt < retries) {
+        await sleep(backoffMs * (attempt+1));
+        continue;
+      }
+      console.error('smiles_a_grafo network error:', e, lastErrText);
+      throw e;
+    }
+  }
+  throw new Error('smiles_a_grafo falló');
+}
+
+  // ---------------- Pintar grafo (centrado/escalado) ----------------
+  function loadGraphOnCanvas(graph){
+    clearAll();
+
+    const pts = (graph.atoms||[]).map(a => ({x:a.x||0, y:a.y||0}));
+    if (!pts.length) { layer.draw(); return; }
+
+    let minX = Math.min(...pts.map(p=>p.x));
+    let maxX = Math.max(...pts.map(p=>p.x));
+    let minY = Math.min(...pts.map(p=>p.y));
+    let maxY = Math.max(...pts.map(p=>p.y));
+
+    const w0 = Math.max(1, maxX - minX);
+    const h0 = Math.max(1, maxY - minY);
+
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    const stageW = stage.width();
+    const stageH = stage.height();
+    const pad = 60;
+
+    const sx = (stageW - 2*pad) / w0;
+    const sy = (stageH - 2*pad) / h0;
+    const scale = Math.min(sx, sy);
+
+    const idMap = {};
+    (graph.atoms||[]).forEach(a=>{
+      const tx = ( (a.x||0) - cx ) * scale + stageW/2;
+      const ty = ( (a.y||0) - cy ) * scale + stageH/2;
+      const created = createAtom(a.el, tx, ty);
+      idMap[a.id] = created.id;
+    });
+
+    (graph.bonds||[]).forEach(b=>{
+      const a1 = idMap[b.a1] ?? b.a1;
+      const a2 = idMap[b.a2] ?? b.a2;
+      const bond = { id: nextBondId++, a1, a2, order: b.order||1, konvaLine: null };
+      bonds.push(bond);
+      drawBondVisual(bond);
+    });
+
+    layer.draw();
+  }
+
+  function loadInventoryFromGraph(graph){
+    clearAll();
+    const counts = countElements(graph);
+    const elems = Object.entries(counts);
+    const cx = stage.width()/2, cy = stage.height()/2;
+
+    const radii = [0, 70, 120, 170];
+    let ring = 0, idxOnRing = 0;
+
+    elems.forEach(([el, n])=>{
+      for (let i=0;i<n;i++){
+        const r = radii[Math.min(ring, radii.length-1)];
+        const angle = (idxOnRing/(n+1)) * 2*Math.PI + (Math.random()*0.5);
+        const x = cx + r*Math.cos(angle) + (Math.random()*14-7);
+        const y = cy + r*Math.sin(angle) + (Math.random()*14-7);
+        createAtom(el, x, y);
+        idxOnRing++;
+        if (idxOnRing > n) { idxOnRing = 0; ring++; }
+      }
+    });
+    layer.draw();
+  }
+
+document.getElementById('btn-cargar').addEventListener('click', async ()=>{
+  const q = document.getElementById('inp-query').value.trim();
+  if (!q) return alert('Escribe un SMILES, nombre o CID.');
+
+  const smiles = await resolveToSmiles(q);
+  console.log('[debug] entrada:', q, '→ SMILES:', smiles);
+
+  if (!smiles || !looksLikeSmiles(smiles)) {
+    alert('Por ahora, escribe un SMILES válido (ej: c1ccccc1). La búsqueda por nombre está temporalmente deshabilitada.');
+    return;
+  }
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (typeof CSRF_TOKEN !== 'undefined' && CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+
+    const resp = await fetch("{% url 'smiles_a_grafo' %}", {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ smiles })
+    });
+    if (!resp.ok) {
+      const txt = await resp.text();
+      console.error('smiles_a_grafo error:', resp.status, txt);
+      alert('No se pudo cargar el SMILES. Intenta nuevamente.');
+      return;
+    }
+
+    const graph = await resp.json(); // {atoms,bonds}
+    const asInventory = document.getElementById('chk-inventario')?.checked;
+    if (asInventory) loadInventoryFromGraph(graph);
+    else loadGraphOnCanvas(graph);
+
+    // autocompleta objetivo si está vacío
+    const inpObj = document.getElementById('inp-objetivo');
+    if (inpObj && !inpObj.value.trim()) inpObj.value = smiles;
+  } catch(e) {
+    console.error(e);
+    alert('Error al cargar el SMILES.');
+  }
+});
+
+  // ---------------- Validar ----------------
+  document.getElementById('btn-check').addEventListener('click', async ()=>{
+    const mode = document.getElementById('sel-eval').value;
+    const objetivo = (document.getElementById('inp-objetivo')?.value || '{{ objetivo_smiles|default:""|escapejs }}').trim();
+    const graphNow = currentGraph();
+
+    if (mode === 'counts') {
+      try {
+        if (!objetivo) return alert('No hay SMILES objetivo configurado.');
+        const goalGraph = await loadGraphFromSmiles(objetivo);
+
+        const cGoal = countElements(goalGraph);
+        const cNow  = countElements(graphNow);
+        const hGoal = bondOrderHistogram(goalGraph);
+        const hNow  = bondOrderHistogram(graphNow);
+
+        const sameElems = JSON.stringify(cGoal) === JSON.stringify(cNow);
+        const sameBonds = JSON.stringify(hGoal) === JSON.stringify(hNow);
+
+        const ok = sameElems && sameBonds;
+        document.getElementById('feedback').innerHTML = ok
+          ? `<div style="color:#16a34a;font-weight:600">✅ Conteos coinciden (átomos y órdenes de enlace)</div>`
+          : `<div style="color:#ef4444;font-weight:600">❌ Diferencias en conteo de átomos o enlaces</div>`;
+      } catch (e) {
+        console.error(e);
+        document.getElementById('feedback').innerHTML = `<div style="color:#ef4444">Error al evaluar por conteo.</div>`;
+      }
+      return;
+    }
+
+    try{
+      const headers = { 'Content-Type':'application/json' };
+      if (CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+
+      const resp = await fetch("{% url 'validar_molecula_armada' practica.id %}", {
+        method:'POST', headers,
+        body: JSON.stringify({ atoms: graphNow.atoms, bonds: graphNow.bonds, objetivo_smiles: objetivo })
+      });
+      const data = await resp.json();
+      const fb = document.getElementById('feedback');
+      fb.innerHTML = data.ok
+        ? `<div style="color:#16a34a;font-weight:600">✅ Correcto (SMILES)</div>`
+        : `<div style="color:#ef4444;font-weight:600">❌ Aún no coincide (SMILES)</div>`;
+    }catch(e){
+      console.error(e);
+      document.getElementById('feedback').innerHTML = `<div style="color:#ef4444">Error de validación.</div>`;
+    }
+  });
+
+  // ---------------- PRELOAD: inventario guardado o objetivo ----------------
+  (async function preload(){
+    const inv = JSON.parse('{{ inventario_json|default:"null"|escapejs }}');
+    const objetivo = '{{ objetivo_smiles|default:""|escapejs }}'.trim();
+
+    try {
+      if (inv) {
+        loadGraphOnCanvas(inv);
+      } else if (objetivo) {
+        const g = await loadGraphFromSmiles(objetivo);
+        loadGraphOnCanvas(g);
+      }
+    } catch (e) {
+      console.warn('No se pudo precargar práctica:', e);
+    }
+  })();
+
+  // ---------------- Guardar práctica ----------------
+  document.getElementById('btn-save').addEventListener('click', async ()=>{
+    const headers = { 'Content-Type':'application/json' };
+    if (CSRF_TOKEN) headers['X-CSRFToken'] = CSRF_TOKEN;
+
+    const g = currentGraph();
+    const inventario = { atoms: g.atoms, bonds: g.bonds };
+    const objetivo = (document.getElementById('inp-objetivo')?.value || '{{ objetivo_smiles|default:""|escapejs }}').trim();
+    const objetivoNombre = (document.getElementById('inp-objetivo-nombre')?.value || '').trim();
+
+    try {
+      const resp = await fetch("{% url 'guardar_practica_builder2d' practica.id %}", {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ inventario, objetivo_smiles: objetivo, objetivo_nombre: objetivoNombre })
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) throw new Error(data.msg || 'Error');
+      alert('✅ Práctica guardada');
+    } catch (e) {
+      console.error(e);
+      alert('❌ No se pudo guardar la práctica');
+    }
+  });
+
+  // ---------------- Autocomplete PubChem ----------------
+  function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+  async function fetchAutocompletePubChem(q){
+    const dl = document.getElementById('pubchem_suggestions');
+    if (!dl) return;
+    dl.innerHTML = '';
+    if (!q || q.trim().length < 2) return;
+
+    try {
+      const url = `https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(q)}/json?limit=15`;
+      const r = await fetch(url);
+      if (!r.ok) return;
+      const j = await r.json();
+      const terms = j?.dictionary_terms?.compound || [];
+      dl.innerHTML = terms.map(t => `<option value="${t}"></option>`).join('');
+    } catch(e){ console.warn('Autocomplete PubChem error:', e); }
+  }
+
+  const qInput = document.getElementById('inp-query');
+  if (qInput) {
+    qInput.addEventListener('input', debounce(ev => {
+      fetchAutocompletePubChem(ev.target.value);
+    }, 250));
+  }
+
+})(); 
+</script>
+
+</body>
+</html>

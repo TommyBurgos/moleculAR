@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ recurso.titulo }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ recurso.titulo }}</h2>
+        <p class="text-gray-600 mb-4">{{ recurso.descripcion }}</p>
+
+        <!-- Botón pantalla completa -->
+        <button onclick="toggleFullScreen()" 
+                class="mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition">
+            ⛶ Pantalla completa
+        </button>
+
+        <!-- Contenedor iframe -->
+        <div class="border border-gray-300 rounded-lg overflow-hidden">
+            <iframe id="viewer" 
+                    class="w-full min-h-[700px] h-[85vh] bg-white" 
+                    sandbox="allow-scripts allow-same-origin" 
+                    srcdoc="{{ recurso.contenido_html|escape }}">
+            </iframe>
+        </div>
+    </div>
+
+    <style>
+        .fullscreen {
+            position: fixed !important;
+            top: 0; left: 0;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999;
+            background: white;
+        }
+    </style>
+
+    <script>
+        function toggleFullScreen() {
+            document.getElementById('viewer').classList.toggle('fullscreen');
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                document.getElementById('viewer').classList.remove('fullscreen');
+            }
+        });
+    </script>
+</body>
+</html>

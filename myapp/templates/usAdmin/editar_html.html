@@ -1,0 +1,75 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar HTML embebido</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.css">
+  <style>
+    .CodeMirror { border: 1px solid #ddd; height: auto; min-height: 300px; }
+    .fullscreen {
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999;
+        background: white;
+    }
+  </style>
+  
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">🖋 Editar HTML embebido: {{ recurso.titulo }}</h2>
+
+    <form method="POST" class="mb-6">
+      {% csrf_token %}
+      <textarea id="editor" name="contenido_html">{{ recurso.contenido_html|default:'' }}</textarea>
+      <br>
+      <button type="submit" 
+              class="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition">
+        💾 Guardar
+      </button>
+    </form>
+
+    <h3 class="text-lg font-semibold mb-2">🔍 Previsualización (segura)</h3>
+    <button type="button" 
+            class="mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+            onclick="toggleFullScreen()">
+        ⛶ Pantalla completa
+    </button>
+
+    <div class="border border-gray-300 rounded-lg overflow-hidden">
+      <iframe id="preview" sandbox="allow-scripts allow-same-origin" class="w-full min-h-[500px] h-[70vh] bg-white"></iframe>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.15/mode/css/css.min.js"></script>
+  <script>
+    const editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+      mode: "htmlmixed",
+      lineNumbers: true,
+      theme: "default"
+    });
+
+    function updatePreview() {
+      document.getElementById("preview").srcdoc = editor.getValue();
+    }
+    editor.on("change", updatePreview);
+    updatePreview();
+
+    function toggleFullScreen() {
+      document.getElementById('preview').classList.toggle('fullscreen');
+    }
+    document.addEventListener('keydown', function(event) {
+      if (event.key === "Escape") {
+        document.getElementById('preview').classList.remove('fullscreen');
+      }
+    });
+  </script>
+</body>
+</html>
