@@ -14,15 +14,18 @@ from django.contrib import messages
 import tempfile
 import json
 
-from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante
+from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante, PracticaConfig, IntentoArmado
 
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
 from django.db.models import Q, Sum  
  
+import boto3
+import uuid
+from django.conf import settings
 
-import requests
+import requests, os
 
 API_RDKit_URL = "https://rdkit-api-l1d9.onrender.com"
 
@@ -43,7 +46,7 @@ def modificar_molecula(request):
         try:
             data = json.loads(request.body)
             smiles = data.get("smiles")
-            atomo_idx = data.get("atomo_idx")  # ya no convertimos a int aquí
+            atomo_idx = data.get("atomo_idx")  # ya no lo convierto a int aquí
             grupo = data.get("grupo")
 
             if not smiles or atomo_idx is None or not grupo:
@@ -103,8 +106,7 @@ def registroExitoso(request):
                     first_name=' ',
                     last_name=' '
                 )
-                print('***INICIO***')
-                # Si quieres asignar rol por defecto
+                print('***INICIO***')                
                 rol_estudiante = Rol.objects.get(nombre='estudiante')
                 print(rol_estudiante)
                 user.rol = rol_estudiante
@@ -114,7 +116,7 @@ def registroExitoso(request):
                 login(request, user)
                 print("Usuario creado y logueado exitosamente.")
                 
-                return redirect('inicio')  # O la vista que tengas definida
+                return redirect('inicio')
             except Exception as e:
                 print(f"❌ Error al crear el usuario: {e}")
                 return HttpResponse('Ocurrió un error al crear el usuario.')
@@ -205,12 +207,20 @@ def filtrar_estilos(style_str):
 
 
 import bleach
+from django.utils.safestring import mark_safe
+
 
 
 @login_required
 def detalle_recurso(request, recurso_id):
     print("He ingresado al detalle del recurso")
     recurso = get_object_or_404(Recurso, id=recurso_id)
+
+    if recurso.tipo.nombre.lower() == 'html embebido':
+        return render(request, 'usAdmin/detalle_html.html', {
+            'recurso': recurso,
+            #'contenido_html_safe': mark_safe(recurso.contenido_html or "")
+        })
 
     if request.user.is_authenticated and hasattr(request.user, 'rol') and request.user.rol.nombre == 'Estudiante':
         progreso, creado = ProgresoUsuario.objects.get_or_create(
@@ -221,7 +231,7 @@ def detalle_recurso(request, recurso_id):
         if not creado and not progreso.visto:
             progreso.visto = True
             progreso.save()
-
+    
     curso = recurso.seccion.curso 
     contenido_html = recurso.contenido_texto or ""
     html_limpio = limpiar_html_permitiendo_alineacion(contenido_html)
@@ -305,7 +315,7 @@ def obtener_smiles_pubchem(nombre_molecula):
     nombre_molecula = nombre_molecula.strip().lower()
     url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{nombre_molecula}/property/IsomericSMILES,SMILES/JSON"
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=30)
         if response.status_code == 200:
             data = response.json()
             properties = data.get('PropertyTable', {}).get('Properties', [])
@@ -318,109 +328,378 @@ def obtener_smiles_pubchem(nombre_molecula):
         print(f"❌ Error al consultar PubChem: {e}")
     return None
 
+@login_required
 def ver_practica(request, recurso_id):
-    recurso = get_object_or_404(Recurso, id=recurso_id)
+    recurso  = get_object_or_404(Recurso, id=recurso_id)
     practica = get_object_or_404(Practica, recurso=recurso)
-    print(f"el recurso es {recurso}")
-    print(f"la practica es {practica}")
+    cfg      = getattr(recurso, 'practica_cfg', None)
+    tipo     = (cfg.practica_tipo if cfg and cfg.practica_tipo else 'jsme').lower()
 
+    # Logs útiles
+    print(f"[ver_practica] recurso={recurso.id} tipo={tipo}")
+
+    # ——— Rama Constructor 2D (lienzo vacío para el estudiante) ———
+    if tipo == 'builder2d':
+        # objetivo desde config; si no hay, intenta desde el modelo de la práctica
+        objetivo_smiles = (cfg.objetivo_smiles or
+                           (practica.modelo_objetivo.smiles if practica.modelo_objetivo else '') if cfg else
+                           (practica.modelo_objetivo.smiles if practica.modelo_objetivo else ''))
+
+        # nombre “bonito”: el Modelo en cfg si existe, si no el título de la práctica o recurso
+        objetivo_nombre = (getattr(cfg, 'modelo', None).titulo
+                           if (cfg and getattr(cfg, 'modelo', None)) else
+                           (practica.titulo_objetivo or recurso.titulo))
+
+        ctx = {
+            'recurso': recurso,
+            'practica': practica,
+            'objetivo_smiles': objetivo_smiles or '',
+            'objetivo_nombre': objetivo_nombre or '',
+            'inventario_json': None,  #Lienzo inicia vacío (el alumno arma desde cero)
+        }
+        return render(request, 'usAdmin/constructor2d_ver.html', ctx)
+
+    # Rama JSME - vista “ver” 
+    # Muestra detalles e inicia sin solución final
     modelo = practica.modelo_objetivo
-    print(f"el modelo es {modelo}")
-    print(f"el smile es {modelo.smiles}")
-    print(modelo.smiles if modelo else "")
-    smiles = modelo.smiles if modelo else ""
-    
+    smiles = (modelo.smiles if modelo else (cfg.objetivo_smiles if cfg else ''))
+
     return render(request, 'usAdmin/ver_practica.html', {
         'practica': practica,
         'recurso': recurso,
-        'modelo':modelo,
-        'smiles': smiles
+        'modelo': modelo,
+        'smiles': smiles or '',
     })
 
 
 @login_required
 def editar_practica(request, recurso_id):
     recurso = get_object_or_404(Recurso, id=recurso_id)
-    practica, creado = Practica.objects.get_or_create(recurso=recurso)
+
+    # Config de práctica (OneToOne). Si no existe, por defecto JSME.
+    practica_cfg, _ = PracticaConfig.objects.get_or_create(
+        recurso=recurso,
+        defaults={'practica_tipo': 'jsme'}
+    )
+
+    # Metadatos de práctica (con título/instrucciones/modelo_objetivo)
+    practica, _ = Practica.objects.get_or_create(recurso=recurso)
 
     if request.method == 'POST':
-        fuente = request.POST.get('fuente_molecula')
-        titulo_objetivo = request.POST.get('titulo_objetivo')
-        instrucciones = request.POST.get('instrucciones')
-        smiles = None
+        # Permite que el form cambie el tipo de práctica 
+        nuevo_tipo = request.POST.get('practica_tipo')
+        if nuevo_tipo and nuevo_tipo in dict(PracticaConfig.TIPO_PRACTICA):
+            practica_cfg.practica_tipo = nuevo_tipo
+
+        fuente = request.POST.get('fuente_molecula')  # 'jsme' | 'pubchem'
+        titulo_objetivo = request.POST.get('titulo_objetivo') or practica.titulo_objetivo
+        instrucciones = request.POST.get('instrucciones') or practica.instrucciones
+
+        practica.titulo_objetivo = titulo_objetivo
+        practica.instrucciones = instrucciones
+
         modelo = None
+        smiles = None
 
-        if fuente == 'jsme':
-            smiles = request.POST.get('mol_input')
-            if smiles and smiles.strip():
+        # --- Rama JSME ---
+        if practica_cfg.practica_tipo == 'jsme':
+            if fuente == 'jsme':
+                smiles = (request.POST.get('mol_input') or '').strip()
+
+            elif fuente == 'pubchem':
+                nombre_molecula = (request.POST.get('nombre_molecula') or '').strip()
+                smiles = (obtener_smiles_pubchem(nombre_molecula) or '').strip()
+                if smiles and not titulo_objetivo:
+                    titulo_objetivo = nombre_molecula  
+
+            if smiles:
                 modelo = Modelo.objects.create(
-                    titulo=titulo_objetivo,
-                    descripcion=instrucciones,
+                    titulo=titulo_objetivo or recurso.titulo,
+                    descripcion=instrucciones or '',
                     tipo='2D',
-                    smiles=smiles.strip(),
+                    smiles=smiles,
                     creado_por=request.user,
                     visible_biblioteca=False
                 )
-            else:
-                return render(request, 'usAdmin/editor_dibujo.html', {
-                    'recurso': recurso,
-                    'error': 'No se pudo obtener el SMILES desde el editor JSME.'
-                })
-
-        elif fuente == 'pubchem':
-            nombre_molecula = request.POST.get('nombre_molecula')
-            print("Nombre recibido desde formulario:", nombre_molecula)
-            smiles = obtener_smiles_pubchem(nombre_molecula)
-            print("SMILES recibido desde PubChem:", smiles)
-            if smiles and smiles.strip():
-                modelo = Modelo.objects.create(
-                    titulo=nombre_molecula,
-                    descripcion='Molécula importada desde PubChem',
-                    tipo='2D',
-                    smiles=smiles.strip(),
-                    creado_por=request.user,
-                    visible_biblioteca=False
-                )
-            else:
-                return render(request, 'usAdmin/editor_dibujo.html', {
-                    'recurso': recurso,
-                    'error': f"No se pudo encontrar un SMILES válido para '{nombre_molecula}'. Intenta con otro nombre."
-                })
-
-        # Crear o actualizar la práctica solo si se creó un modelo
-        if modelo:
-            practica, creada = Practica.objects.get_or_create(
-                recurso=recurso,
-                defaults={
-                    'titulo_objetivo': titulo_objetivo,
-                    'instrucciones': instrucciones,
-                    'modelo_objetivo': modelo
-                }
-            )
-
-            if not creada:
-                practica.titulo_objetivo = titulo_objetivo
-                practica.instrucciones = instrucciones
                 practica.modelo_objetivo = modelo
-                practica.save()
+                practica_cfg.objetivo_smiles = smiles  # giardo también en la config
 
-            return redirect('detalle_curso', curso_id=recurso.seccion.curso.id)
+            else:
+                # Error: no hubo SMILES válido
+                return render(request, 'usAdmin/editor_dibujo.html', {
+                    'recurso': recurso,
+                    'practica': practica,
+                    'instruccion': instrucciones or "",
+                    'smiles': "",
+                    'error': 'No se pudo obtener un SMILES válido (JSME/PubChem).'
+                })
+
+        # --- Rama Constructor 2D: solo guardo/actualizo el objetivo SMILES si vino ---
+        elif practica_cfg.practica_tipo == 'builder2d':
+            objetivo_smiles = (request.POST.get('objetivo_smiles') or practica_cfg.objetivo_smiles or '').strip()
+            practica_cfg.objetivo_smiles = objetivo_smiles
+            # En builder2d no se cre el Modelo aquí; el armado lo hace el estudiante
+
+        # Persistencia de cambios
+        practica.save()
+        practica_cfg.save()
+
+        # Dispatcher: redirige a la UI correcta
+        if practica_cfg.practica_tipo == 'builder2d':
+            return redirect('practica_builder2d', recurso_id=recurso.id)
         else:
-            return render(request, 'usAdmin/editor_dibujo.html', {
-                'recurso': recurso,
-                'error': 'No se pudo crear la práctica porque no se generó ningún modelo.'
-            })
+            return redirect('editar_practica', recurso_id=recurso.id)
 
-    # Enviar el SMILES existente si hay modelo asociado, si no, un string vacío
-    smiles_existente = practica.modelo_objetivo.smiles if practica.modelo_objetivo else ""
-    print(f"el smile existente es {smiles_existente}")
+    # --- GET: muestra la pantalla correspondiente ---
+    if practica_cfg.practica_tipo == 'builder2d':
+        return redirect('practica_builder2d', recurso_id=recurso.id)
+
+    # Por defecto JSME: pasa SMILES existente si hay
+    smiles_existente = ""
+    if practica.modelo_objetivo:
+        smiles_existente = practica.modelo_objetivo.smiles or ""
+    elif practica_cfg.objetivo_smiles:
+        smiles_existente = practica_cfg.objetivo_smiles or ""
 
     return render(request, 'usAdmin/editor_dibujo.html', {
         'recurso': recurso,
         'practica': practica,
-        'instruccion': practica.instrucciones if practica.instrucciones else "",
-        'smiles': smiles_existente
+        'instruccion': practica.instrucciones or "",
+        'smiles': smiles_existente,
+        'modelo': getattr(practica, 'modelo_objetivo', None),
+        'error': None
     })
+
+def practica_jsme(request, recurso_id):
+    recurso = get_object_or_404(Recurso, pk=recurso_id)
+    practica_cfg = PracticaConfig.objects.filter(recurso=recurso).first()
+    practica, _ = Practica.objects.get_or_create(recurso=recurso)
+
+    smiles_existente = ""
+    if getattr(practica, 'modelo_objetivo', None):
+        smiles_existente = practica.modelo_objetivo.smiles or ""
+    elif practica_cfg and practica_cfg.objetivo_smiles:
+        smiles_existente = practica_cfg.objetivo_smiles or ""
+
+    return render(request, 'usAdmin/editor_dibujo.html', {
+        'recurso': recurso,
+        'practica': practica,
+        'instruccion': practica.instrucciones or "",
+        'smiles': smiles_existente,
+        'modelo': getattr(practica, 'modelo_objetivo', None),
+        'error': None
+    })
+
+# ---- UI Constructor 2D ----
+def _get_rdkit_base():
+    for c in [
+        getattr(settings, 'RDKit_API_URL', None),
+        getattr(settings, 'RDKIT_API_URL', None),
+        os.environ.get('RDKit_API_URL'),
+        os.environ.get('RDKIT_API_URL'),
+    ]:
+        if c and str(c).strip():
+            return str(c).strip().rstrip('/')
+    # fallback duro para no bloquear desarrollo si settings falla
+    return "https://rdkit-api-l1d9.onrender.com"
+
+
+# -------- pantalla del Constructor 2D --------
+@login_required
+def practica_builder2d(request, recurso_id):
+    recurso = get_object_or_404(Recurso, pk=recurso_id)
+    cfg, _ = PracticaConfig.objects.get_or_create(
+        recurso=recurso, defaults={'practica_tipo': 'builder2d'}
+    )
+
+    # objetivo e (opcional) inventario guardado
+    objetivo = (cfg.objetivo_smiles or '').strip()
+    inventario = None
+    if cfg.inventario_json:
+        try:
+            inventario = json.loads(cfg.inventario_json)
+        except Exception:
+            inventario = None
+
+    return render(request, 'usAdmin/constructor2d.html', {
+        'practica': recurso,                              # lo uso como "practica" en el template
+        'objetivo_smiles': objetivo,
+        'inventario_json': json.dumps(inventario) if inventario else 'null',
+    })
+
+from django.views.decorators.http import require_POST
+# -------- guardar inventario/objetivo para la práctica builder2d --------
+@login_required
+@require_POST
+def guardar_practica_builder2d(request, recurso_id):
+    recurso = get_object_or_404(Recurso, pk=recurso_id)
+    cfg, _ = PracticaConfig.objects.get_or_create(
+        recurso=recurso, defaults={'practica_tipo': 'builder2d'}
+    )
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'ok': False, 'msg': 'JSON inválido'}, status=400)
+
+    inventario = payload.get('inventario')  # dict {atoms,bonds}
+    objetivo = (payload.get('objetivo_smiles') or '').strip()
+
+    if inventario and isinstance(inventario, dict):
+        cfg.inventario_json = json.dumps(inventario)   # TextField: serializamos
+
+    if objetivo:
+        cfg.objetivo_smiles = objetivo
+
+    cfg.practica_tipo = 'builder2d'
+    cfg.save()
+
+    return JsonResponse({'ok': True, 'msg': 'Práctica guardada', 'objetivo_smiles': cfg.objetivo_smiles})
+
+import time
+
+# ------ API: SMILES -> grafo 2D (usa el microservicio /smiles_to_graph) ------
+@login_required
+@require_POST
+def smiles_a_grafo(request):
+    # Espera POST con JSON: {"smiles": "<cadena>"}
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'error': 'JSON inválido'}, status=400)
+
+    smiles = (body.get('smiles') or '').strip()
+    if not smiles:
+        return JsonResponse({'error': 'SMILES requerido'}, status=400)
+
+    base = _get_rdkit_base()  # Debería devolver la base del microservicio, algo así "https://rdkit-api-....onrender.com"
+    url = f"{base}/smiles_to_graph"
+
+    # Reintentos contra el microservicio (para cold starts o picos)
+    retries = 2           # total 3 intentos (0,1,2)
+    backoff_ms = 0.8      # segundos base de espera progresiva
+    last_text = ''
+
+    for attempt in range(retries + 1):
+        try:
+            r = requests.post(url, json={'smiles': smiles}, timeout=30)
+
+            if r.status_code == 200:
+                data = r.json()
+                return JsonResponse({
+                    'atoms': data.get('atoms', []),
+                    'bonds': data.get('bonds', [])
+                })
+
+            # Si es error temporal, reintenta
+            if r.status_code in (502, 503, 504) and attempt < retries:
+                time.sleep(backoff_ms * (attempt + 1))
+                continue
+
+            # Otros códigos: intenta extraer mensaje
+            try:
+                err = r.json().get('error', 'Error microservicio')
+            except Exception:
+                err = 'Error microservicio'
+            return JsonResponse({'error': err}, status=r.status_code)
+
+        except requests.Timeout:
+            if attempt < retries:
+                time.sleep(backoff_ms * (attempt + 1))
+                continue
+            return JsonResponse({'error': 'Timeout microservicio'}, status=504)
+
+        except Exception as e:
+            # Errores de red u otros: reintenta y si agota, devuelve 500
+            if attempt < retries:
+                time.sleep(0.6 * (attempt + 1))
+                continue
+            return JsonResponse({'error': str(e)}, status=500)
+
+# -------- API: validar armado vs objetivo (comparación canónica) --------
+@login_required
+@require_POST
+def validar_molecula_armada(request, recurso_id):
+    recurso = get_object_or_404(Recurso, pk=recurso_id)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'ok': False, 'msg': 'JSON inválido'}, status=400)
+
+    atoms = payload.get('atoms') or []
+    bonds = payload.get('bonds') or []    
+
+
+    # 1) objetivo: primero del body, luego de PracticaConfig, luego del modelo de JSME si existe
+    objetivo = (payload.get('objetivo_smiles') or '').strip()
+    if not objetivo:
+        cfg = getattr(recurso, 'practica_cfg', None)
+        if cfg and cfg.objetivo_smiles:
+            objetivo = cfg.objetivo_smiles.strip()
+        elif getattr(recurso, 'practica', None) and recurso.practica.modelo_objetivo:
+            objetivo = (recurso.practica.modelo_objetivo.smiles or '').strip()
+
+    base = _get_rdkit_base()
+
+    # 2) Grafo del estudiante -> SMILES canónico
+    try:
+        if not atoms:
+            return JsonResponse({'ok': False, 'msg': 'No hay átomos en el lienzo.'}, status=200)
+        r = requests.post(f"{base}/build_smiles", json={'atoms': atoms, 'bonds': bonds}, timeout=30)
+        r.raise_for_status()
+        rd = r.json()
+        smiles_gen_canon = (rd.get('smiles_canonico') or '').strip()
+        if not smiles_gen_canon:
+            return JsonResponse({'ok': False, 'msg': 'No se pudo generar SMILES.'}, status=502)
+    except Exception as e:
+        return JsonResponse({'ok': False, 'msg': f'Error build_smiles: {e}'}, status=500)
+
+    # 3) Canonizar objetivo
+    objetivo_canon = ''
+    if objetivo:
+        try:
+            r2 = requests.post(f"{base}/procesar", json={'entrada': objetivo, 'tipo': 'smiles'}, timeout=30)
+            if r2.status_code == 200:
+                objetivo_canon = (r2.json().get('smiles_canonico') or objetivo).strip()
+            else:
+                objetivo_canon = objetivo
+        except Exception:
+            objetivo_canon = objetivo
+
+    es_ok = bool(objetivo_canon) and (smiles_gen_canon == objetivo_canon)
+
+    # 4) Registrar intento
+    try:
+        IntentoArmado.objects.create(
+            practica=recurso,
+            estudiante=request.user,
+            graph_json=json.dumps({'atoms': atoms, 'bonds': bonds}),  # TextField: serializamos
+            smiles_generado=smiles_gen_canon,
+            es_correcto=es_ok
+        )
+    except Exception:
+        pass
+
+    return JsonResponse({
+        'ok': es_ok,
+        'smiles_canonico': smiles_gen_canon,
+        'objetivo_canonico': objetivo_canon,
+        'msg': 'Coincide' if es_ok else 'Aún no coincide'
+    })    
+
+@role_required(['Admin', 'Docente'])
+@login_required
+def editar_html(request, recurso_id):
+    recurso = get_object_or_404(Recurso, id=recurso_id, tipo__nombre__iexact='html embebido')
+
+    if request.method == 'POST':
+        recurso.contenido_html = request.POST.get('contenido_html') or ''
+        recurso.save()
+        messages.success(request, "HTML embebido guardado correctamente.")
+        return redirect('detalle_recurso', recurso.id)
+
+    return render(request, 'usAdmin/editar_html.html', {'recurso': recurso})
 
 
 def crear_recurso(request, seccion_id):
@@ -472,10 +751,18 @@ def crear_recurso(request, seccion_id):
                 print("⚠️ No se recibió la URL del video desde el formulario.")
               
         elif tipo.nombre.lower() == 'practica':
-            # Por ahora NO creamos la práctica. Solo dejamos el recurso creado.
-            # Luego redirigiremos a una vista donde se edita ese recurso.
-            print("Se creo el recurso practica")
-            return redirect('editar_practica', recurso.id)  
+            practica_tipo = request.POST.get('practica_tipo', 'jsme')
+            objetivo_smiles = request.POST.get('objetivo_smiles') or None
+            modelo_id = request.POST.get('modelo_id') or None
+
+            PracticaConfig.objects.create(
+                recurso=recurso,
+                practica_tipo=practica_tipo,
+                objetivo_smiles=objetivo_smiles,
+                modelo_id=modelo_id
+            )
+            return redirect('editar_practica', recurso.id)
+
         
         elif tipo.nombre.lower() == 'cuestionario':
             print("Dentro del if cuestionario")
@@ -486,15 +773,15 @@ def crear_recurso(request, seccion_id):
                 instrucciones=instrucciones,
                 tiempo_limite=tiempo_limite
             )  
-            # Por ahora NO creamos la práctica. Solo dejamos el recurso creado.
-            # Luego redirigiremos a una vista donde se edita ese recurso.
+            # Por ahora NO se crea la práctica. Solo dejamos el recurso creado.
+            # Redirijo a una vista donde se edita ese recurso.
             print("Se creo el recurso practica")
             return redirect('editar_cuestionario', recurso.id)  
         
         elif tipo.nombre.lower() == 'competencia':
             print("Dentro del if competencia")
             instrucciones = request.POST.get('instrucciones_competencia', '')
-            # Aquí puedes generar un código aleatorio o permitir ingresarlo desde el formulario
+            # Se puede aquí generar un código aleatorio o colocar uno.
             import random, string
             codigo = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
@@ -505,6 +792,14 @@ def crear_recurso(request, seccion_id):
             )
             print("Competencia creada correctamente.")
             return redirect('panel_competencia', recurso.competencia.id)
+        
+        elif tipo.nombre.lower() == 'html embebido':
+            contenido_html = request.POST.get('contenido_html') or ''
+            recurso.contenido_html = contenido_html
+            recurso.save()
+            return redirect('editar_html', recurso.id)
+
+
 
         return redirect('detalle_recurso',recurso.id)
 
@@ -512,13 +807,9 @@ from .forms import AdminCrearUsuarioForm
 
 @role_required('Admin')
 def crear_usuario_admin(request):
-    """
-    Solo permite acceso a usuarios con rol 'admin'.
-    Ajusta el nombre exacto de tu rol si es 'Admin', 'Administrador', etc.
-    """
     if not request.user.rol or request.user.rol.nombre.lower() != 'admin':
         messages.error(request, "No tienes permisos para acceder a esta sección.")
-        return redirect('no_autorizado')  # o a donde corresponda en tu proyecto
+        return redirect('acceso_denegado')  
 
     if request.method == 'POST':
         form = AdminCrearUsuarioForm(request.POST, request.FILES)
@@ -546,8 +837,7 @@ def crear_usuario_admin(request):
                 user.imgPerfil = imgPerfil
             user.save()
 
-            messages.success(request, f"Usuario '{username}' creado correctamente.")
-            # Redirige a donde prefieras: listado, perfil admin, etc.
+            messages.success(request, f"Usuario '{username}' creado correctamente.")            
             return redirect('crear_usuario_admin')
         else:
             messages.error(request, "Por favor corrige los errores del formulario.")
@@ -578,7 +868,7 @@ def detalleUsuarios(request):
     print(usuarios)
     print(usuarios2)
 
-        # Paginación — debe ir después de filtrar los usuarios
+        # Paginación — Va después de filtrar los usuarios
     paginator = Paginator(usuarios, 10)  # 10 usuarios por página
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -632,7 +922,7 @@ def editar_usuario(request, user_id):
     # Recursos vistos por el estudiante
     recursos_vistos = ProgresoUsuario.objects.filter(usuario=usuario, visto=True).count()
 
-    # Evitamos división por cero
+    # Se evita división por cero
     if recursos_totales > 0:
         progreso = int((recursos_vistos / recursos_totales) * 100)
     else:
@@ -645,7 +935,7 @@ def editar_usuario(request, user_id):
         usuario.is_active = 'is_active' in request.POST  # checkbox activo
         usuario.save()
         messages.success(request, 'Usuario actualizado correctamente.')
-        return redirect('detalleUsuarios-adm')  # o donde quieras redirigir
+        return redirect('detalleUsuarios-adm') 
 
     context = {
         'usuario': usuario,
@@ -679,17 +969,11 @@ def resetContra_usuario(request, id):
     usuario = get_object_or_404(User, id=id)
     # lógica para mostrar o editar
     nueva_contrasena = "12345678"
-    usuario.set_password(nueva_contrasena)  # Cambia la contraseña de forma segura
+    usuario.set_password(nueva_contrasena)  # Se cambia la contraseña de forma segura
     usuario.save()
     messages.success(request, f"La contraseña del usuario '{usuario.username}' ha sido reseteada con éxito.")
     return redirect('detalleUsuarios-adm')
 
-
-
-
-import boto3
-import uuid
-from django.conf import settings
 
 @csrf_exempt
 def obtener_presigned_url(request):
@@ -705,7 +989,6 @@ def obtener_presigned_url(request):
             region_name=settings.AWS_S3_REGION_NAME
         )
 
-        # ⚠️ NO incluir campos ACL ni condiciones ACL
         presigned_post = s3.generate_presigned_post(
             Bucket=settings.AWS_STORAGE_BUCKET_NAME,
             Key=nuevo_nombre,
@@ -852,7 +1135,7 @@ def unirse_curso(request):
                 messages.success(request, 'Te has unido correctamente al curso.')
         except Curso.DoesNotExist:
             messages.error(request, 'El código ingresado no es válido.')
-        return redirect('listar_cursos')  # o tu página de cursos
+        return redirect('listar_cursos') 
 
 def listar_cursos(request):
     usuario = request.user
@@ -1080,7 +1363,7 @@ def custom_login(request):
                         print(f"❌ Error al redirigir a estudiante: {e}")
                         return render(request, 'sign-in.html', {'error': f'Error de redirección estudiante: {e}'})
                         
-                elif rol == 3:  # Profesor/Docente
+                elif rol == 3:  # Docente
                     print("🚀 Debería redirigir a dashboard docente")
                     try:
                         return redirect('teacher_dashboard')
@@ -1131,7 +1414,7 @@ def procesar_molecula(request):
             response = requests.post(
                 f"{settings.RDKit_API_URL}/procesar",
                 json={"entrada": entrada, "tipo": tipo},
-                timeout=10
+                timeout=30
             )
 
             if response.status_code == 200:
@@ -1148,6 +1431,80 @@ def procesar_molecula(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'message': 'Usa POST con SMILES o MOL'})
+
+
+# ---- API Validar (Constructor 2D → RDKit) ----
+def _pubchem_json(url, timeout=15):
+    r = requests.get(url, timeout=timeout)
+    if r.status_code != 200:
+        return None
+    try:
+        return r.json()
+    except:
+        return None
+
+def _pc(url, timeout=15):
+    try:
+        r = requests.get(url, timeout=timeout)
+        if r.status_code != 200:
+            print("PUBCHEM non-200:", r.status_code, url)
+            return None
+        return r.json()
+    except Exception as e:
+        print("PUBCHEM error:", e, url)
+        return None
+
+import json, re, urllib.request, urllib.error
+
+SMILES_PATTERN = re.compile(r"^[A-Za-z0-9@+\-\[\]\(\)=#$]{2,}$")
+
+def _http_post_json(url: str, payload: dict, timeout: int = 30):
+    data = json.dumps(payload).encode('utf-8')
+    req = urllib.request.Request(
+        url, data=data,
+        headers={'Content-Type': 'application/json'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status, resp.read().decode('utf-8', errors='replace')
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode('utf-8', errors='replace')
+    except Exception as e:
+        return None, str(e)
+
+@csrf_exempt
+@require_POST
+def resolve_smiles(request):
+    try:
+        body = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'smiles': None})  # sin romper
+
+    query = (body.get('query') or '').strip()
+    if not query:
+        return JsonResponse({'smiles': None})
+
+    # si ya parece SMILES → devuélvelo (no se hace nada más)
+    if SMILES_PATTERN.match(query):
+        return JsonResponse({'smiles': query})
+
+    # si quieres dejar el intento remoto activado, lo mantengo:
+    base = getattr(settings, 'RDKit_API_URL', '').rstrip('/')
+    if not base:
+        return JsonResponse({'smiles': None})  # sin romper
+
+    status, body = _http_post_json(f"{base}/name_to_smiles", {'query': query})
+    if status != 200:
+        return JsonResponse({'smiles': None})  # sin romper
+
+    try:
+        data = json.loads(body)
+    except Exception:
+        return JsonResponse({'smiles': None})
+
+    return JsonResponse({'smiles': data.get('smiles')})
+
 
 #Paula
 
@@ -3042,7 +3399,7 @@ def editar_perfil(request):
         form = EditarPerfilForm(request.POST, request.FILES, instance=user)
         if form.is_valid():
             form.save()
-            return redirect('editar_perfil')  # Puedes cambiar esto a donde quieras redirigir
+            return redirect('editar_perfil')  
     else:
         form = EditarPerfilForm(instance=user)
 

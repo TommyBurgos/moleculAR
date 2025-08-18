@@ -10,4 +10,5 @@ admin.site.register(Cuestionario)
 admin.site.register(Recurso)
 admin.site.register(Curso)
 admin.site.register(TipoPregunta)
+admin.site.register(PracticaConfig)
 

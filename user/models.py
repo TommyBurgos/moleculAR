@@ -84,6 +84,8 @@ class Recurso(models.Model):
     contenido_texto = models.TextField(blank=True, null=True)  #NUEVO CAMPO para recurso tipo texto
     visible_biblioteca = models.BooleanField(default=False)  # Marco si va a la biblioteca pública
     video_url = models.URLField(blank=True, null=True)
+    contenido_html = models.TextField(blank=True, null=True)  # Código HTML puro
+
 
     creado_por = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, 
                                    related_name='recursos_creados')
@@ -140,6 +142,37 @@ class Practica(models.Model):
 
     def __str__(self):
         return f"Práctica - {self.recurso.titulo}"
+
+import json
+from typing import Union, Optional
+
+class PracticaConfig(models.Model):
+    TIPO_PRACTICA = [('jsme','Editor JSME'), ('builder2d','Constructor 2D')]
+    recurso = models.OneToOneField(Recurso, on_delete=models.CASCADE, related_name='practica_cfg')
+    practica_tipo = models.CharField(max_length=20, choices=TIPO_PRACTICA, default='jsme')
+    objetivo_smiles = models.TextField(blank=True, null=True)
+    modelo = models.ForeignKey('Modelo', blank=True, null=True, on_delete=models.SET_NULL)
+    # antes: JSONField
+    inventario_json = models.TextField(blank=True, null=True)
+
+    # helpers (opcionales)
+    def get_inventario(self):
+        try:
+            return json.loads(self.inventario_json) if self.inventario_json else None
+        except Exception:
+            return None    
+    def set_inventario(self, data: Optional[Union[dict, list]]):
+
+        self.inventario_json = json.dumps(data) if data is not None else None
+
+class IntentoArmado(models.Model):
+    practica = models.ForeignKey('Recurso', on_delete=models.CASCADE, related_name='intentos_armado')
+    estudiante = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
+    # antes: JSONField
+    graph_json = models.TextField()   # guardaremos el JSON como string
+    smiles_generado = models.TextField(blank=True)
+    es_correcto = models.BooleanField(default=False)
+    creado_en = models.DateTimeField(auto_now_add=True)
 
 class Modelo(models.Model):
     titulo = models.CharField(max_length=150)

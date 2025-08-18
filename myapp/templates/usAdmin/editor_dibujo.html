@@ -18,18 +18,32 @@
   </script>
   
   <script type="text/javascript" src="{% static 'jsme/jsme.nocache.js' %}"></script>
+  
   <style>
     body {
       font-family: sans-serif;
       background: #f0f0f0;      
     }
 
-    #jsme_container {
-      width: 600px;
-      height: 400px;
-      border: 1px solid #ccc;
-      margin-bottom: 15px;
-    }
+     .jsme-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.06);
+    padding: 14px;
+  }
+  #jsme_container {
+    width: 100%;
+    height: 420px;            /* alto base */
+    min-height: 360px;
+    border-radius: 10px;
+    overflow: hidden;         /* oculta bordes del canvas */
+  }
+  /* Modo “claro” forzado del fondo de página, ajusta si usas dark-mode */
+  body { background: #f7f8fa; }
+  @media (max-width: 768px) {
+    #jsme_container { height: 360px; }
+  }
 
     textarea {
       width: 600px;
@@ -57,8 +71,8 @@
     let jsmeApplet;
 
 function jsmeOnLoad() {
-    jsmeApplet = new JSApplet.JSME("jsme_container", "600px", "400px", {
-      options: "oldlook,star,query,hydrogens,noquery"
+    jsmeApplet = new JSApplet.JSME("jsme_container", "100%", "100%", {
+      options: "noquery,hydrogens"
     });
 
     const smilesExistente = "{{ smiles|default:''|escapejs }}";
@@ -74,6 +88,12 @@ function jsmeOnLoad() {
         }
       }, 300);
     }
+    window.addEventListener('resize', () => {
+      // Recalcula en px reales del contenedor
+      const c = document.getElementById('jsme_container');
+      if (c && jsmeApplet) jsmeApplet.setSize(c.clientWidth, c.clientHeight);
+
+    });
   }
     function exportar(formato) {
       const molecula = formato === 'mol' ? jsmeApplet.molFile() : jsmeApplet.smiles();
@@ -82,10 +102,31 @@ function jsmeOnLoad() {
     }
 
     function verEn3D() {
-      const smiles = jsmeApplet.smiles();
-      const url = "https://embed.molview.org/v1/?mode=balls&smiles=" + encodeURIComponent(smiles);
-      window.open(url, "_blank");
+    if (!jsmeApplet) return;
+
+    const smiles = jsmeApplet.smiles().trim();
+    if (!smiles) {
+      alert("Primero dibuja o carga una molécula para visualizarla en 3D.");
+      return;
     }
+
+    // Usamos MolView embed con modo bolas (3D)
+    const url = "https://embed.molview.org/v1/?mode=balls&smiles=" + encodeURIComponent(smiles);
+
+    const iframe = document.getElementById("iframe3D");
+    iframe.src = url;
+
+    // Abrir modal (Bootstrap 5)
+    const modal = new bootstrap.Modal(document.getElementById('modal3D'));
+    modal.show();
+
+    // Limpieza al cerrar: vaciar src para detener procesos en el iframe
+    const modalEl = document.getElementById('modal3D');
+    modalEl.addEventListener('hidden.bs.modal', function handleClose() {
+      iframe.src = "";
+      modalEl.removeEventListener('hidden.bs.modal', handleClose);
+    });
+  }
   </script>
 
   <script>
@@ -179,23 +220,53 @@ function jsmeOnLoad() {
         <input type="radio" name="fuente_molecula" value="jsme" checked> Dibujar manualmente<br>
         <input type="radio" name="fuente_molecula" value="pubchem"> Buscar desde PubChem
 
-        <div id="busqueda_pubchem" class="mt-3" style="display: none;">
-          <label for="nombre_molecula">🔎 Nombre del compuesto (PubChem):</label>
-          <input type="text" name="nombre_molecula" class="form-control">
+        <div id="busqueda_pubchem" class="mt-3" style="display:none;">
+        <label for="nombre_molecula">🔎 Nombre del compuesto (PubChem):</label>
+        <div class="input-group">
+          <input type="text"
+                id="nombre_molecula"
+                name="nombre_molecula"
+                class="form-control"
+                placeholder="Ej: benzene, glucose, caffeine…"
+                list="pubchem_suggestions"
+                autocomplete="off">
+          <button class="btn btn-primary" type="button" onclick="cargarDesdePubChem()">Cargar</button>
         </div>
-
-        <label><input type="radio" name="formato" value="smiles" checked> SMILES</label>
-        <label><input type="radio" name="formato" value="mol"> MOL</label><br><br>
-
-        <button type="button" onclick="exportar('smiles')">📤 Exportar SMILES</button>
-        <button type="button" onclick="exportar('mol')">📤 Exportar MOL</button>
-        <button type="button" onclick="verEn3D()">🧬 Ver molécula en 3D</button>
+        <datalist id="pubchem_suggestions"></datalist>
+        <small class="text-muted">
+          Empieza a escribir para ver sugerencias de PubChem. Presiona <kbd>Enter</kbd> o “Cargar” para traer la molécula.
+        </small>
+      </div>        
+        
 
         <input type="hidden" name="tipo" id="tipo" value="smiles">
-        <textarea name="mol_input" id="mol_input" placeholder="Aquí aparecerá el SMILES o MOL exportado..."></textarea>
+        <textarea style="display:none;" name="mol_input" id="mol_input" placeholder="Aquí aparecerá el SMILES o MOL exportado..."></textarea>
 
-        <button type="button" onclick="guardarYEnviar()">💾 Guardar práctica</button>
+        <button style="display:none;" type="button" onclick="guardarYEnviar()">💾 Guardar práctica</button>
       </form>
+
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">  
+
+  <!-- Botones principales -->
+  <div class="btn-group ms-auto">
+    <button type="button" class="btn btn-secondary" onclick="limpiarJSME()">🧹 Limpiar</button>
+    <button type="button" class="btn btn-info" onclick="verEn3D()">🧬 Ver 3D</button>
+    <button type="button" class="btn btn-success" onclick="guardarYEnviar()">💾 Guardar práctica</button>
+
+    <!-- Más (exportar y utilidades) -->
+    <div class="btn-group">
+      <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+        Más
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="#" onclick="copiarSmiles()">Copiar SMILES</a></li>
+        <li><a class="dropdown-item" href="#" onclick="descargarSMILES()">Descargar SMILES (.txt)</a></li>
+        <li><a class="dropdown-item" href="#" onclick="descargarMOL()">Descargar MOL (.mol)</a></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 
       <div id="jsme_container">Cargando editor...</div>
     </div>
@@ -226,6 +297,245 @@ function guardarYEnviar() {
     });
   });
 </script>
+
+<!-- Modal: Vista 3D -->
+<div class="modal fade" id="modal3D" tabindex="-1" aria-labelledby="modal3DLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal3DLabel">Visualización 3D de la molécula</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body p-0" style="height: 75vh;">
+        <!-- Contenedor del iframe -->
+        <iframe id="iframe3D"
+                title="MolView 3D"
+                src=""
+                style="border:0; width:100%; height:100%;"
+                allowfullscreen
+                referrerpolicy="no-referrer">
+        </iframe>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===========================
+   Utilidades generales
+=========================== */
+function debounce(fn, delay) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+
+/* ===========================
+   Guardar práctica
+=========================== */
+function guardarYEnviar() {
+  if (typeof jsmeApplet === 'undefined' || !jsmeApplet) return;
+  const smiles = jsmeApplet.smiles();
+  const ta = document.getElementById("mol_input");
+  if (ta) ta.value = smiles;
+  const tipo = document.getElementById("tipo");
+  if (tipo) tipo.value = "smiles";
+  const form = document.getElementById("formulario_molecula");
+  if (form) form.submit();
+}
+
+/* ===========================
+   Mostrar / ocultar fuentes
+=========================== */
+function toggleFuenteMolecula(fuente) {
+  const busqueda = document.getElementById("busqueda_pubchem");
+  const cont = document.getElementById("jsme_container");
+  if (busqueda) busqueda.style.display = (fuente === 'pubchem') ? 'block' : 'none';
+  if (cont) cont.style.display = (fuente === 'jsme') ? 'block' : 'none';
+}
+
+/* ===========================
+   Autocompletado PubChem
+=========================== */
+async function fetchSugerenciasPubChem(query) {
+  const dl = document.getElementById('pubchem_suggestions');
+  if (!dl) return;
+  dl.innerHTML = '';
+  if (!query || query.trim().length < 2) return; // desde 2 caracteres
+  try {
+    const url = `https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/${encodeURIComponent(query)}/json?limit=15`;
+    const r = await fetch(url);
+    if (!r.ok) return;
+    const data = await r.json();
+    const terms = data?.dictionary_terms?.compound || [];
+    dl.innerHTML = terms.map(t => `<option value="${t}"></option>`).join('');
+  } catch (e) {
+    console.warn('Autocomplete PubChem error:', e);
+  }
+}
+
+/* ===========================
+   Cargar desde PubChem
+   - Soporta nombre y "CID: 5793"/"5793"
+=========================== */
+async function cargarDesdePubChem() {
+  const input = document.getElementById('nombre_molecula');
+  const raw = (input?.value || '').trim();
+  if (!raw) { alert('Escribe un nombre o CID.'); return; }
+
+  // ¿Es un CID?
+  const cidMatch = raw.match(/^\s*(?:cid\s*[:#]?\s*)?(\d+)\s*$/i);
+
+  try {
+    let smiles = null;
+
+    if (cidMatch) {
+      const cid = cidMatch[1];
+      smiles = await getSmilesByCID(cid);
+    } else {
+      // 1) Nombre → SMILES directo
+      smiles = await getSmilesByName(raw);
+      // 2) Si no, Nombre → CID → SMILES
+      if (!smiles) {
+        const cid = await getFirstCIDByName(raw);
+        if (cid) smiles = await getSmilesByCID(cid);
+      }
+    }
+
+    if (!smiles) { alert('No se encontró SMILES para ese término en PubChem.'); return; }
+
+    // Pintar en JSME
+    if (typeof jsmeApplet !== 'undefined' && jsmeApplet) {
+      try { jsmeApplet.readGenericMolecularInput(smiles); } catch {}
+    }
+
+    // Actualizar campos ocultos para tu POST
+    const ta = document.getElementById('mol_input'); if (ta) ta.value = smiles;
+    const tipo = document.getElementById('tipo');    if (tipo) tipo.value = 'smiles';
+
+    // Asegurar visibilidad del editor
+    const cont = document.getElementById('jsme_container');
+    if (cont && cont.style.display === 'none') cont.style.display = 'block';
+
+    // Cambiar radio a "jsme" y ocultar búsqueda
+    const rJ = document.querySelector('input[name="fuente_molecula"][value="jsme"]');
+    if (rJ) rJ.checked = true;
+    const busq = document.getElementById('busqueda_pubchem'); if (busq) busq.style.display = 'none';
+
+    // Llevar vista al editor
+    cont?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (e) {
+    console.error(e);
+    alert('Error al cargar desde PubChem. Intenta con otro nombre o un CID.');
+  }
+}
+
+/* ----- Helpers PubChem ----- */
+async function getSmilesByName(name) {
+  const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/property/CanonicalSMILES/JSON`;
+  const r = await fetch(url);
+  if (!r.ok) return null;
+  const data = await r.json();
+  return data?.PropertyTable?.Properties?.[0]?.CanonicalSMILES || null;
+}
+
+async function getFirstCIDByName(name) {
+  const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(name)}/cids/JSON`;
+  const r = await fetch(url);
+  if (!r.ok) return null;
+  const data = await r.json();
+  const cids = data?.IdentifierList?.CID || [];
+  return cids.length ? String(cids[0]) : null;
+}
+
+async function getSmilesByCID(cid) {
+  const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/${cid}/property/CanonicalSMILES/JSON`;
+  const r = await fetch(url);
+  if (!r.ok) return null;
+  const data = await r.json();
+  return data?.PropertyTable?.Properties?.[0]?.CanonicalSMILES || null;
+}
+
+/* ===========================
+   Editor: limpiar / exportar / utilidades
+=========================== */
+function limpiarJSME() {
+  if (!jsmeApplet) return;
+  try {
+    if (typeof jsmeApplet.reset === 'function') {
+      jsmeApplet.reset(true);
+    } else {
+      jsmeApplet.readGenericMolecularInput('');
+    }
+  } catch (e) {
+    console.warn('No se pudo limpiar JSME:', e);
+  }
+}
+
+// (Opcional) Exportar — si aún usas estos botones en algún lugar
+function exportar(formato) {
+  if (!jsmeApplet) return;
+  const dato = (formato === 'mol') ? jsmeApplet.molFile() : jsmeApplet.smiles();
+  const ta = document.getElementById("mol_input"); if (ta) ta.value = dato;
+  const tipo = document.getElementById("tipo");    if (tipo) tipo.value = formato;
+}
+
+// Utilidades (dropdown "Más")
+function copiarSmiles() {
+  if (!jsmeApplet) return;
+  const smiles = jsmeApplet.smiles();
+  navigator.clipboard?.writeText(smiles).then(()=>{},()=>{});
+  alert('SMILES copiado al portapapeles.');
+}
+function descargarSMILES() {
+  if (!jsmeApplet) return;
+  const smiles = jsmeApplet.smiles();
+  descargarTexto('molecula.smiles.txt', smiles);
+}
+function descargarMOL() {
+  if (!jsmeApplet) return;
+  const mol = jsmeApplet.molFile();
+  descargarTexto('molecula.mol', mol);
+}
+function descargarTexto(nombre, contenido) {
+  const blob = new Blob([contenido], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = nombre; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ===========================
+   Enlaces y eventos (cuando el DOM esté listo)
+=========================== */
+document.addEventListener('DOMContentLoaded', () => {
+  // Radio fuente_molecula
+  document.querySelectorAll('input[name="fuente_molecula"]').forEach(radio => {
+    radio.addEventListener('change', function () { toggleFuenteMolecula(this.value); });
+  });
+
+  // Autocomplete de PubChem
+  const inputNombre = document.getElementById('nombre_molecula');
+  if (inputNombre) {
+    inputNombre.addEventListener('input', debounce(ev => {
+      fetchSugerenciasPubChem(ev.target.value);
+    }, 250));
+
+    // ENTER para cargar
+    inputNombre.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        cargarDesdePubChem();
+      }
+    });
+  }
+});
+</script>
+
 
 </body>
 </html>

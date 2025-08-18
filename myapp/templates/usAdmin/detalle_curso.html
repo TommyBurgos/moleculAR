@@ -214,9 +214,9 @@
 										<a href="{% url 'editar_video' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar</a>
 										{% elif recurso.tipo.nombre == 'Texto' %}
 										<a href="{% url 'editar_texto' recurso.id %}" class="btn btn-sm btn-outline-warning">Editar texto</a>
+										{% elif recurso.tipo.nombre == 'HTML embebido' %}
+									    <a href="{% url 'editar_html' recurso.id %}" class="btn btn-sm btn-outline-warning hover:bg-blue-700 transition">Editar HTML</a>
 										{% endif %}
-
-										
 										{% endif %}	
 
 										</div>
@@ -382,6 +382,26 @@
 				</div>
 
 				<!-- SI ES PRÁCTICA -->
+				 <div id="campo-tipo-practica" style="display:none;">
+					<label>Tipo de práctica</label>
+					<select name="practica_tipo" class="form-select">
+						<option value="jsme">Editor JSME</option>
+						<option value="builder2d">Constructor 2D</option>
+					</select>
+
+					<!-- Opcional: objetivo inicial -->
+					<label class="mt-2">SMILES objetivo (opcional)</label>
+					<input type="text" name="objetivo_smiles" class="form-control" placeholder="Ej. C1=CC=CC=C1" />
+
+					<!-- Opcional: elegir Modelo -->
+					<label class="mt-2">Modelo (opcional)</label>
+					<select name="modelo_id" class="form-select">
+						<option value="">—</option>
+						{% for m in modelos %}
+						<option value="{{ m.id }}">{{ m.titulo }}</option>
+						{% endfor %}
+					</select>
+					</div>
 				 <!-- Voy a crear un recurso y aparte creare la molecula adicional -->
 				
 				<!-- SI ES TEXTO -->
@@ -631,6 +651,13 @@ document.getElementById("formAgregarRecurso").addEventListener("submit", functio
   });
 </script>
 
+<script>
+  // cuando cambias el tipo de recurso en el modal
+  document.querySelector('select[name="tipo"]').addEventListener('change', function(){
+    const esPractica = this.options[this.selectedIndex].text.toLowerCase().includes('practica');
+    document.getElementById('campo-tipo-practica').style.display = esPractica ? 'block' : 'none';
+  });
+</script>
 
 
 </body>
