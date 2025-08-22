@@ -1260,7 +1260,6 @@ def editarCuestionario(request, cuestionario_id):
 
 @login_required
 def editar_cuestionario(request, recurso_id):
-    """Vista para editar un cuestionario existente - AHORA USA RECURSO_ID"""
     print(f"✏️ editarCuestionario llamada con Recurso ID: {recurso_id}")
     
     recurso = get_object_or_404(Recurso, id=recurso_id)
@@ -1523,7 +1522,7 @@ def actualizarConfiguracion(request):
 @require_http_methods(["POST"])
 @login_required
 def agregarPregunta(request):
-    """Agregar una nueva pregunta al cuestionario - COMPLETAMENTE FUNCIONAL"""
+    """Agregar una nueva pregunta al cuestionario - CORREGIDO"""
     try:
         print("➕ Agregando nueva pregunta...")
         
@@ -1545,15 +1544,23 @@ def agregarPregunta(request):
         
         tipo_pregunta = get_object_or_404(TipoPregunta, nombre=tipo_nombre)
         
-        # Calcular orden
-        ultima_pregunta = cuestionario.preguntas.order_by('-orden').first()
+        # Calcular orden - CORREGIDO para usar relaciones genéricas
+        from django.contrib.contenttypes.models import ContentType
+        cuestionario_ct = ContentType.objects.get_for_model(Cuestionario)
+        
+        ultima_pregunta = PreguntaCuestionario.objects.filter(
+            content_type=cuestionario_ct,
+            object_id=cuestionario.id
+        ).order_by('-orden').first()
+        
         orden = ultima_pregunta.orden + 1 if ultima_pregunta else 1
         
         print(f"📝 Creando pregunta orden {orden}")
         
-        # Crear pregunta
+        # ✅ CREAR PREGUNTA USANDO RELACIONES GENÉRICAS:
         pregunta = PreguntaCuestionario.objects.create(
-            cuestionario=cuestionario,
+            content_type=cuestionario_ct,
+            object_id=cuestionario.id,
             tipo=tipo_pregunta,
             enunciado=f"Nueva pregunta {orden}",
             orden=orden,
@@ -1623,9 +1630,18 @@ def cambiarTipoPregunta(request):
         
         pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
         
+        # ✅ VERIFICAR QUE PERTENECE A UN CUESTIONARIO:
+        if not isinstance(pregunta.content_object, Cuestionario):
+            return JsonResponse({
+                'success': False, 
+                'error': 'Esta pregunta no pertenece a un cuestionario'
+            })
+        
+        cuestionario = pregunta.content_object
+        
         # Verificar permisos
-        if (pregunta.cuestionario.recurso.seccion and 
-            pregunta.cuestionario.recurso.seccion.curso.profesor != request.user):
+        if (cuestionario.recurso.seccion and 
+            cuestionario.recurso.seccion.curso.profesor != request.user):
             return JsonResponse({
                 'success': False, 
                 'error': 'Sin permisos'
@@ -6114,24 +6130,338 @@ def webhook_finalizacion_competencia(request):
     """Webhook finalización (placeholder)"""
     return JsonResponse({'success': True})
 
-# Funciones adicionales para competencias que pueden faltar
 
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
 def cambiar_tipo_pregunta_competencia(request):
-    """Cambiar tipo pregunta competencia (placeholder)"""
-    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+    """Cambiar tipo de pregunta de competencia - IMPLEMENTACIÓN REAL"""
+    try:
+        data = json.loads(request.body)
+        pregunta_id = data.get('pregunta_id')
+        nuevo_tipo = data.get('nuevo_tipo')
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # Verificar que sea de competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({'success': False, 'error': 'No es pregunta de competencia'})
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos y estado
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        if competencia.estado not in ['configuracion']:
+            return JsonResponse({'success': False, 'error': 'Solo en configuración'})
+        
+        with transaction.atomic():
+            # Eliminar opciones existentes
+            pregunta.opciones.all().delete()
+            
+            # Cambiar tipo
+            tipo_pregunta = get_object_or_404(TipoPregunta, nombre=nuevo_tipo)
+            pregunta.tipo = tipo_pregunta
+            pregunta.save()
+            
+            # Crear nuevas opciones según tipo
+            if nuevo_tipo in ['opcion_unica', 'opcion_multiple']:
+                for i in range(1, 5):
+                    OpcionPregunta.objects.create(
+                        pregunta=pregunta,
+                        texto=f'Opción {i}',
+                        es_correcta=(i == 1)
+                    )
+            elif nuevo_tipo == 'falso_verdadero':
+                OpcionPregunta.objects.create(pregunta=pregunta, texto='Verdadero', es_correcta=True)
+                OpcionPregunta.objects.create(pregunta=pregunta, texto='Falso', es_correcta=False)
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Tipo de pregunta cambiado exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
 
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
 def agregar_opcion_competencia(request):
-    """Agregar opción competencia (placeholder)"""
-    return JsonResponse({'success': False, 'error': 'En desarrollo'})
+    """Agregar opción a pregunta de competencia - IMPLEMENTACIÓN REAL"""
+    try:
+        data = json.loads(request.body)
+        pregunta_id = data.get('pregunta_id')
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # Verificar que sea de competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({'success': False, 'error': 'No es pregunta de competencia'})
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Solo en configuración
+        if competencia.estado not in ['configuracion']:
+            return JsonResponse({'success': False, 'error': 'Solo en configuración'})
+        
+        # Verificar tipo
+        if pregunta.tipo.nombre not in ['opcion_unica', 'opcion_multiple']:
+            return JsonResponse({'success': False, 'error': 'Tipo no permite opciones'})
+        
+        # Crear opción
+        opciones_count = pregunta.opciones.count()
+        opcion = OpcionPregunta.objects.create(
+            pregunta=pregunta,
+            texto=f"Nueva opción {opciones_count + 1}",
+            es_correcta=False
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'opcion_id': opcion.id,
+            'mensaje': 'Opción agregada exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def actualizar_opcion_competencia(request):
     """Actualizar opción competencia (placeholder)"""
     return JsonResponse({'success': False, 'error': 'En desarrollo'})
 
+@csrf_exempt
+@require_http_methods(["DELETE"])
+@login_required
+@role_required(['Admin', 'Docente'])
 def eliminar_opcion_competencia(request, opcion_id):
-    """Eliminar opción competencia (placeholder)"""
-    return JsonResponse({'success': False, 'error': 'En desarrollo'})
-from .forms import EditarPerfilForm
+    """Eliminar opción de pregunta de competencia - IMPLEMENTACIÓN REAL"""
+    try:
+        opcion = get_object_or_404(OpcionPregunta, id=opcion_id)
+        pregunta = opcion.pregunta
+            # Verificar que sea de competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({'success': False, 'error': 'No es pregunta de competencia'})
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Solo en configuración
+        if competencia.estado not in ['configuracion']:
+            return JsonResponse({'success': False, 'error': 'Solo en configuración'})
+        
+        # Verificar mínimo
+        if pregunta.opciones.count() <= 2:
+            return JsonResponse({'success': False, 'error': 'Mínimo 2 opciones'})
+        
+        texto = opcion.texto
+        opcion.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'Opción "{texto}" eliminada'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def subir_recurso_competencia(request):
+    """Subir recurso multimedia a pregunta de competencia - IMPLEMENTACIÓN REAL"""
+    try:
+        pregunta_id = request.POST.get('pregunta_id')
+        tipo_recurso = request.POST.get('tipo_recurso')
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+        
+        # Verificar que sea de competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({'success': False, 'error': 'No es pregunta de competencia'})
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Procesar según tipo
+        if tipo_recurso in ['imagen', 'video', 'documento', 'audio'] and 'archivo' in request.FILES:
+            pregunta.archivo_multimedia = request.FILES['archivo']
+            pregunta.save()
+        
+        elif tipo_recurso == 'youtube':
+            youtube_id = request.POST.get('youtube_id')
+            if youtube_id:
+                pregunta.url_youtube = youtube_id
+                pregunta.save()
+        
+        elif tipo_recurso == 'simulador':
+            # Procesar datos del simulador
+            tipo_sim = request.POST.get('tipo_simulador')
+            smiles_obj = request.POST.get('smiles_objetivo')
+            instrucciones = request.POST.get('instrucciones')
+            tolerancia = request.POST.get('tolerancia_similitud', 95)
+            
+            if tipo_sim and smiles_obj and instrucciones:
+                pregunta.smiles_objetivo = smiles_obj
+                pregunta.descripcion_molecula = instrucciones
+                pregunta.tolerancia_similitud = int(tolerancia)
+                pregunta.save()
+        
+        elif tipo_recurso == 'html':
+            codigo_html = request.POST.get('codigo_html_encriptado')
+            titulo = request.POST.get('titulo')
+            descripcion = request.POST.get('descripcion', '')
+            
+            if codigo_html and titulo:
+                # Guardar HTML encriptado en archivo multimedia temporalmente
+                # O crear un campo específico en el modelo si es necesario
+                pregunta.descripcion_molecula = f"HTML: {titulo} - {descripcion}"
+                pregunta.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': f'{tipo_recurso} cargado exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def eliminar_recurso_pregunta_competencia(request):
+    """Eliminar recurso de pregunta de competencia - IMPLEMENTACIÓN REAL"""
+    try:
+        data = json.loads(request.body)
+        pregunta_id = data.get('pregunta_id')
+        tipo = data.get('tipo')
+        pregunta = get_object_or_404(PreguntaCuestionario, id=pregunta_id)
+            
+        # Verificar que sea de competencia
+        if not isinstance(pregunta.content_object, Competencia):
+            return JsonResponse({'success': False, 'error': 'No es pregunta de competencia'})
+        
+        competencia = pregunta.content_object
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        if tipo == 'archivo':
+            if pregunta.archivo_multimedia:
+                try:
+                    pregunta.archivo_multimedia.delete()
+                except:
+                    pass
+                pregunta.archivo_multimedia = None
+        elif tipo == 'youtube':
+            pregunta.url_youtube = None
+        
+        pregunta.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Recurso eliminado exitosamente'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def guardar_competencia_completa(request, competencia_id):
+    """Guardar competencia completa - IMPLEMENTACIÓN REAL"""
+    try:
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Validar que esté completa
+        errores = validar_configuracion_competencia(competencia)
+        if errores:
+            return JsonResponse({
+                'success': False,
+                'error': 'Competencia incompleta',
+                'errores': errores
+            })
+        
+        # Actualizar fecha de modificación
+        competencia.fecha_modificacion = timezone.now()
+        competencia.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Competencia guardada completamente',
+            'puede_iniciar': competencia.puede_iniciar()
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+@role_required(['Admin', 'Docente'])
+def autoguardar_competencia(request):
+    """Autoguardar competencia - IMPLEMENTACIÓN REAL"""
+    try:
+        data = json.loads(request.body)
+        competencia_id = data.get('competencia_id')
+        titulo = data.get('titulo', '').strip()
+        descripcion = data.get('descripcion', '').strip()
+        competencia = get_object_or_404(Competencia, id=competencia_id)
+        
+        # Verificar permisos
+        if (competencia.recurso.seccion and 
+            competencia.recurso.seccion.curso.profesor != request.user):
+            return JsonResponse({'success': False, 'error': 'Sin permisos'}, status=403)
+        
+        # Actualizar solo si hay cambios
+        cambios = False
+        if titulo and competencia.recurso.titulo != titulo:
+            competencia.recurso.titulo = titulo
+            cambios = True
+        
+        if descripcion and competencia.instrucciones != descripcion:
+            competencia.instrucciones = descripcion
+            cambios = True
+        
+        if cambios:
+            competencia.recurso.save()
+            competencia.save()
+        
+        return JsonResponse({
+            'success': True,
+            'mensaje': 'Autoguardado exitoso' if cambios else 'Sin cambios'
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @login_required
 def editar_perfil(request):

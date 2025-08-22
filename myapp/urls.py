@@ -167,6 +167,18 @@ urlpatterns = [
     path('docente/competencia/guardar-como-plantilla/<int:competencia_id>/', views.guardar_como_plantilla, name='guardar_como_plantilla'),
     
 
+    ######URLS DE PRUEBA########
+    # Agrega estas al final de tu sección de competencias:
+    path('docente/competencia/agregar-opcion/', views.agregar_opcion_competencia, name='agregar_opcion_competencia'),
+    path('docente/competencia/eliminar-opcion/<int:opcion_id>/', views.eliminar_opcion_competencia, name='eliminar_opcion_competencia'),
+    path('docente/competencia/cambiar-tipo-pregunta/', views.cambiar_tipo_pregunta_competencia, name='cambiar_tipo_pregunta_competencia'),
+    path('docente/competencia/subir-recurso/', views.subir_recurso_competencia, name='subir_recurso_competencia'),
+    path('docente/competencia/eliminar-recurso-pregunta/', views.eliminar_recurso_pregunta_competencia, name='eliminar_recurso_pregunta_competencia'),
+    path('docente/competencia/guardar-completa/<int:competencia_id>/', views.guardar_competencia_completa, name='guardar_competencia_completa'),
+    path('docente/competencia/eliminar-pregunta/<int:pregunta_id>/', views.eliminar_pregunta_competencia, name='eliminar_pregunta_competencia'),
+    path('docente/competencia/duplicar-pregunta/', views.duplicar_pregunta_competencia, name='duplicar_pregunta_competencia'),
+    path('docente/competencia/autoguardar/', views.autoguardar_competencia, name='autoguardar_competencia'),
+
     # ===== COMPETENCIAS - ESTUDIANTE =====
     
     # Acceso inicial
