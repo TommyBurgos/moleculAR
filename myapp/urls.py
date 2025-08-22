@@ -35,12 +35,34 @@ urlpatterns = [
     path('practica/<int:practica_id>/resolver/', views.resolver_practica, name='resolver_practica'),
     path('practica/<int:practica_id>/historial/', views.historial_intentos, name='historial_intentos'),
 
+    # Dispatcher / edición de práctica (decide a qué UI enviar)
+    path('practicas/<int:recurso_id>/editar/', views.editar_practica, name='editar_practica'),
+
+    # UIs específicas
+    path('practicas/<int:recurso_id>/editar/jsme/', views.practica_jsme, name='practica_jsme'),
+    path('practicas/<int:recurso_id>/editar/builder2d/', views.practica_builder2d, name='practica_builder2d'),
+
+
+    # --- constructor 2D ---
+    path('practicas/<int:recurso_id>/builder2d/', views.practica_builder2d, name='practica_builder2d'),
+    path('practicas/<int:recurso_id>/guardar-builder2d/', views.guardar_practica_builder2d, name='guardar_practica_builder2d'),
+    path('api/validar-armado/<int:recurso_id>/', views.validar_molecula_armada, name='validar_molecula_armada'),    
+    path('api/resolve-smiles/', views.resolve_smiles, name='resolve_smiles'),
+    
+
+
+    # API de validación para el Constructor 2D
+    #path('practicas/<int:recurso_id>/validar-armado/', views.validar_molecula_armada, name='validar_molecula_armada'),
+    path('api/smiles-a-grafo/', views.smiles_a_grafo, name='smiles_a_grafo'),
+
 
     path('curso/<int:curso_id>/modulo/nuevo/', views.crear_modulo, name='crear_modulo'),
     path('seccion/<int:seccion_id>/crear-recurso/', views.crear_recurso, name='crear_recurso'),
     path('practica/<int:recurso_id>/ver/', views.ver_practica, name='ver_practica'),
     path('practica/<int:recurso_id>/editar/', views.editar_practica, name='editar_practica'),
     path('biblioteca/practicas/', views.biblioteca_practicas, name='biblioteca_practicas'),
+    path('recurso/<int:recurso_id>/editar/html/', views.editar_html, name='editar_html'),
+
 
     path('competencia/<int:competencia_id>/panel/', views.panel_competencia, name='panel_competencia'),
     path('competencia/<int:competencia_id>/agregar-pregunta/', views.agregar_pregunta_competencia, name='agregar_pregunta_competencia'),

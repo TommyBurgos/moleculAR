@@ -29,6 +29,6 @@ def role_required(role_names):
             print(request.user.is_authenticated)            
             if request.user.is_authenticated and request.user.rol.nombre in role_names:
                 return view_func(request, *args, **kwargs)
-            return redirect('acceso_denegado')  # cambia esto si tienes otra vista de acceso denegado
+            return redirect('acceso_denegado') 
         return _wrapped_view
     return decorator
