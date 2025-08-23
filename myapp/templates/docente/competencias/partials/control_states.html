@@ -1,0 +1,404 @@
+<!-- Control según Estado de la Competencia -->
+
+{% if competencia.estado == 'configuracion' %}
+    <!-- Estado: Configuración -->
+    <div class="state-alert alert-warning">
+        <div class="alert-content">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <h6>Competencia en Configuración</h6>
+                <p>Agrega preguntas y configura tu competencia antes de abrirla a los estudiantes.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="control-buttons">
+        <a href="{% url 'editar_competencia' competencia.id %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-edit me-2"></i>Configurar Competencia
+        </a>
+        
+        {% if preguntas.count > 0 %}
+            <button type="button" class="btn btn-success btn-lg" onclick="abrirSalaEspera()">
+                <i class="fas fa-door-open me-2"></i>Abrir Sala de Espera
+            </button>
+        {% else %}
+            <button type="button" class="btn btn-secondary btn-lg" disabled>
+                <i class="fas fa-exclamation-circle me-2"></i>Agrega Preguntas Primero
+            </button>
+        {% endif %}
+    </div>
+
+{% elif competencia.estado == 'esperando' %}
+    <!-- Estado: Esperando -->
+    <div class="state-alert alert-info">
+        <div class="alert-content">
+            <i class="fas fa-users pulse"></i>
+            <div>
+                <h6>Sala de Espera Abierta</h6>
+                <p>Los estudiantes pueden unirse usando el PIN. Inicia cuando estés listo.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="control-buttons">
+        {% if total_participantes > 0 %}
+            <button type="button" class="btn btn-success btn-xl main-control-btn" onclick="iniciarCompetencia()">
+                <i class="fas fa-play me-3"></i>
+                <div>
+                    <div class="main-text">INICIAR COMPETENCIA</div>
+                    <small>{{ total_participantes }} participante{{ total_participantes|pluralize:"s" }} esperando</small>
+                </div>
+            </button>
+        {% else %}
+            <button type="button" class="btn btn-warning btn-xl main-control-btn" disabled>
+                <i class="fas fa-hourglass-half me-3"></i>
+                <div>
+                    <div class="main-text">ESPERANDO PARTICIPANTES...</div>
+                    <small>Comparte el PIN para que se unan</small>
+                </div>
+            </button>
+        {% endif %}
+        
+        <div class="secondary-controls">
+            <button type="button" class="btn btn-outline-secondary" onclick="cerrarSalaEspera()">
+                <i class="fas fa-door-closed me-2"></i>Cerrar Sala
+            </button>
+            <button type="button" class="btn btn-outline-primary" onclick="actualizarTodo()">
+                <i class="fas fa-sync-alt me-2"></i>Actualizar
+            </button>
+        </div>
+    </div>
+
+{% elif competencia.estado == 'activa' %}
+    <!-- Estado: Activa -->
+    <div class="state-alert alert-success">
+        <div class="alert-content">
+            <i class="fas fa-broadcast-tower bounce"></i>
+            <div>
+                <h6>¡Competencia en Vivo!</h6>
+                <p>Los participantes están respondiendo. Controla el flujo desde aquí.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Control de Pregunta Actual -->
+    {% if competencia.pregunta_actual %}
+    <div class="current-question-control">
+        <div class="question-header">
+            <div class="question-number">{{ competencia.pregunta_actual.orden }}</div>
+            <div class="question-info">
+                <h6>Pregunta Actual</h6>
+                <p>{{ competencia.pregunta_actual.enunciado|truncatechars:100 }}</p>
+                <div class="question-meta">
+                    <span class="badge bg-primary">{{ competencia.pregunta_actual.tipo.descripcion }}</span>
+                    <span class="points">{{ competencia.pregunta_actual.puntaje }} pts</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="question-progress">
+            <div class="progress">
+                <div class="progress-bar bg-success" 
+                     style="width: {% widthratio competencia.pregunta_actual.orden preguntas.count 100 %}%">
+                </div>
+            </div>
+            <div class="progress-info">
+                <span>Progreso: {% widthratio competencia.pregunta_actual.orden preguntas.count 100 %}%</span>
+                <span id="participants-answering">{{ participantes_respondiendo|default:0 }} respondiendo</span>
+            </div>
+        </div>
+        
+        <div class="navigation-controls">
+            <button type="button" class="btn btn-outline-info" onclick="preguntaAnterior()"
+                    {% if competencia.pregunta_actual.orden <= 1 %}disabled{% endif %}>
+                <i class="fas fa-step-backward me-2"></i>Anterior
+            </button>
+            <button type="button" class="btn btn-info" onclick="siguientePregunta()"
+                    {% if competencia.pregunta_actual.orden >= preguntas.count %}disabled{% endif %}>
+                <i class="fas fa-step-forward me-2"></i>Siguiente
+            </button>
+            <button type="button" class="btn btn-outline-warning" onclick="pausarCompetencia()">
+                <i class="fas fa-pause me-2"></i>Pausar
+            </button>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="control-buttons">
+        <button type="button" class="btn btn-danger btn-lg" onclick="finalizarCompetencia()">
+            <i class="fas fa-flag-checkered me-2"></i>Finalizar Competencia
+        </button>
+        <button type="button" class="btn btn-outline-primary" onclick="verRankingCompleto()">
+            <i class="fas fa-trophy me-2"></i>Ver Ranking
+        </button>
+    </div>
+
+{% elif competencia.estado == 'pausada' %}
+    <!-- Estado: Pausada -->
+    <div class="state-alert alert-warning">
+        <div class="alert-content">
+            <i class="fas fa-pause-circle"></i>
+            <div>
+                <h6>Competencia Pausada</h6>
+                <p>La competencia está en pausa. Los estudiantes están esperando.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="control-buttons">
+        <button type="button" class="btn btn-success btn-xl main-control-btn" onclick="reanudarCompetencia()">
+            <i class="fas fa-play me-3"></i>
+            <div>
+                <div class="main-text">REANUDAR COMPETENCIA</div>
+            </div>
+        </button>
+        <button type="button" class="btn btn-danger btn-lg" onclick="finalizarCompetencia()">
+            <i class="fas fa-stop me-2"></i>Finalizar
+        </button>
+    </div>
+
+{% elif competencia.estado == 'finalizada' %}
+    <!-- Estado: Finalizada -->
+    <div class="state-alert alert-dark">
+        <div class="alert-content">
+            <i class="fas fa-flag-checkered"></i>
+            <div>
+                <h6>Competencia Finalizada</h6>
+                <p>Revisa los resultados y estadísticas de la competencia.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="control-buttons">
+        <a href="{% url 'resultados_competencia' competencia.id %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-chart-bar me-2"></i>Ver Resultados
+        </a>
+        <button type="button" class="btn btn-outline-secondary" onclick="exportarResultados()">
+            <i class="fas fa-download me-2"></i>Exportar
+        </button>
+        <button type="button" class="btn btn-outline-success" onclick="reiniciarCompetencia()">
+            <i class="fas fa-redo me-2"></i>Nueva Ronda
+        </button>
+    </div>
+{% endif %}
+
+<style>
+/* ===== ESTILOS PARA CONTROL STATES ===== */
+.state-alert {
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.alert-content i {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.alert-content h6 {
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.alert-content p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+}
+
+.alert-dark {
+    background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+    color: #383d41;
+}
+
+.control-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+.main-control-btn {
+    min-width: 300px;
+    padding: 1.5rem 2rem;
+    border-radius: 15px;
+    font-weight: 700;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.main-control-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.main-control-btn:hover::before {
+    left: 100%;
+}
+
+.main-text {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.secondary-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.current-question-control {
+    background: rgba(40, 167, 69, 0.1);
+    border: 2px solid rgba(40, 167, 69, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.question-header {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.question-number {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.question-info {
+    flex: 1;
+}
+
+.question-info h6 {
+    color: #155724;
+    margin-bottom: 0.5rem;
+}
+
+.question-info p {
+    color: #495057;
+    margin-bottom: 0.75rem;
+}
+
+.question-meta {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.points {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+    padding: 0.25rem 0.75rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.question-progress {
+    margin-bottom: 1rem;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.navigation-controls {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Animaciones */
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.bounce {
+    animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
+    40%, 43% { transform: translate3d(0,-10px,0); }
+    70% { transform: translate3d(0,-5px,0); }
+    90% { transform: translate3d(0,-2px,0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .control-buttons {
+        flex-direction: column;
+    }
+    
+    .main-control-btn {
+        min-width: 100%;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .secondary-controls {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .question-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .navigation-controls {
+        flex-direction: column;
+    }
+}
+</style>
