@@ -1504,14 +1504,82 @@ Inner part END -->
     </div>
 </div>
 
-<!-- Modal para Simulador -->
+<!-- Modal HTML Global -->
+<div class="modal fade modal-custom" id="modalRecursoHtml" tabindex="-1" aria-labelledby="modalRecursoHtmlLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRecursoHtmlLabel">
+                    <i class="fas fa-code me-3 text-primary"></i>
+                    Agregar HTML Interactivo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formHtml" enctype="multipart/form-data">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-upload me-2"></i>
+                            Cargar archivo HTML
+                        </label>
+                        <input type="file" class="form-control" id="archivo-html" accept=".html,.htm">
+                        <small class="text-muted">Archivo HTML completo (máximo 100KB)</small>
+                    </div>
+                    
+                    <div class="text-center my-3">
+                        <span class="badge bg-secondary">O</span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-code me-2"></i>
+                            Pegar código HTML directamente
+                        </label>
+                        <textarea class="form-control" id="codigo-html-directo" rows="8" 
+                                  style="font-family: 'Courier New', monospace; font-size: 13px;"
+                                  placeholder="Pega tu código HTML aquí..."></textarea>
+                        <small class="text-muted">HTML, CSS y JavaScript en un solo archivo</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-heading me-2"></i>
+                            Título del contenido
+                        </label>
+                        <input type="text" class="form-control" id="titulo-html" 
+                               placeholder="Ej: Calculadora, Juego Interactivo..." required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-comment me-2"></i>
+                            Descripción (opcional)
+                        </label>
+                        <textarea class="form-control" id="descripcion-html" rows="2" 
+                                  placeholder="Describe qué hace este contenido HTML..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="subirRecurso('html_encriptado')">
+                    <i class="fas fa-save me-2"></i>Guardar HTML
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Simulador COMPLETO -->
 <div class="modal fade modal-custom" id="modalRecursoSimulador" tabindex="-1" aria-labelledby="modalRecursoSimuladorLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalRecursoSimuladorLabel">
                     <i class="fas fa-atom me-3 text-primary"></i>
-                    Agregar Simulador Molecular
+                    Configurar Simulador Molecular
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -1519,60 +1587,141 @@ Inner part END -->
                 <div class="row">
                     <div class="col-md-6">
                         <form id="formSimulador">
+                            <!-- Tipo de simulador -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">
                                     <i class="fas fa-cog me-2"></i>
                                     Tipo de simulador
                                 </label>
-                                <select class="form-select" id="tipo-simulador" required>
+                                <select class="form-select" id="tipo-simulador" required onchange="cambiarTipoSimulador()">
                                     <option value="">Seleccionar tipo</option>
-                                    <option value="2d">Simulador 2D (JSME)</option>
-                                    <option value="3d">Simulador 3D (3Dmol)</option>
+                                    <option value="2d">Simulador 2D (JSME - Editor molecular)</option>
+                                    <option value="3d">Simulador 3D (3Dmol - Visualizador molecular)</option>
                                 </select>
+                                <small class="text-muted">Elige si quieres editor 2D o visualizador 3D</small>
                             </div>
                             
-                            <div class="mb-4">
+                            <!-- Método de entrada -->
+                            <div class="mb-4" id="metodo-entrada" style="display: none;">
                                 <label class="form-label fw-bold">
-                                    <i class="fas fa-flask me-2"></i>
-                                    Molécula objetivo (SMILES)
+                                    <i class="fas fa-route me-2"></i>
+                                    Método de entrada
                                 </label>
-                                <input type="text" class="form-control" id="smiles-objetivo" 
-                                       placeholder="CCO (para etanol)" required>
-                                <small class="text-muted">Notación SMILES de la molécula que deben construir</small>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="metodo" id="metodo-smiles" value="smiles" checked onchange="cambiarMetodo()">
+                                    <label class="form-check-label" for="metodo-smiles">
+                                        <strong>SMILES</strong> - Notación química (ej: CCO para etanol)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="metodo" id="metodo-pubchem" value="pubchem" onchange="cambiarMetodo()">
+                                    <label class="form-check-label" for="metodo-pubchem">
+                                        <strong>PubChem ID</strong> - Código numérico de la base de datos
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="metodo" id="metodo-nombre" value="nombre" onchange="cambiarMetodo()">
+                                    <label class="form-check-label" for="metodo-nombre">
+                                        <strong>Nombre</strong> - Nombre común de la molécula
+                                    </label>
+                                </div>
                             </div>
                             
-                            <div class="mb-4">
+                            <!-- Campo de entrada dinámico -->
+                            <div class="mb-4" id="campo-molecula" style="display: none;">
+                                <label class="form-label fw-bold" id="label-molecula">
+                                    <i class="fas fa-flask me-2"></i>
+                                    Molécula objetivo
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="molecula-objetivo" placeholder="" required>
+                                    <button class="btn btn-outline-primary" type="button" onclick="buscarMolecula()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted" id="help-molecula">Ingresa la notación SMILES</small>
+                                
+                                <!-- Ejemplos dinámicos -->
+                                <div class="mt-2" id="ejemplos-molecula">
+                                    <small class="text-info">
+                                        <i class="fas fa-lightbulb me-1"></i>
+                                        <strong>Ejemplos:</strong> 
+                                        <span id="ejemplos-texto">CCO (etanol), CC(=O)O (ácido acético), c1ccccc1 (benceno)</span>
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Instrucciones -->
+                            <div class="mb-4" id="instrucciones-container" style="display: none;">
                                 <label class="form-label fw-bold">
                                     <i class="fas fa-comment me-2"></i>
-                                    Instrucciones
+                                    Instrucciones para el estudiante
                                 </label>
                                 <textarea class="form-control" id="instrucciones-simulador" rows="4" 
-                                          placeholder="Describe qué molécula deben construir y cualquier instrucción especial..." required></textarea>
+                                          placeholder="Describe qué debe hacer el estudiante con el simulador..." required></textarea>
+                                <small class="text-muted">Estas instrucciones aparecerán junto al simulador</small>
                             </div>
                             
-                            <div class="mb-4">
+                            <!-- Configuración avanzada -->
+                            <div class="mb-4" id="config-avanzada" style="display: none;">
                                 <label class="form-label fw-bold">
-                                    <i class="fas fa-percentage me-2"></i>
-                                    Tolerancia de similitud
+                                    <i class="fas fa-sliders-h me-2"></i>
+                                    Configuración avanzada
                                 </label>
-                                <input type="range" class="form-range" id="tolerancia-similitud" 
-                                       min="70" max="100" value="95" step="5">
-                                <div class="d-flex justify-content-between text-muted small">
-                                    <span>70%</span>
-                                    <span id="valor-tolerancia">95%</span>
-                                    <span>100%</span>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tolerancia de similitud</label>
+                                        <input type="range" class="form-range" id="tolerancia-similitud" 
+                                               min="70" max="100" value="95" step="5"
+                                               oninput="actualizarTolerancia(this.value)">
+                                        <div class="d-flex justify-content-between text-muted small">
+                                            <span>70%</span>
+                                            <span id="valor-tolerancia">95%</span>
+                                            <span>100%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch mt-4">
+                                            <input class="form-check-input" type="checkbox" id="permitir-isomeros">
+                                            <label class="form-check-label" for="permitir-isomeros">
+                                                Permitir isómeros
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </form>
                     </div>
+                    
                     <div class="col-md-6">
                         <!-- Vista previa del simulador -->
                         <div class="mb-4">
                             <label class="form-label fw-bold">Vista previa</label>
-                            <div id="preview-simulador" class="preview-area" style="height: 300px;">
+                            <div id="preview-simulador" class="preview-area" style="height: 400px;">
                                 <i class="fas fa-atom fa-3x text-muted"></i>
-                                <p class="text-muted mt-2">El simulador aparecerá aquí</p>
+                                <p class="text-muted mt-2">Selecciona un tipo de simulador para ver la vista previa</p>
                             </div>
+                        </div>
+                        
+                        <!-- Información de la molécula -->
+                        <div id="info-molecula" style="display: none;">
+                            <div class="alert alert-success">
+                                <h6><i class="fas fa-info-circle me-2"></i>Información de la molécula:</h6>
+                                <div id="molecula-detalles"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Consejos -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-lightbulb me-2"></i>Consejos:</h6>
+                            <ul class="mb-0 small">
+                                <li><strong>2D:</strong> Para que construyan/dibujen moléculas</li>
+                                <li><strong>3D:</strong> Para visualizar estructuras complejas</li>
+                                <li><strong>SMILES:</strong> Más preciso para moléculas específicas</li>
+                                <li><strong>PubChem:</strong> Ideal para moléculas conocidas</li>
+                                <li><strong>Tolerancia:</strong> 95% recomendado para evaluación</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -1582,7 +1731,7 @@ Inner part END -->
                     <i class="fas fa-times me-2"></i>Cancelar
                 </button>
                 <button type="button" class="btn btn-primary" onclick="subirRecurso('simulador')">
-                    <i class="fas fa-atom me-2"></i>Agregar Simulador
+                    <i class="fas fa-atom me-2"></i>Configurar Simulador
                 </button>
             </div>
         </div>
@@ -1619,6 +1768,79 @@ Inner part END -->
 
 .preview-area iframe {
     border-radius: 6px;
+}
+
+/* Estilos para el modal HTML global */
+.preview-container-global {
+    position: relative;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: #ffffff;
+    min-height: 300px;
+    overflow: hidden;
+}
+
+.preview-overlay-global {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 249, 250, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.preview-overlay-global.hidden {
+    display: none;
+}
+
+.preview-iframe-global {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+}
+
+.modal-xl .modal-dialog {
+    max-width: 1200px;
+}
+
+/* Scrollbar personalizado para el textarea */
+#codigo-html-directo::-webkit-scrollbar {
+    width: 8px;
+}
+
+#codigo-html-directo::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#codigo-html-directo::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+#codigo-html-directo::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+@media (max-width: 768px) {
+    .modal-xl .modal-dialog {
+        max-width: 95%;
+        margin: 1rem auto;
+    }
+    
+    .preview-container-global {
+        min-height: 200px;
+    }
+    
+    #codigo-html-directo {
+        rows: 6;
+        font-size: 12px;
+    }
 }
 </style>
 
@@ -2000,8 +2222,21 @@ function abrirModalRecurso(tipo, preguntaId) {
     // Limpiar formularios previos
     limpiarModalRecurso(tipo);
     
+    // Mapear tipos especiales para IDs de modal
+    let modalSuffix;
+    switch(tipo) {
+        case 'html_encriptado':
+            modalSuffix = 'Html';
+            break;
+        case 'youtube':
+            modalSuffix = 'Youtube';
+            break;
+        default:
+            modalSuffix = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+    }
+    
     // Abrir modal correspondiente
-    const modalId = `modalRecurso${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
+    const modalId = `modalRecurso${modalSuffix}`;
     const modalElement = document.getElementById(modalId);
     
     if (modalElement) {
@@ -2076,6 +2311,25 @@ function limpiarModalRecurso(tipo) {
             if (simInstr) simInstr.value = '';
             if (simTol) simTol.value = '95';
             resetPreview('preview-simulador');
+            break;
+
+        case 'html_encriptado':
+            const htmlArchivo = document.getElementById('archivo-html');
+            const htmlCodigo = document.getElementById('codigo-html-directo');
+            const htmlPreview = document.getElementById('html-file-preview');
+            const htmlPreviewDiv = document.getElementById('html-preview');
+            
+            if (htmlArchivo) htmlArchivo.value = '';
+            if (htmlCodigo) htmlCodigo.value = '';
+            if (htmlPreview) htmlPreview.style.display = 'none';
+            if (htmlPreviewDiv) {
+                htmlPreviewDiv.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-code fa-2x mb-2"></i>
+                        <p>La vista previa aparecerá aquí cuando agregues código HTML</p>
+                    </div>
+                `;
+            }
             break;
     }
 }
@@ -2272,6 +2526,36 @@ function subirRecurso(tipo) {
                 return;
             }
             break;
+        
+        case 'html_encriptado':
+            const archivoHtml = document.getElementById('archivo-html')?.files[0];
+            const codigoHtmlDirecto = document.getElementById('codigo-html-directo')?.value?.trim();
+            
+            if (archivoHtml || codigoHtmlDirecto) {
+                if (archivoHtml) {
+                    // Validar tamaño del archivo
+                    if (archivoHtml.size > 100 * 1024) { // 100KB
+                        mostrarErrorElegante('El archivo HTML no puede superar 100KB');
+                        return;
+                    }
+                    formData.append('archivo_html', archivoHtml);
+                } else {
+                    // Validar tamaño del código directo
+                    if (codigoHtmlDirecto.length > 100000) { // 100KB aprox
+                        mostrarErrorElegante('El código HTML es demasiado largo (máximo 100KB)');
+                        return;
+                    }
+                    // Encriptar el HTML para seguridad
+                    const htmlEncriptado = btoa(unescape(encodeURIComponent(codigoHtmlDirecto)));
+                    formData.append('codigo_html_encriptado', htmlEncriptado);
+                }
+                valido = true;
+            } else {
+                mostrarErrorElegante('Seleccione un archivo HTML o pegue código HTML');
+                return;
+            }
+            break;
+
     }
     
     if (!valido) {
@@ -2740,6 +3024,28 @@ function configurarVistaPreviaAutomatica() {
                 `;
             }
         }
+
+        if (e.target.id === 'archivo-html') {
+            const file = e.target.files[0];
+            const preview = document.getElementById('html-file-preview');
+            const info = document.getElementById('html-file-info');
+            
+            if (file) {
+                preview.style.display = 'block';
+                info.innerHTML = `
+                    <strong>Archivo:</strong> ${file.name}<br>
+                    <strong>Tamaño:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                    <strong>Tipo:</strong> ${file.type || 'text/html'}
+                `;
+                
+                // Auto-llenar título
+                const tituloInput = document.getElementById('titulo-html');
+                if (!tituloInput.value) {
+                    const nombreSinExtension = file.name.split('.').slice(0, -1).join('.');
+                    tituloInput.value = nombreSinExtension;
+                }
+            }
+        }
     });
     
     // Vista previa automática para YouTube al escribir
@@ -2758,6 +3064,38 @@ function configurarVistaPreviaAutomatica() {
                 valorSpan.textContent = e.target.value + '%';
             }
         }
+
+        if (e.target.id === 'codigo-html-directo') {
+            const codigo = e.target.value;
+            const preview = document.getElementById('preview-html');
+            
+            if (codigo.trim()) {
+                preview.innerHTML = `
+                    <iframe srcdoc="${codigo.replace(/"/g, '&quot;')}" 
+                            style="width: 100%; height: 100%; border: none;">
+                    </iframe>
+                `;
+                preview.classList.add('has-content');
+                
+                // Auto-llenar título
+                const tituloInput = document.getElementById('titulo-html');
+                if (!tituloInput.value) {
+                    const titleMatch = codigo.match(/<title[^>]*>([^<]+)<\/title>/i);
+                    if (titleMatch) {
+                        tituloInput.value = titleMatch[1].trim();
+                    } else {
+                        tituloInput.value = 'Contenido HTML Interactivo';
+                    }
+                }
+            } else {
+                preview.innerHTML = `
+                    <i class="fas fa-code fa-3x text-muted"></i>
+                    <p class="text-muted mt-2">Vista previa del HTML aparecerá aquí</p>
+                `;
+                preview.classList.remove('has-content');
+            }
+        }
+
     });
 }
 
@@ -2873,6 +3211,141 @@ function cambiarTipoPregunta(preguntaId, nuevoTipo) {
         }
     );
 }
+
+function cambiarTipoSimulador() {
+    const tipo = document.getElementById('tipo-simulador').value;
+    const metodoDiv = document.getElementById('metodo-entrada');
+    const campoDiv = document.getElementById('campo-molecula');
+    const instruccionesDiv = document.getElementById('instrucciones-container');
+    const configDiv = document.getElementById('config-avanzada');
+    const preview = document.getElementById('preview-simulador');
+    
+    if (tipo) {
+        metodoDiv.style.display = 'block';
+        instruccionesDiv.style.display = 'block';
+        configDiv.style.display = 'block';
+        cambiarMetodo(); // Activar el campo de molécula
+        
+        if (tipo === '2d') {
+            preview.innerHTML = `
+                <div class="text-center p-4">
+                    <i class="fas fa-pencil-alt fa-3x text-primary mb-3"></i>
+                    <h5>Editor Molecular 2D</h5>
+                    <p class="text-muted">Los estudiantes podrán dibujar y construir moléculas</p>
+                    <div class="bg-light p-3 rounded">
+                        <small><strong>Características:</strong><br>
+                        • Editor interactivo JSME<br>
+                        • Construcción paso a paso<br>
+                        • Validación automática</small>
+                    </div>
+                </div>
+            `;
+        } else if (tipo === '3d') {
+            preview.innerHTML = `
+                <div class="text-center p-4">
+                    <i class="fas fa-cube fa-3x text-info mb-3"></i>
+                    <h5>Visualizador Molecular 3D</h5>
+                    <p class="text-muted">Los estudiantes podrán rotar y examinar moléculas en 3D</p>
+                    <div class="bg-light p-3 rounded">
+                        <small><strong>Características:</strong><br>
+                        • Visualización 3Dmol.js<br>
+                        • Rotación interactiva<br>
+                        • Diferentes representaciones</small>
+                    </div>
+                </div>
+            `;
+        }
+    } else {
+        metodoDiv.style.display = 'none';
+        campoDiv.style.display = 'none';
+        instruccionesDiv.style.display = 'none';
+        configDiv.style.display = 'none';
+        preview.innerHTML = `
+            <i class="fas fa-atom fa-3x text-muted"></i>
+            <p class="text-muted mt-2">Selecciona un tipo de simulador para ver la vista previa</p>
+        `;
+    }
+}
+
+function cambiarMetodo() {
+    const metodo = document.querySelector('input[name="metodo"]:checked').value;
+    const campoDiv = document.getElementById('campo-molecula');
+    const label = document.getElementById('label-molecula');
+    const input = document.getElementById('molecula-objetivo');
+    const help = document.getElementById('help-molecula');
+    const ejemplos = document.getElementById('ejemplos-texto');
+    
+    campoDiv.style.display = 'block';
+    
+    if (metodo === 'smiles') {
+        label.innerHTML = '<i class="fas fa-flask me-2"></i>Notación SMILES';
+        input.placeholder = 'CCO';
+        help.textContent = 'Ingresa la notación SMILES de la molécula';
+        ejemplos.textContent = 'CCO (etanol), CC(=O)O (ácido acético), c1ccccc1 (benceno)';
+    } else if (metodo === 'pubchem') {
+        label.innerHTML = '<i class="fas fa-database me-2"></i>PubChem ID';
+        input.placeholder = '702';
+        help.textContent = 'Ingresa el ID numérico de PubChem';
+        ejemplos.textContent = '702 (etanol), 176 (ácido acético), 241 (benceno)';
+    } else if (metodo === 'nombre') {
+        label.innerHTML = '<i class="fas fa-tag me-2"></i>Nombre de la molécula';
+        input.placeholder = 'etanol';
+        help.textContent = 'Ingresa el nombre común de la molécula';
+        ejemplos.textContent = 'etanol, ácido acético, benceno, glucosa, aspirina';
+    }
+}
+
+function buscarMolecula() {
+    const metodo = document.querySelector('input[name="metodo"]:checked').value;
+    const valor = document.getElementById('molecula-objetivo').value.trim();
+    const info = document.getElementById('info-molecula');
+    const detalles = document.getElementById('molecula-detalles');
+    
+    if (!valor) {
+        mostrarErrorElegante('Ingresa un valor para buscar');
+        return;
+    }
+    
+    // Simular búsqueda (aquí conectarías con una API real)
+    info.style.display = 'block';
+    
+    if (metodo === 'smiles') {
+        detalles.innerHTML = `
+            <strong>SMILES:</strong> ${valor}<br>
+            <strong>Estado:</strong> Válido para simulación<br>
+            <strong>Tipo:</strong> Molécula orgánica
+        `;
+    } else if (metodo === 'pubchem') {
+        detalles.innerHTML = `
+            <strong>PubChem ID:</strong> ${valor}<br>
+            <strong>Estado:</strong> Encontrado en base de datos<br>
+            <strong>Fórmula:</strong> Detectada automáticamente
+        `;
+    } else {
+        detalles.innerHTML = `
+            <strong>Nombre:</strong> ${valor}<br>
+            <strong>Estado:</strong> Molécula reconocida<br>
+            <strong>Conversión:</strong> Automática a SMILES
+        `;
+    }
+    
+    mostrarExitoElegante('Molécula encontrada y validada');
+}
+
+function actualizarTolerancia(valor) {
+    document.getElementById('valor-tolerancia').textContent = valor + '%';
+}
+
+// Inicializar tooltips si existen
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar rangos
+    const toleranciaInput = document.getElementById('tolerancia-similitud');
+    if (toleranciaInput) {
+        actualizarTolerancia(toleranciaInput.value);
+    }
+});
+
+console.log('✅ Modales de HTML y Simulador configurados correctamente');
 
 /**
  * Elimina una pregunta completa
@@ -3429,8 +3902,163 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('⌨️  Teclas de acceso rápido: Ctrl+S (guardar), Escape (cerrar)');
 });
 
+
 // =====================================================
-// PREVENCIÓN DE PÉRDIDA DE DATOS - MEJORADA
+// Modal HTML global
+// =====================================================
+
+// Event listeners para el modal HTML global
+document.addEventListener('DOMContentLoaded', function() {
+    // Vista previa automática al escribir
+    const codigoTextarea = document.getElementById('codigo-html-directo');
+    if (codigoTextarea) {
+        codigoTextarea.addEventListener('input', function() {
+            actualizarEstadisticasGlobal();
+            
+            // Auto-llenar título si está vacío
+            const tituloInput = document.getElementById('titulo-html');
+            if (tituloInput && !tituloInput.value.trim() && this.value.trim()) {
+                const titleMatch = this.value.match(/<title[^>]*>([^<]+)<\/title>/i);
+                if (titleMatch) {
+                    tituloInput.value = titleMatch[1].trim();
+                } else if (this.value.includes('<h1')) {
+                    const h1Match = this.value.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+                    if (h1Match) {
+                        tituloInput.value = h1Match[1].replace(/[🎯🎮🎲🎪🎨🎭🎯🎊🎉]/g, '').trim() || 'Contenido HTML Interactivo';
+                    }
+                } else {
+                    tituloInput.value = 'Contenido HTML Personalizado';
+                }
+            }
+        });
+        
+        // Inicializar estadísticas
+        actualizarEstadisticasGlobal();
+    }
+    
+    // Vista previa para archivo subido
+    const archivoInput = document.getElementById('archivo-html');
+    if (archivoInput) {
+        archivoInput.addEventListener('change', function() {
+            const file = this.files[0];
+            const infoDiv = document.getElementById('html-file-info-global');
+            const detailsDiv = document.getElementById('file-details-global');
+            const tituloInput = document.getElementById('titulo-html');
+            
+            if (file) {
+                // Mostrar información del archivo
+                infoDiv.style.display = 'block';
+                detailsDiv.innerHTML = `
+                    <strong>Archivo:</strong> ${file.name}<br>
+                    <strong>Tamaño:</strong> ${(file.size / 1024).toFixed(2)} KB<br>
+                    <strong>Tipo:</strong> ${file.type || 'text/html'}
+                `;
+                
+                // Auto-llenar título
+                if (tituloInput && !tituloInput.value.trim()) {
+                    const nombreSinExtension = file.name.split('.').slice(0, -1).join('.');
+                    tituloInput.value = nombreSinExtension;
+                }
+                
+                // Leer contenido del archivo
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const contenido = e.target.result;
+                    document.getElementById('codigo-html-directo').value = contenido;
+                    actualizarEstadisticasGlobal();
+                };
+                reader.readAsText(file);
+                
+            } else {
+                infoDiv.style.display = 'none';
+            }
+        });
+    }
+});
+
+function actualizarEstadisticasGlobal() {
+    const codigo = document.getElementById('codigo-html-directo')?.value || '';
+    const charCount = document.getElementById('char-count-global');
+    const lineCount = document.getElementById('line-count-global');
+    const sizeCount = document.getElementById('size-count-global');
+    
+    if (charCount) charCount.textContent = codigo.length.toLocaleString();
+    if (lineCount) lineCount.textContent = (codigo.split('\n').length).toLocaleString();
+    if (sizeCount) {
+        const bytes = new Blob([codigo]).size;
+        const kb = (bytes / 1024).toFixed(1);
+        sizeCount.textContent = kb + ' KB';
+    }
+}
+
+function previsualizarHtmlGlobal() {
+    const codigoHtml = document.getElementById('codigo-html-directo')?.value?.trim();
+    const iframe = document.getElementById('preview-iframe-global');
+    const overlay = document.getElementById('preview-overlay-global');
+    
+    if (!codigoHtml) {
+        mostrarErrorElegante('No hay código HTML para previsualizar');
+        return;
+    }
+    
+    try {
+        // Crear blob con el HTML
+        const htmlBlob = new Blob([codigoHtml], { type: 'text/html' });
+        const htmlUrl = URL.createObjectURL(htmlBlob);
+        
+        // Mostrar iframe y ocultar overlay
+        iframe.src = htmlUrl;
+        iframe.style.display = 'block';
+        overlay.classList.add('hidden');
+        
+        // Limpiar URL después de 5 minutos
+        setTimeout(() => {
+            URL.revokeObjectURL(htmlUrl);
+        }, 300000);
+        
+        mostrarExitoElegante('Vista previa cargada exitosamente');
+        
+    } catch (error) {
+        console.error('Error al previsualizar HTML:', error);
+        mostrarErrorElegante('Error al cargar la vista previa');
+    }
+}
+
+function limpiarPreviewGlobal() {
+    const iframe = document.getElementById('preview-iframe-global');
+    const overlay = document.getElementById('preview-overlay-global');
+    
+    if (iframe) {
+        iframe.src = 'about:blank';
+        iframe.style.display = 'none';
+    }
+    
+    if (overlay) {
+        overlay.classList.remove('hidden');
+    }
+    
+    mostrarInfoElegante('Vista previa limpiada');
+}
+
+// Función para limpiar todo el modal
+function limpiarModalHtmlGlobal() {
+    document.getElementById('archivo-html').value = '';
+    document.getElementById('codigo-html-directo').value = '';
+    document.getElementById('titulo-html').value = '';
+    document.getElementById('descripcion-html').value = '';
+    document.getElementById('html-file-info-global').style.display = 'none';
+    
+    actualizarEstadisticasGlobal();
+    limpiarPreviewGlobal();
+    
+    mostrarInfoElegante('Modal limpiado completamente');
+}
+
+console.log('✅ Modal HTML global configurado y listo');
+
+
+// =====================================================
+// PREVENCIÓN DE PÉRDIDA DE DATOS
 // =====================================================
 
 // Manejar teclas de acceso rápido

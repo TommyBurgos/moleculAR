@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericRelation
 import string
 import random
 from django.utils import timezone
@@ -111,6 +112,8 @@ class Cuestionario(models.Model):
     intentos_permitidos = models.PositiveIntegerField(default=1, help_text='Número de intentos permitidos')
     mostrar_resultados = models.BooleanField(default=True, help_text='Mostrar resultados al estudiante después de completar')
     orden_aleatorio = models.BooleanField(default=False, help_text='Mostrar preguntas en orden aleatorio')
+    
+    preguntas = GenericRelation('PreguntaCuestionario', related_query_name='cuestionario_pregunta')
 
     def __str__(self):
         return f"Cuestionario - {self.recurso.titulo}"
@@ -259,6 +262,8 @@ class Competencia(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
     
+    preguntas = GenericRelation('PreguntaCuestionario', related_query_name='competencia_pregunta')
+    
     # ============== CLASE META CORREGIDA ==============
     class Meta:
         ordering = ['-fecha_creacion']
@@ -327,7 +332,6 @@ class Competencia(models.Model):
             total=models.Sum('puntaje')
         )['total'] or 0
     
-    # ============== MÉTODOS NUEVOS AGREGADOS ==============
     def get_preguntas(self):
         """Obtiene todas las preguntas de esta competencia"""
         from django.contrib.contenttypes.models import ContentType
@@ -389,6 +393,36 @@ class Competencia(models.Model):
         return self.get_preguntas().filter(
             orden__lt=self.pregunta_actual.orden
         ).last()
+    
+    @property
+    def preguntas(self):
+        """Manager para acceder a las preguntas de esta competencia"""
+        from django.contrib.contenttypes.models import ContentType
+        competencia_ct = ContentType.objects.get_for_model(Competencia)
+        
+        class PreguntasManager:
+            def all(self):
+                return PreguntaCuestionario.objects.filter(
+                    content_type=competencia_ct,
+                    object_id=self.id
+                ).order_by('orden')
+            
+            def count(self):
+                return self.all().count()
+            
+            def exists(self):
+                return self.all().exists()
+            
+            def aggregate(self, **kwargs):
+                return self.all().aggregate(**kwargs)
+            
+            def filter(self, **kwargs):
+                return self.all().filter(**kwargs)
+        
+        # Necesitamos pasar self al manager
+        manager = PreguntasManager()
+        manager.id = self.id
+        return manager
 
 class GrupoCompetencia(models.Model):
     """Modelo para manejar grupos en competencias grupales"""
@@ -598,11 +632,11 @@ class RespuestaCompetencia(models.Model):
         return f"Respuesta de {self.participacion.estudiante.username} - Pregunta {self.pregunta.id}"
     
     def calcular_puntaje_automatico(self):
-        """Calcula el puntaje automáticamente según el tipo de pregunta"""
+        """Calcula el puntaje automáticamente según el tipo de pregunta - MÉTODO FALTANTE"""
         tipo = self.pregunta.tipo.nombre
         puntaje_pregunta = self.pregunta.puntaje
         
-        if tipo == 'opcion_unica' or tipo == 'falso_verdadero':
+        if tipo in ['opcion_unica', 'falso_verdadero']:
             if self.opcion_seleccionada and self.opcion_seleccionada.es_correcta:
                 self.puntaje_obtenido = puntaje_pregunta
                 self.es_correcta = True
@@ -612,17 +646,88 @@ class RespuestaCompetencia(models.Model):
         
         elif tipo == 'opcion_multiple':
             if self.opciones_multiples:
-                ids_seleccionadas = set(self.opciones_multiples.split(','))
-                opciones_correctas = set(str(op.id) for op in self.pregunta.opciones.filter(es_correcta=True))
-                
-                if ids_seleccionadas == opciones_correctas:
+                try:
+                    ids_seleccionadas = set(self.opciones_multiples.split(','))
+                    opciones_correctas = set(str(op.id) for op in self.pregunta.opciones.filter(es_correcta=True))
+                    
+                    if ids_seleccionadas == opciones_correctas:
+                        self.puntaje_obtenido = puntaje_pregunta
+                        self.es_correcta = True
+                    else:
+                        self.puntaje_obtenido = 0
+                        self.es_correcta = False
+                except:
+                    self.puntaje_obtenido = 0
+                    self.es_correcta = False
+            else:
+                self.puntaje_obtenido = 0
+                self.es_correcta = False
+        
+        elif tipo == 'respuesta_abierta':
+            # Requiere calificación manual
+            self.es_correcta = None
+            self.puntaje_obtenido = 0
+        
+        elif tipo == 'completar':
+            if self.respuestas_completar and self.pregunta.respuestas_completar:
+                try:
+                    respuestas_correctas = [r.strip() for r in self.pregunta.respuestas_completar.split(',')]
+                    respuestas_estudiante = [r.strip() for r in self.respuestas_completar.split('|')]
+                    
+                    correctas = 0
+                    for i, resp_correcta in enumerate(respuestas_correctas):
+                        if i < len(respuestas_estudiante):
+                            if respuestas_estudiante[i].lower() == resp_correcta.lower():
+                                correctas += 1
+                    
+                    porcentaje = correctas / len(respuestas_correctas) if respuestas_correctas else 0
+                    self.puntaje_obtenido = puntaje_pregunta * porcentaje
+                    self.es_correcta = porcentaje >= 1.0
+                except:
+                    self.puntaje_obtenido = 0
+                    self.es_correcta = False
+            else:
+                self.puntaje_obtenido = 0
+                self.es_correcta = False
+        
+        elif tipo == 'unir_lineas':
+            if self.conexiones_realizadas and self.pregunta.conexiones_correctas:
+                try:
+                    import json
+                    conexiones_estudiante = json.loads(self.conexiones_realizadas)
+                    conexiones_correctas = {}
+                    
+                    for conexion in self.pregunta.conexiones_correctas.split(','):
+                        if '-' in conexion:
+                            izq, der = conexion.strip().split('-')
+                            conexiones_correctas[izq.strip()] = der.strip()
+                    
+                    correctas = 0
+                    for izq, der in conexiones_correctas.items():
+                        if conexiones_estudiante.get(izq) == der:
+                            correctas += 1
+                    
+                    porcentaje = correctas / len(conexiones_correctas) if conexiones_correctas else 0
+                    self.puntaje_obtenido = puntaje_pregunta * porcentaje
+                    self.es_correcta = porcentaje >= 1.0
+                except:
+                    self.puntaje_obtenido = 0
+                    self.es_correcta = False
+            else:
+                self.puntaje_obtenido = 0
+                self.es_correcta = False
+        
+        elif tipo in ['simulador_2d', 'simulador_3d']:
+            if self.respuesta_smiles and self.pregunta.smiles_objetivo:
+                if self.respuesta_smiles.strip() == self.pregunta.smiles_objetivo.strip():
                     self.puntaje_obtenido = puntaje_pregunta
                     self.es_correcta = True
                 else:
                     self.puntaje_obtenido = 0
                     self.es_correcta = False
-        
-        # Más tipos se pueden agregar aquí...
+            else:
+                self.es_correcta = None
+                self.puntaje_obtenido = 0
         
         self.save()
         return self.puntaje_obtenido
