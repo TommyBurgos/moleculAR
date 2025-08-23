@@ -125,6 +125,43 @@ def registroExitoso(request):
             return HttpResponse('Las contraseñas no coinciden.')
     return HttpResponse('Método no permitido')
 
+#REGISTRAR DOCENTE
+def registroDocente(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm = request.POST.get('confirmPassword')
+        codigo = request.POST.get('codigo_institucional')
+
+        if password != confirm:
+            return HttpResponse('Las contraseñas no coinciden.')
+
+        if len(password) < 8 or not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$', password):
+            return HttpResponse('La contraseña debe tener al menos 8 caracteres y contener letras y números.')
+
+        CODIGO_VALIDO = getattr(settings, "CODIGO_DOCENTE", None)
+        if codigo != CODIGO_VALIDO:
+            return HttpResponse('Código institucional inválido.')
+
+        try:
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=password,
+                first_name='',
+                last_name=''
+            )
+            rol_docente = Rol.objects.get(nombre='Docente')
+            user.rol = rol_docente
+            user.save()
+            login(request, user)
+            return redirect('inicio')
+        except Exception as e:
+            return HttpResponse(f'Ocurrió un error: {e}')
+
+    return render(request, 'sign-up-docente.html')
+
+
 @csrf_exempt
 def vistaLogin(request):
     return render(request,'sign-in.html')
@@ -133,17 +170,89 @@ def acceso_denegado(request):
     print("Inicie a la función de acceso denegado")        
     return render(request, 'error-404.html')
 
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
 
 @role_required('Admin')
 def inicioAdmin(request):
     print("Inicie a la función de inicio Admin")
     user = request.user    
-    imgPerfil=user.imgPerfil  
+    imgPerfil = user.imgPerfil  
+
+    # Métricas globales
+    total_cursos = Curso.objects.count()
+    total_usuarios = User.objects.count()
+
+    # Últimos 6 usuarios del último mes con cantidad de cursos inscritos
+    hace_un_mes = timezone.now() - timedelta(days=30)
+    ultimos_usuarios = (
+        User.objects.filter(date_joined__gte=hace_un_mes)
+        .annotate(cursos_inscritos=Count('inscripcioncurso'))
+        .order_by('-date_joined')[:6]
+    )
+    # Top 5 cursos más inscritos
+    # Top cursos (aunque tengan 0 inscripciones)
+    cursos_populares = (
+        Curso.objects.annotate(num_inscritos=Count('inscripcioncurso'))
+        .order_by('-num_inscritos')[:5]
+    )
+
+    labels_cursos = [c.titulo for c in cursos_populares]
+    data_cursos = [c.num_inscritos for c in cursos_populares]
+
+    total_inscripciones = sum(data_cursos)
+
+    # Usuarios agrupados por mes (para la gráfica)
+    usuarios_por_mes = (
+        User.objects
+        .annotate(mes=TruncMonth('date_joined'))
+        .values('mes')
+        .annotate(total=Count('id'))
+        .order_by('mes')
+    )
+    labels = [u['mes'].strftime("%b %Y") for u in usuarios_por_mes]
+    data = [u['total'] for u in usuarios_por_mes]
+
+    # Cursos creados en el último mes
+    cursos_recientes = Curso.objects.filter(
+        fecha_creacion__gte=hace_un_mes
+    ).select_related('profesor', 'categoria').order_by('-fecha_creacion')
+
+    # Recursos creados en la última semana
+    hace_una_semana = timezone.now() - timedelta(days=7)
+    recursos_recientes = (
+        Recurso.objects.filter(fecha_creacion__gte=hace_una_semana)
+        .select_related('tipo')
+        .order_by('-fecha_creacion')
+    )
+
+    # --- NUEVAS MÉTRICAS ---
+    try:
+        tipo_practica = TipoRecurso.objects.get(nombre__iexact="Practica")
+        total_practicas = Recurso.objects.filter(tipo=tipo_practica).count()
+        practicas_visibles = Recurso.objects.filter(tipo=tipo_practica, visible_biblioteca=1).count()
+    except TipoRecurso.DoesNotExist:
+        total_practicas = 0
+        practicas_visibles = 0
+
     context = {                  
         'imgPerfil': imgPerfil,        
-        'usuario':user,        
+        'usuario': user,
+        'total_cursos': total_cursos,
+        'total_usuarios': total_usuarios,
+        'ultimos_usuarios': ultimos_usuarios,
+        'labels': labels,
+        'data': data,
+        'cursos_recientes': cursos_recientes,
+        'recursos_recientes': recursos_recientes,
+        'total_practicas': total_practicas,
+        'practicas_visibles': practicas_visibles,
+        'labels_cursos': labels_cursos,
+        'data_cursos': data_cursos,
+        'total_inscripciones': total_inscripciones,
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
+
 
 @role_required(['Admin', 'Docente'])
 def vistaAllCursos(request):

@@ -86,6 +86,7 @@ urlpatterns = [
 
     #paula
     #Profesor
+    path('registro-docente/', views.registroDocente, name='registro_docente'),#BY TOMMY
     path('docente/crear_cuestionario/', views.instructorQuiz, name='crearCuestionario'),
     path('docente/crear_cuestionario/<int:seccion_id>/', views.instructorQuiz, name='crearCuestionarioSeccion'),
     path('docente/editar_cuestionario/<int:cuestionario_id>/', views.editarCuestionario, name='editarCuestionario'),
