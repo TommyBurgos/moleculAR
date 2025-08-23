@@ -637,7 +637,7 @@ class TipoPregunta(models.Model):
 
 class PreguntaCuestionario(models.Model):
     # Relación genérica para que funcione con cuestionarios Y competencias
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType,null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
     enunciado = models.TextField()
@@ -988,7 +988,7 @@ class EventoCompetencia(models.Model):
     tipo = models.CharField(max_length=20, choices=TIPO_EVENTO_CHOICES)
     descripcion = models.TextField(blank=True)
     usuario = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True)
-    datos_adicionales = models.JSONField(null=True, blank=True)  # Para almacenar datos extra
+    datos_adicionales = models.TextField(null=True, blank=True)  # Para almacenar datos extra
     fecha_evento = models.DateTimeField(auto_now_add=True)
     
     class Meta:
