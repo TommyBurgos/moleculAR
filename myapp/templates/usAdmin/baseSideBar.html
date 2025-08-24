@@ -17,9 +17,9 @@
 				
 				<!-- Menu item 1 -->
 				 {% if request.user.rol.nombre == "Admin" %}
-				<li class="nav-item"><a href="/usAdmin/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
+					<li class="nav-item"><a href="/usAdmin/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
 				{% elif request.user.rol.nombre == "Docente" %}
-				<li class="nav-item"><a href="/usDocente/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
+					<li class="nav-item"><a href="/usDocente/" class="nav-link active"><i class="bi bi-house fa-fw me-2"></i>Dashboard</a></li>
 				{% endif %}
 				<!-- Title -->
 				<li class="nav-item ms-2 my-2">Opciones</li>
@@ -31,8 +31,12 @@
 					</a>
 					<!-- Submenu -->
 					<ul class="nav collapse flex-column" id="collapsepage" data-bs-parent="#navbar-sidebar">
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Todos los cursos</a></li>
-						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearCurso">Crear Curso</a></li>						
+						{% if request.user.rol.nombre == "Admin" %}
+							<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleCursos">Todos los cursos</a></li>
+						{% elif request.user.rol.nombre == "Docente" %}
+							<li class="nav-item"> <a class="nav-link" href="/docente/mis-cursos/">Ver mis cursos</a></li>
+						{% endif %}
+						<li class="nav-item"> <a class="nav-link" href="/crearCurso">Crear Curso</a></li>						
 					</ul>
 				</li>
 
@@ -40,20 +44,32 @@
 
 				<!-- Menu item 4 -->
 				<li class="nav-item">
-					<a class="nav-link" data-bs-toggle="collapse" href="#collapseinstructors" role="button" aria-expanded="false" aria-controls="collapseinstructors">
-						<img src="{% static 'img/Plataforma/General/seguidores.png' %}" class="fa-fw me-2" alt="">Gestión de usuarios
-					</a>
+					{% if request.user.rol.nombre == "Admin" %}
+						<a class="nav-link" data-bs-toggle="collapse" href="#collapseinstructors" role="button" aria-expanded="false" aria-controls="collapseinstructors">
+							<img src="{% static 'img/Plataforma/General/seguidores.png' %}" class="fa-fw me-2" alt="">Gestión de usuarios
+						</a>
+					{% elif request.user.rol.nombre == "Docente" %}
+						<a class="nav-link" data-bs-toggle="collapse" href="#collapseinstructors" role="button" aria-expanded="false" aria-controls="collapseinstructors">
+						<img src="{% static 'img/Plataforma/General/seguidores.png' %}" class="fa-fw me-2" alt="">Usuarios
+						</a>
+					{% endif %}
 					<!-- Submenu -->
+					 {% if request.user.rol.nombre == "Admin" %}
 					<ul class="nav collapse flex-column" id="collapseinstructors" data-bs-parent="#navbar-sidebar">
 						<li class="nav-item"> <a class="nav-link" href="/usAdmin/detalleUsuarios">Usuarios</a></li>						
 						<li class="nav-item"> <a class="nav-link" href="/usAdmin/crearUsuario">Crear usuario</a></li>						
 					</ul>
+					{% elif request.user.rol.nombre == "Docente" %}
+						<ul class="nav collapse flex-column" id="collapseinstructors" data-bs-parent="#navbar-sidebar">
+							<li class="nav-item"> <a class="nav-link" href="/docente/mis-alumnos/">Usuarios</a></li>						
+							<li class="nav-item"> <a class="nav-link" href="/usDocente/verRendimiento">Ver rendimiento</a></li>						
+						</ul>
+					{% endif %}
 				</li>
 				
 				<!-- Menu item 5 -->
 				<li class="nav-item"> <a class="nav-link" href="/coming_soon/"><img src="{% static 'img/Plataforma/General/opciones.png' %}" class="fa-fw me-2" alt="">Competencias</a></li>								
 				
-
 				<!-- Title -->
 				<li class="nav-item ms-2 my-2">Experimentación</li>
 
