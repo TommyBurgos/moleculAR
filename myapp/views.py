@@ -17,6 +17,8 @@ import json
 
 from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante, PracticaConfig, IntentoArmado, GrupoCompetencia, ParticipacionCompetencia, RespuestaCompetencia
 
+from .forms import AdminCrearUsuarioForm, EditarPerfilForm, CursoForm
+
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
@@ -108,7 +110,7 @@ def registroExitoso(request):
                     last_name=' '
                 )
                 print('***INICIO***')                
-                rol_estudiante = Rol.objects.get(nombre='estudiante')
+                rol_estudiante = Rol.objects.get(nombre='Estudiante')
                 print(rol_estudiante)
                 user.rol = rol_estudiante
                 print(user.rol)                                
@@ -913,7 +915,7 @@ def crear_recurso(request, seccion_id):
 
         return redirect('detalle_recurso',recurso.id)
 
-from .forms import AdminCrearUsuarioForm
+
 
 @role_required('Admin')
 def crear_usuario_admin(request):
@@ -1114,9 +1116,6 @@ def obtener_presigned_url(request):
             'url': url_publica
         })
 
-
-from .forms import CursoForm
-
 @role_required(['Admin', 'Docente'])
 def vistaCrearCurso(request):
     user = request.user    
@@ -1126,8 +1125,9 @@ def vistaCrearCurso(request):
         if form.is_valid():
             curso = form.save(commit=False)
             curso.profesor = request.user  # Asignar el usuario actual como profesor
-            curso.save()
+            curso.save()               
             return redirect('detalle_curso', curso.id) 
+        
     else:
         form = CursoForm() 
     context = {                  
@@ -1350,9 +1350,60 @@ def biblioteca_practicas(request):
 
 @role_required('Docente')
 def inicioDocente(request):
-    return render(request, 'docente/instructor-dashboard.html')
+    user = request.user
+    imgPerfil = user.imgPerfil
+    context={
+        'imgPerfil': imgPerfil,
+        'usuario': user.username
+        }
 
+    return render(request, 'docente/instructor-dashboard.html', context)
 
+@role_required('Docente')
+@login_required
+def mis_cursos_docente(request):
+    cursos = Curso.objects.filter(profesor=request.user).order_by('-fecha_creacion')
+    return render(request, 'docente/mis_cursos.html', {
+        'cursos': cursos,
+        'usuario': request.user,
+    })
+
+@role_required('Docente')
+@login_required
+def alumnos_mis_cursos(request):
+    cursos_docente = Curso.objects.filter(profesor=request.user)
+
+    curso_id = request.GET.get('curso')
+    buscar = request.GET.get('buscar', '').strip()
+
+    inscripciones = InscripcionCurso.objects.filter(
+        curso__in=cursos_docente
+    ).select_related('estudiante', 'curso')
+
+    # 🔹 Filtro por curso
+    if curso_id and curso_id.isdigit():
+        inscripciones = inscripciones.filter(curso_id=curso_id)
+
+    # 🔹 Filtro por búsqueda (nombre, apellido, username o email)
+    if buscar:
+        inscripciones = inscripciones.filter(
+            Q(estudiante__first_name__icontains=buscar) |
+            Q(estudiante__last_name__icontains=buscar) |
+            Q(estudiante__username__icontains=buscar) |
+            Q(estudiante__email__icontains=buscar)
+        )
+
+    # 🔹 Paginación
+    paginator = Paginator(inscripciones, 10)  # 10 por página
+    page_number = request.GET.get('page')
+    inscripciones_page = paginator.get_page(page_number)
+
+    return render(request, 'docente/alumnos_mis_cursos.html', {
+        'inscripciones': inscripciones_page,
+        'cursos_docente': cursos_docente,
+        'curso_id': int(curso_id) if curso_id and curso_id.isdigit() else None,
+        'buscar': buscar,  # para mantener valor en input search
+    })
 
 """def custom_login(request):
     print("entre a la funcion custom")

@@ -72,7 +72,7 @@ urlpatterns = [
 
 
 
-    path('usAdmin/crearCurso', views.vistaCrearCurso, name="crearCurso-adm"),
+    path('crearCurso', views.vistaCrearCurso, name="crearCurso-adm"),
     path("obtener-presigned-url/", views.obtener_presigned_url, name="obtener_presigned_url"),
 
     path('usEstudiante/', views.inicioEstudiante, name="student_dashboard"),
@@ -87,6 +87,13 @@ urlpatterns = [
     #paula
     #Profesor
     path('registro-docente/', views.registroDocente, name='registro_docente'),#BY TOMMY
+    path('usDocente/crearCurso', views.vistaCrearCurso, name="crearCurso-doc"), #MISMA FUNCIÓN DE ADMIN, SOLO REDIRIGE por ruta de docente.
+    # urls.py
+    path('docente/mis-cursos/', views.mis_cursos_docente, name='mis_cursos_docente'),
+    # urls.py
+    path('docente/mis-alumnos/', views.alumnos_mis_cursos, name='alumnos_mis_cursos'),
+
+
     path('docente/crear_cuestionario/', views.instructorQuiz, name='crearCuestionario'),
     path('docente/crear_cuestionario/<int:seccion_id>/', views.instructorQuiz, name='crearCuestionarioSeccion'),
     path('docente/editar_cuestionario/<int:cuestionario_id>/', views.editarCuestionario, name='editarCuestionario'),
