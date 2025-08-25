@@ -175,6 +175,8 @@ def acceso_denegado(request):
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 
+from django.db.models.functions import TruncMonth, TruncWeek, TruncDay
+
 @role_required('Admin')
 def inicioAdmin(request):
     print("Inicie a la función de inicio Admin")
@@ -185,42 +187,48 @@ def inicioAdmin(request):
     total_cursos = Curso.objects.count()
     total_usuarios = User.objects.count()
 
-    # Últimos 6 usuarios del último mes con cantidad de cursos inscritos
     hace_un_mes = timezone.now() - timedelta(days=30)
     ultimos_usuarios = (
         User.objects.filter(date_joined__gte=hace_un_mes)
         .annotate(cursos_inscritos=Count('inscripcioncurso'))
         .order_by('-date_joined')[:6]
     )
-    # Top 5 cursos más inscritos
-    # Top cursos (aunque tengan 0 inscripciones)
+
     cursos_populares = (
         Curso.objects.annotate(num_inscritos=Count('inscripcioncurso'))
         .order_by('-num_inscritos')[:5]
     )
-
     labels_cursos = [c.titulo for c in cursos_populares]
     data_cursos = [c.num_inscritos for c in cursos_populares]
-
     total_inscripciones = sum(data_cursos)
 
-    # Usuarios agrupados por mes (para la gráfica)
-    usuarios_por_mes = (
-        User.objects
-        .annotate(mes=TruncMonth('date_joined'))
-        .values('mes')
-        .annotate(total=Count('id'))
-        .order_by('mes')
-    )
-    labels = [u['mes'].strftime("%b %Y") for u in usuarios_por_mes]
-    data = [u['total'] for u in usuarios_por_mes]
+    # 🔹 Intervalo dinámico para usuarios
+    intervalo = request.GET.get('intervalo', 'mes')
+    if intervalo == 'dia':
+        trunc_func = TruncDay
+        formato = "%Y-%m-%d"
+    elif intervalo == 'semana':
+        trunc_func = TruncWeek
+        formato = "Semana %W %Y"
+    else:
+        trunc_func = TruncMonth
+        formato = "%b %Y"
 
-    # Cursos creados en el último mes
+    usuarios_por_intervalo = (
+        User.objects
+        .annotate(periodo=trunc_func('date_joined'))
+        .values('periodo')
+        .annotate(total=Count('id'))
+        .order_by('periodo')
+    )
+
+    labels = [u['periodo'].strftime(formato) for u in usuarios_por_intervalo]
+    data = [u['total'] for u in usuarios_por_intervalo]
+
     cursos_recientes = Curso.objects.filter(
         fecha_creacion__gte=hace_un_mes
     ).select_related('profesor', 'categoria').order_by('-fecha_creacion')
 
-    # Recursos creados en la última semana
     hace_una_semana = timezone.now() - timedelta(days=7)
     recursos_recientes = (
         Recurso.objects.filter(fecha_creacion__gte=hace_una_semana)
@@ -228,7 +236,6 @@ def inicioAdmin(request):
         .order_by('-fecha_creacion')
     )
 
-    # --- NUEVAS MÉTRICAS ---
     try:
         tipo_practica = TipoRecurso.objects.get(nombre__iexact="Practica")
         total_practicas = Recurso.objects.filter(tipo=tipo_practica).count()
@@ -245,6 +252,7 @@ def inicioAdmin(request):
         'ultimos_usuarios': ultimos_usuarios,
         'labels': labels,
         'data': data,
+        'intervalo': intervalo,  # 👈 se pasa al template
         'cursos_recientes': cursos_recientes,
         'recursos_recientes': recursos_recientes,
         'total_practicas': total_practicas,
@@ -254,7 +262,6 @@ def inicioAdmin(request):
         'total_inscripciones': total_inscripciones,
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
-
 
 @role_required(['Admin', 'Docente'])
 def vistaAllCursos(request):
@@ -838,6 +845,7 @@ def crear_recurso(request, seccion_id):
             imagen=imagen,
             seccion=seccion,
             visible_biblioteca=visible,
+            creado_por=request.user,
             contenido_texto=contenido_texto
         )
         print(f"Recurso creado {recurso}")
@@ -1347,25 +1355,117 @@ def biblioteca_practicas(request):
     }
     return render(request, 'estudiante/biblioteca_practicas.html', context)
 
-
+from django.db.models.functions import TruncMonth, TruncWeek, TruncDay
 @role_required('Docente')
 def inicioDocente(request):
     user = request.user
-    imgPerfil = user.imgPerfil
-    context={
-        'imgPerfil': imgPerfil,
-        'usuario': user.username
+
+    # Totales
+    total_cursos = Curso.objects.filter(profesor=user).count()
+    print(f"total cursos{total_cursos} y los cursos {Curso.objects.filter(profesor=user)}")
+    total_estudiantes = InscripcionCurso.objects.filter(
+        curso__profesor=user
+    ).values('estudiante').distinct().count()
+    print(total_estudiantes)
+    total_practicas = Recurso.objects.filter(
+        creado_por=user,
+        tipo__nombre__iexact="Practica",
+        visible_biblioteca=True
+    ).count()
+    print(total_practicas)    
+    # Cursos listados (con búsqueda/paginación como ya hicimos)
+    buscar = request.GET.get('buscar', '').strip()
+    cursos_qs = Curso.objects.filter(profesor=user).order_by('-fecha_creacion')
+    if buscar:
+        cursos_qs = cursos_qs.filter(
+            Q(titulo__icontains=buscar) |
+            Q(descripcion__icontains=buscar) |
+            Q(categoria__nombre__icontains=buscar)
+        )
+    paginator = Paginator(cursos_qs, 5)
+    page_number = request.GET.get('page')
+    cursos_page = paginator.get_page(page_number)
+
+    # 🔹 Intervalo dinámico
+    intervalo = request.GET.get('intervalo', 'mes')
+    if intervalo == 'dia':
+        trunc_func = TruncDay
+        formato = "%Y-%m-%d"
+    elif intervalo == 'semana':
+        trunc_func = TruncWeek
+        formato = "Semana %W %Y"
+    else:
+        trunc_func = TruncMonth
+        formato = "%Y-%m"
+
+    inscripciones = (
+        InscripcionCurso.objects.filter(curso__profesor=user)
+        .annotate(periodo=trunc_func('fecha_inscripcion'))
+        .values('periodo', 'curso__titulo')
+        .annotate(total=Count('id'))
+        .order_by('periodo')
+    )
+
+    # Reestructurar datos para Chart.js
+    periodos = sorted(set([i['periodo'].strftime(formato) for i in inscripciones]))
+    cursos_series = {}
+    for i in inscripciones:
+        curso = i['curso__titulo']
+        periodo = i['periodo'].strftime(formato)
+        if curso not in cursos_series:
+            cursos_series[curso] = {p: 0 for p in periodos}
+        cursos_series[curso][periodo] = i['total']
+
+    datasets = [
+        {
+            "label": curso,
+            "data": [series[p] for p in periodos],
         }
+        for curso, series in cursos_series.items()
+    ]
+    print(f"total cursos al final {total_cursos} y los cursos {Curso.objects.filter(profesor=user)}")
+    print(total_estudiantes)
+    print(total_practicas)
+    context = {
+        'imgPerfil': user.imgPerfil,
+        'usuario': user.username,
+        'cursos': cursos_page,
+        'buscar': buscar,
+        'intervalo': intervalo,
+        'chart_labels': json.dumps(periodos),
+        'chart_datasets': json.dumps(datasets),
+        'total_cursos': total_cursos,
+        'total_estudiantes': total_estudiantes,
+        'total_practicas': total_practicas,
+    }
 
     return render(request, 'docente/instructor-dashboard.html', context)
 
 @role_required('Docente')
 @login_required
 def mis_cursos_docente(request):
+    user = request.user
     cursos = Curso.objects.filter(profesor=request.user).order_by('-fecha_creacion')
-    return render(request, 'docente/mis_cursos.html', {
-        'cursos': cursos,
+     # 🔹 Búsqueda
+    buscar = request.GET.get('buscar', '').strip()
+    cursos_qs = Curso.objects.filter(profesor=user).order_by('-fecha_creacion')
+
+    if buscar:
+        cursos_qs = cursos_qs.filter(
+            Q(titulo__icontains=buscar) |
+            Q(descripcion__icontains=buscar) |
+            Q(categoria__nombre__icontains=buscar)
+        )
+
+    # 🔹 Paginación
+    paginator = Paginator(cursos_qs, 5)  # 5 cursos por página
+    page_number = request.GET.get('page')
+    cursos_page = paginator.get_page(page_number)
+    return render(request, 'docente/mis_cursos.html', {        
         'usuario': request.user,
+        'total_cursos': cursos,        
+        'cursos': cursos_page, 
+        'buscar': buscar,
     })
 
 @role_required('Docente')

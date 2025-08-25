@@ -129,9 +129,9 @@
 							<span class="display-6 text-warning mb-0"><i class="fas fa-tv fa-fw"></i></span>
 							<div class="ms-4">
 								<div class="d-flex">
-									<h5 class="purecounter mb-0 fw-bold" data-purecounter-start="0" data-purecounter-end="25"	data-purecounter-delay="200">0</h5>
+									<h5 class="purecounter mb-0 fw-bold" data-purecounter-start="0" data-purecounter-end="{{ total_cursos }}"	data-purecounter-delay="200">{{ total_cursos }}</h5>
 								</div>
-								<span class="mb-0 h6 fw-light">Total Courses</span>
+								<span class="mb-0 h6 fw-light">Cursos totales</span>
 							</div>
 						</div>
 					</div>
@@ -141,10 +141,10 @@
 							<span class="display-6 text-purple mb-0"><i class="fas fa-user-graduate fa-fw"></i></span>
 							<div class="ms-4">
 								<div class="d-flex">
-									<h5 class="purecounter mb-0 fw-bold" data-purecounter-start="0" data-purecounter-end="25"	data-purecounter-delay="200">0</h5>
-									<span class="mb-0 h5">K+</span>
+									<h5 class="purecounter mb-0 fw-bold" data-purecounter-start="0" data-purecounter-end="{{ total_estudiantes }}"	data-purecounter-delay="200">{{ total_estudiantes }}</h5>
+									
 								</div>
-								<span class="mb-0 h6 fw-light">Total Students</span>
+								<span class="mb-0 h6 fw-light">Total de estudiantes</span>
 							</div>
 						</div>
 					</div>
@@ -154,41 +154,37 @@
 							<span class="display-6 text-info mb-0"><i class="fas fa-gem fa-fw"></i></span>
 							<div class="ms-4">
 								<div class="d-flex">
-									<h5 class="purecounter mb-0 fw-bold" data-purecounter-start="0" data-purecounter-end="12" data-purecounter-delay="300">0</h5>
-									<span class="mb-0 h5">K</span>
+									<h5 class="purecounter mb-0 fw-bold" data-purecounter-start="0" data-purecounter-end="{{ total_practicas }}" data-purecounter-delay="300">{{ total_practicas }}</h5>
+									<span class="mb-0 h5">Práctica</span>
 								</div>
-								<span class="mb-0 h6 fw-light">Enrolled Students</span>
+								<span class="mb-0 h6 fw-light">pública aportada</span>
 							</div>
 						</div>
 					</div>
 				</div>
 				<!-- Counter boxes END -->
 
-				<!-- Chart START -->
-				<div class="row mt-5">
-					<div class="col-12">
-						<div class="card card-body bg-transparent border p-4 h-100">
-							<div class="row g-4">
-								<!-- Content -->
-								<div class="col-sm-6 col-md-4">
-									<span class="badge text-bg-dark">Current Month</span>
-									<h4 class="text-primary my-2">$35000</h4>
-									<p class="mb-0"><span class="text-success me-1">0.20%<i class="bi bi-arrow-up"></i></span>vs last month</p>
-								</div>
-								<!-- Content -->
-								<div class="col-sm-6 col-md-4">
-									<span class="badge text-bg-dark">Last Month</span>
-									<h4 class="my-2">$28000</h4>
-									<p class="mb-0"><span class="text-danger me-1">0.10%<i class="bi bi-arrow-down"></i></span>Then last month</p>
-								</div>
-							</div>
-
-							<!-- Apex chart -->
-							<div id="ChartPayout"></div>
-
-						</div>
+				<!-- Chart START -->			
+				<div class="card mt-4">
+					<div class="card-header">
+						<h5>📊 Inscripciones por curso ({{ intervalo|title }})</h5>
+						<div class="d-flex justify-content-end mb-3">
+					
+					<form method="get">
+							<input type="hidden" name="buscar" value="{{ buscar }}">
+							<select name="intervalo" class="form-select w-auto" onchange="this.form.submit()">
+							<option value="mes" {% if intervalo == 'mes' %}selected{% endif %}>Por mes</option>
+							<option value="semana" {% if intervalo == 'semana' %}selected{% endif %}>Por semana</option>
+							<option value="dia" {% if intervalo == 'dia' %}selected{% endif %}>Por día</option>
+							</select>
+					</form>
+				</div>
+					</div>
+					<div class="card-body">
+						<canvas id="chartInscripciones" height="120"></canvas>
 					</div>
 				</div>
+
 				<!-- Chart END -->
 
 				<!-- Course List table START -->
@@ -196,203 +192,112 @@
 					<div class="col-12">
 						<div class="card border bg-transparent rounded-3 mt-5">
 							<!-- Card header START -->
-							<div class="card-header bg-transparent border-bottom">
-								<div class="d-sm-flex justify-content-sm-between align-items-center">
-									<h3 class="mb-2 mb-sm-0">Most Selling Courses</h3>
-									<a href="#" class="btn btn-sm btn-primary-soft mb-0">View all</a>
+							<div class="card-header bg-light border-bottom">
+								<!-- Search and select START -->
+								<div class="row g-3 align-items-center justify-content-between">
+									<!-- Search bar -->
+									<div class="col-md-8">
+										<form class="rounded position-relative" method="get">
+											<input class="form-control bg-body" type="search" 
+													placeholder="Search" aria-label="Search" 
+													name="buscar" value="{{ buscar }}">
+											<button class="bg-transparent p-2 position-absolute top-50 end-0 translate-middle-y border-0 text-primary-hover text-reset" type="submit">
+												<i class="fas fa-search fs-6 "></i>
+											</button>
+										</form>
+
+									</div>
+
+									<!-- Select option -->
+									<div class="col-md-3">
+										<!-- Short by filter -->
+										<form>
+											<select class="form-select js-choice border-0 z-index-9" aria-label=".form-select-sm">
+												<option value="">Sort by</option>
+												<option>Newest</option>
+												<option>Oldest</option>
+												<option>Accepted</option>
+												<option>Rejected</option>
+											</select>
+										</form>
+									</div>
 								</div>
+								<!-- Search and select END -->
 							</div>
 							<!-- Card header END -->
 
 							<!-- Card body START -->
 							<div class="card-body">
-								<div class="table-responsive border-0 rounded-3">
-									<!-- Table START -->
-									<table class="table table-dark-gray align-middle p-4 mb-0">
-										<!-- Table head -->
-										<thead>
-											<tr>
-												<th scope="col" class="border-0 rounded-start">Course Name</th>
-												<th scope="col" class="border-0">Selling</th>
-												<th scope="col" class="border-0">Amount</th>
-												<th scope="col" class="border-0">Period</th>
-												<th scope="col" class="border-0 rounded-end">Action</th>
-											</tr>
-										</thead>
-										<!-- Table body START -->
-										<tbody>
-											
-											<!-- Table item -->
-											<tr>
-												<!-- Course item -->
-												<td>
-													<div class="d-flex align-items-center">
-														<!-- Image -->
-														<div class="w-60px">
-															<img src="assets/images/courses/4by3/08.jpg" class="rounded" alt="">
-														</div>
-														<!-- Title -->
-														<h6 class="mb-0 ms-2 table-responsive-title">	
-															<a href="#">Building Scalable APIs with GraphQL</a>
-														</h6>
+							<!-- Course table START -->
+							<div class="table-responsive border-0 rounded-3">
+								<!-- Table START -->
+								<table class="table table-dark-gray align-middle p-4 mb-0 table-hover">
+									<!-- Table head -->
+									<thead>
+										<tr>
+											<th scope="col" class="border-0 rounded-start">Nombre del curso</th>
+											<th scope="col" class="border-0">Código de acceso</th>
+											<th scope="col" class="border-0">Docente</th>
+											<th scope="col" class="border-0">Fecha de Creación</th>
+											<th scope="col" class="border-0">Categoria</th>
+											<th scope="col" class="border-0 rounded-end">Acción</th>
+										</tr>
+									</thead>						
+									<!-- Table body START -->
+									<tbody>
+										{% for curso in cursos %}
+										<!-- Table row -->
+										<tr>
+											<!-- Table data -->
+											<td>
+												<div class="d-flex align-items-center position-relative">
+													<!-- Image -->
+													<div class="w-60px">
+														<img src="{{ curso.imagen_portada.url }}" class="rounded" alt="">
 													</div>
-												</td>
-												<!-- Selling item -->
-												<td>34</td>
-												<!-- Amount item -->
-												<td>$1,25,478</td>
-												<!-- Period item -->
-												<td>
-													<span class="badge bg-primary bg-opacity-10 text-primary">9 months</span>
-												</td>
-												<!-- Action item -->
-												<td>
-													<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-0"><i class="far fa-fw fa-edit"></i></a>
-													<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
-												</td>
-											</tr>
-	
-											<!-- Table item -->
-											<tr>
-												<!-- Course item -->
-												<td>
-													<div class="d-flex align-items-center">
-														<!-- Image -->
-														<div class="w-60px">
-															<img src="assets/images/courses/4by3/10.jpg" class="rounded" alt="">
-														</div>
-														<!-- Title -->
-														<h6 class="mb-0 ms-2 table-responsive-title">	
-															<a href="#">Bootstrap 5 From Scratch</a>
-														</h6>
-													</div>
-												</td>
-												<!-- Selling item -->
-												<td>45</td>
-												<!-- Amount item -->
-												<td>$2,85,478</td>
-												<!-- Period item -->
-												<td>
-													<span class="badge bg-primary bg-opacity-10 text-primary">6 months</span>
-												</td>
-												<!-- Action item -->
-												<td>
-													<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-0"><i class="far fa-fw fa-edit"></i></a>
-													<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
-												</td>
-											</tr>
-	
-											<!-- Table item -->
-											<tr>
-												<!-- Course item -->
-												<td>
-													<div class="d-flex align-items-center">
-														<!-- Image -->
-														<div class="w-60px">
-															<img src="assets/images/courses/4by3/02.jpg" class="rounded" alt="">
-														</div>
-														<!-- Title -->
-														<h6 class="mb-0 ms-2 table-responsive-title">	
-															<a href="#">Graphic Design Masterclass</a>
-														</h6>
-													</div>
-												</td>
-												<!-- Selling item -->
-												<td>21</td>
-												<!-- Amount item -->
-												<td>$85,478</td>
-												<!-- Period item -->
-												<td>
-													<span class="badge bg-primary bg-opacity-10 text-primary">4 months</span>
-												</td>
-												<!-- Action item -->
-												<td>
-													<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-0"><i class="far fa-fw fa-edit"></i></a>
-													<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
-												</td>
-											</tr>
-	
-											<!-- Table item -->
-											<tr>
-												<!-- Course item -->
-												<td>
-													<div class="d-flex align-items-center">
-														<!-- Image -->
-														<div class="w-60px">
-															<img src="assets/images/courses/4by3/04.jpg" class="rounded" alt="">
-														</div>
-														<!-- Title -->
-														<h6 class="mb-0 ms-2 table-responsive-title">	
-															<a href="#">Learn Invision</a>
-														</h6>
-													</div>
-												</td>
-												<!-- Selling item -->
-												<td>28</td>
-												<!-- Amount item -->
-												<td>$98,478</td>
-												<!-- Period item -->
-												<td>
-													<span class="badge bg-primary bg-opacity-10 text-primary">8 months</span>
-												</td>
-												<!-- Action item -->
-												<td>
-													<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-0"><i class="far fa-fw fa-edit"></i></a>
-													<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
-												</td>
-											</tr>
-	
-											<!-- Table item -->
-											<tr>
-												<!-- Course item -->
-												<td>
-													<div class="d-flex align-items-center">
-														<!-- Image -->
-														<div class="w-60px">
-															<img src="assets/images/courses/4by3/06.jpg" class="rounded" alt="">
-														</div>
-														<!-- Title -->
-														<h6 class="mb-0 ms-2 table-responsive-title">	
-															<a href="#">Angular – The Complete Guider</a>
-														</h6>
-													</div>
-												</td>
-												<!-- Selling item -->
-												<td>38</td>
-												<!-- Amount item -->
-												<td>$1,02,478</td>
-												<!-- Period item -->
-												<td>
-													<span class="badge bg-primary bg-opacity-10 text-primary">1 year</span>
-												</td>
-												<!-- Action item -->
-												<td>
-													<a href="#" class="btn btn-sm btn-success-soft btn-round me-1 mb-0"><i class="far fa-fw fa-edit"></i></a>
-													<button class="btn btn-sm btn-danger-soft btn-round mb-0"><i class="fas fa-fw fa-times"></i></button>
-												</td>
-											</tr>
-										</tbody>
-										<!-- Table body END -->
-									</table>
-									<!-- Table END -->
-								</div>
+													<!-- Title -->
+													<h6 class="table-responsive-title mb-0 ms-2">	
+														<a href="{% url 'detalle_curso' curso.id %}" class="stretched-link">{{ curso.titulo }}</a>
+													</h6>
+												</div>
+											</td>
 
-								<!-- Pagination -->
-								<div class="d-sm-flex justify-content-sm-between align-items-sm-center mt-3">
-									<!-- Content -->
-									<p class="mb-0 text-center text-sm-start">Showing 1 to 8 of 20 entries</p>
-									<!-- Pagination -->
-									<nav class="d-flex justify-content-center mb-0" aria-label="navigation">
-										<ul class="pagination pagination-sm pagination-primary-soft d-inline-block d-md-flex rounded mb-0">
-											<li class="page-item mb-0"><a class="page-link" href="#" tabindex="-1"><i class="fas fa-angle-left"></i></a></li>
-											<li class="page-item mb-0"><a class="page-link" href="#">1</a></li>
-											<li class="page-item mb-0 active"><a class="page-link" href="#">2</a></li>
-											<li class="page-item mb-0"><a class="page-link" href="#">3</a></li>
-											<li class="page-item mb-0"><a class="page-link" href="#"><i class="fas fa-angle-right"></i></a></li>
-										</ul>
-									</nav>
-								</div>
+											<td>{{ curso.codigo_acceso }}</td>
+
+											<!-- Table data -->
+											<td>
+												<div class="d-flex align-items-center mb-3">
+													<!-- Avatar -->
+													<div class="avatar avatar-xs flex-shrink-0">
+														<img class="avatar-img rounded-circle" src="{{ curso.profesor.imgPerfil.url }}" alt="avatar">
+													</div>
+													<!-- Info -->
+													<div class="ms-2">
+														<h6 class="mb-0 fw-light">{{ curso.profesor }}</h6>
+													</div>
+												</div>
+											</td>
+
+											<!-- Table data -->
+											<td>{{ curso.fecha_creacion }}</td>
+											
+											<!-- Table data -->
+											<td>{{ curso.categoria }}</td>								
+
+											<!-- Table data -->
+											<td>
+												<a href="{% url 'detalle_curso' curso.id %}" class="btn btn-sm btn-success-soft me-1 mb-1 mb-md-0">Ver detalle</a>
+												<button class="btn btn-sm btn-secondary-soft mb-0">Eliminar</button>
+											</td>
+										</tr>							
+										{% endfor %}
+									</tbody>
+									<!-- Table body END -->
+								</table>
+								<!-- Table END -->
 							</div>
+							<!-- Course table END -->
+						</div>
 							<!-- Card body START -->
 						</div>
 					</div>
@@ -460,7 +365,28 @@ Footer END -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!--Para la gráfica-->
+
+<script>
+const ctx = document.getElementById('chartInscripciones').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: {{ chart_datasets|safe }}
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    stacked: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      y: { beginAtZero: true, title: { display: true, text: 'Alumnos inscritos' } },
+      x: { title: { display: true, text: 'Mes' } }
+    }
+  }
+});
+</script>
 
 </body>
 </html>
