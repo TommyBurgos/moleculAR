@@ -91,11 +91,11 @@ class Recurso(models.Model):
     video_url = models.URLField(blank=True, null=True)
     contenido_html = models.TextField(blank=True, null=True)  # Código HTML puro
 
-
     creado_por = models.ForeignKey('User', on_delete=models.SET_NULL, null=True, blank=True, 
                                    related_name='recursos_creados')
 
-
+    es_simulacion = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"{self.titulo} ({self.tipo.nombre})"
 

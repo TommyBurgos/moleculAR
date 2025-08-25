@@ -814,11 +814,23 @@ def editar_html(request, recurso_id):
 
     if request.method == 'POST':
         recurso.contenido_html = request.POST.get('contenido_html') or ''
+        recurso.es_simulacion = 'es_simulacion' in request.POST
         recurso.save()
         messages.success(request, "HTML embebido guardado correctamente.")
         return redirect('detalle_recurso', recurso.id)
 
     return render(request, 'usAdmin/editar_html.html', {'recurso': recurso})
+
+@login_required
+def lista_simulaciones(request):
+    simulaciones = Recurso.objects.filter(
+        tipo__nombre__iexact="html embebido",
+        es_simulacion=True
+    ).order_by("-fecha_creacion")
+
+    return render(request, "usAdmin/simulaciones.html", {
+        "simulaciones": simulaciones
+    })
 
 
 def crear_recurso(request, seccion_id):
@@ -916,6 +928,7 @@ def crear_recurso(request, seccion_id):
         elif tipo.nombre.lower() == 'html embebido':
             contenido_html = request.POST.get('contenido_html') or ''
             recurso.contenido_html = contenido_html
+            recurso.es_simulacion = 'es_simulacion' in request.POST
             recurso.save()
             return redirect('editar_html', recurso.id)
 

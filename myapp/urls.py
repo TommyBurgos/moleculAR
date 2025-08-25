@@ -48,7 +48,8 @@ urlpatterns = [
     path('practicas/<int:recurso_id>/guardar-builder2d/', views.guardar_practica_builder2d, name='guardar_practica_builder2d'),
     path('api/validar-armado/<int:recurso_id>/', views.validar_molecula_armada, name='validar_molecula_armada'),    
     path('api/resolve-smiles/', views.resolve_smiles, name='resolve_smiles'),
-    
+
+    path("simulaciones/", views.lista_simulaciones, name="lista_simulaciones"),    
 
 
     # API de validación para el Constructor 2D
