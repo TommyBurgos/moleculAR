@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% load static %}
+	<title>Eduport - LMS, Education and Course Theme</title>
+
+			<!-- Hotjar - Seguimiento usuarios -->
+	<script>
+		(function(h,o,t,j,a,r){
+			h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+			h._hjSettings={hjid:6485293,hjsv:6};
+			a=o.getElementsByTagName('head')[0];
+			r=o.createElement('script');r.async=1;
+			r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+			a.appendChild(r);
+		})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+	</script>
+
+	<!-- Meta Tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="author" content="Webestica.com">
+	<meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+	<!-- Dark mode -->
+	<script>
+		const storedTheme = localStorage.getItem('theme')
+ 
+		const getPreferredTheme = () => {
+			if (storedTheme) {
+				return storedTheme
+			}
+			return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'light'
+		}
+
+		const setTheme = function (theme) {
+			if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.setAttribute('data-bs-theme', 'dark')
+			} else {
+				document.documentElement.setAttribute('data-bs-theme', theme)
+			}
+		}
+
+		setTheme(getPreferredTheme())
+
+		window.addEventListener('DOMContentLoaded', () => {
+		    var el = document.querySelector('.theme-icon-active');
+			if(el != 'undefined' && el != null) {
+				const showActiveTheme = theme => {
+				const activeThemeIcon = document.querySelector('.theme-icon-active use')
+				const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+				const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+				document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+					element.classList.remove('active')
+				})
+
+				btnToActive.classList.add('active')
+				activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+			}
+
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				if (storedTheme !== 'light' || storedTheme !== 'dark') {
+					setTheme(getPreferredTheme())
+				}
+			})
+
+			showActiveTheme(getPreferredTheme())
+
+			document.querySelectorAll('[data-bs-theme-value]')
+				.forEach(toggle => {
+					toggle.addEventListener('click', () => {
+						const theme = toggle.getAttribute('data-bs-theme-value')
+						localStorage.setItem('theme', theme)
+						setTheme(theme)
+						showActiveTheme(theme)
+					})
+				})
+
+			}
+		})
+		
+	</script>
+
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %} ">
+
+	<!-- Google Font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+	<!-- Plugins CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %} ">
+
+	<!-- Theme CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+</head>
+
+<body>
+
+<!-- Header START -->
+{% include 'navbarWeb.html' %}
+<!-- Header END -->
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+  <section class="position-relative overflow-hidden pt-5 pt-lg-3">
+    <div class="container-fluid">
+      <div class="row">
+        <!-- Left -->
+        <div class="col-12 col-lg-6 d-md-flex align-items-center justify-content-center bg-primary bg-opacity-10 vh-lg-100">
+          <div class="p-3 p-lg-5 text-center">
+            <div class="text-center">
+              <h2 class="fw-bold">Bienvenidos Docentes</h2>
+              <p class="mb-0 h6 fw-light">Construyamos conocimiento juntos!</p>
+            </div>
+            <img style="width: 350px; height: 350px;" src="{% static 'assets/img/sitioWeb/logoMoleculAr.jpeg' %}" class="mt-5" alt="">
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div class="col-12 col-lg-6 m-auto">
+          <div class="row my-5">
+            <div class="col-sm-10 col-xl-8 m-auto">
+              <h2>Regístrate como Docente</h2>
+              <p class="lead mb-4">Crea tu cuenta en pocos segundos.</p>
+
+              <!-- Form START -->
+              <form action="{% url 'registro_docente' %}" method="POST" class="contact-form form-validate" novalidate id="registroForm">
+                {% csrf_token %}
+
+                <!-- Email -->
+                <div class="mb-4">
+                  <label class="form-label">Correo Electrónico *</label>
+                  <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-light border-0 text-secondary px-3"><i class="bi bi-envelope-fill"></i></span>
+                    <input type="email" class="form-control border-0 bg-light ps-1" placeholder="E-mail" name="email" required>
+                  </div>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-4">
+                  <label class="form-label">Contraseña *</label>
+                  <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-light border-0 text-secondary px-3"><i class="fas fa-lock"></i></span>
+                    <input type="password" class="form-control border-0 bg-light ps-1" placeholder="*********" name="password" required>
+                  </div>
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="mb-4">
+                  <label class="form-label">Confirmar Contraseña *</label>
+                  <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-light border-0 text-secondary px-3"><i class="fas fa-lock"></i></span>
+                    <input type="password" class="form-control border-0 bg-light ps-1" placeholder="*********" name="confirmPassword" required>
+                  </div>
+                </div>
+
+                <!-- Código Institucional -->
+                <div class="mb-4">
+                  <label class="form-label">Código Institucional *</label>
+                  <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-light border-0 text-secondary px-3"><i class="bi bi-shield-lock"></i></span>
+                    <input type="text" class="form-control border-0 bg-light ps-1" placeholder="AMIE + PIN" name="codigo_institucional" required>
+                  </div>
+                </div>
+
+                <!-- Check box -->
+                <div class="mb-4">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="checkbox-1">
+                    <label class="form-check-label" for="checkbox-1">Al continuar aceptas nuestros <a href="#">términos y condiciones</a></label>
+                  </div>
+                </div>
+
+                <!-- Button -->
+                <div class="d-grid">
+                  <button class="btn btn-primary mb-0" type="submit">Registrarse</button>
+                </div>
+              </form>
+              <!-- Form END -->
+
+              <div class="mt-4 text-center">
+                <span>¿Ya tienes cuenta?<a href="/login"> Inicia sesión</a></span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- **************** MAIN CONTENT END **************** -->
+
+<!-- Back to top -->
+<div class="back-top"><i class="bi bi-arrow-up-short position-absolute top-50 start-50 translate-middle"></i></div>
+
+<!-- Bootstrap JS -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %} "></script>
+
+<!-- Template Functions -->
+<script src="{% static 'assets/js/functions.js' %} "></script>
+
+</body>
+</html>

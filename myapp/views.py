@@ -18,6 +18,8 @@ from django.http import JsonResponse, HttpRequest
 
 from user.models import User,Rol, Curso, Seccion, TipoRecurso, Recurso, Cuestionario, Practica, Modelo, InscripcionCurso, MoleculaEstudiante, Competencia, PreguntaCuestionario,TipoPregunta, ProgresoUsuario, OpcionPregunta, IntentoCuestionario, RespuestaEstudiante, PracticaConfig, IntentoArmado, GrupoCompetencia, ParticipacionCompetencia, RespuestaCompetencia
 
+from .forms import AdminCrearUsuarioForm, EditarPerfilForm, CursoForm
+
 from django.contrib.auth import login, logout, authenticate
 import re
 from .permissions import role_required
@@ -109,7 +111,7 @@ def registroExitoso(request):
                     last_name=' '
                 )
                 print('***INICIO***')                
-                rol_estudiante = Rol.objects.get(nombre='estudiante')
+                rol_estudiante = Rol.objects.get(nombre='Estudiante')
                 print(rol_estudiante)
                 user.rol = rol_estudiante
                 print(user.rol)                                
@@ -126,6 +128,43 @@ def registroExitoso(request):
             return HttpResponse('Las contraseñas no coinciden.')
     return HttpResponse('Método no permitido')
 
+#REGISTRAR DOCENTE
+def registroDocente(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        confirm = request.POST.get('confirmPassword')
+        codigo = request.POST.get('codigo_institucional')
+
+        if password != confirm:
+            return HttpResponse('Las contraseñas no coinciden.')
+
+        if len(password) < 8 or not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$', password):
+            return HttpResponse('La contraseña debe tener al menos 8 caracteres y contener letras y números.')
+
+        CODIGO_VALIDO = getattr(settings, "CODIGO_DOCENTE", None)
+        if codigo != CODIGO_VALIDO:
+            return HttpResponse('Código institucional inválido.')
+
+        try:
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=password,
+                first_name='',
+                last_name=''
+            )
+            rol_docente = Rol.objects.get(nombre='Docente')
+            user.rol = rol_docente
+            user.save()
+            login(request, user)
+            return redirect('inicio')
+        except Exception as e:
+            return HttpResponse(f'Ocurrió un error: {e}')
+
+    return render(request, 'sign-up-docente.html')
+
+
 @csrf_exempt
 def vistaLogin(request):
     return render(request,'sign-in.html')
@@ -134,15 +173,94 @@ def acceso_denegado(request):
     print("Inicie a la función de acceso denegado")        
     return render(request, 'error-404.html')
 
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
+
+from django.db.models.functions import TruncMonth, TruncWeek, TruncDay
 
 @role_required('Admin')
 def inicioAdmin(request):
     print("Inicie a la función de inicio Admin")
     user = request.user    
-    imgPerfil=user.imgPerfil  
+    imgPerfil = user.imgPerfil  
+
+    # Métricas globales
+    total_cursos = Curso.objects.count()
+    total_usuarios = User.objects.count()
+
+    hace_un_mes = timezone.now() - timedelta(days=30)
+    ultimos_usuarios = (
+        User.objects.filter(date_joined__gte=hace_un_mes)
+        .annotate(cursos_inscritos=Count('inscripcioncurso'))
+        .order_by('-date_joined')[:6]
+    )
+
+    cursos_populares = (
+        Curso.objects.annotate(num_inscritos=Count('inscripcioncurso'))
+        .order_by('-num_inscritos')[:5]
+    )
+    labels_cursos = [c.titulo for c in cursos_populares]
+    data_cursos = [c.num_inscritos for c in cursos_populares]
+    total_inscripciones = sum(data_cursos)
+
+    # 🔹 Intervalo dinámico para usuarios
+    intervalo = request.GET.get('intervalo', 'mes')
+    if intervalo == 'dia':
+        trunc_func = TruncDay
+        formato = "%Y-%m-%d"
+    elif intervalo == 'semana':
+        trunc_func = TruncWeek
+        formato = "Semana %W %Y"
+    else:
+        trunc_func = TruncMonth
+        formato = "%b %Y"
+
+    usuarios_por_intervalo = (
+        User.objects
+        .annotate(periodo=trunc_func('date_joined'))
+        .values('periodo')
+        .annotate(total=Count('id'))
+        .order_by('periodo')
+    )
+
+    labels = [u['periodo'].strftime(formato) for u in usuarios_por_intervalo]
+    data = [u['total'] for u in usuarios_por_intervalo]
+
+    cursos_recientes = Curso.objects.filter(
+        fecha_creacion__gte=hace_un_mes
+    ).select_related('profesor', 'categoria').order_by('-fecha_creacion')
+
+    hace_una_semana = timezone.now() - timedelta(days=7)
+    recursos_recientes = (
+        Recurso.objects.filter(fecha_creacion__gte=hace_una_semana)
+        .select_related('tipo')
+        .order_by('-fecha_creacion')
+    )
+
+    try:
+        tipo_practica = TipoRecurso.objects.get(nombre__iexact="Practica")
+        total_practicas = Recurso.objects.filter(tipo=tipo_practica).count()
+        practicas_visibles = Recurso.objects.filter(tipo=tipo_practica, visible_biblioteca=1).count()
+    except TipoRecurso.DoesNotExist:
+        total_practicas = 0
+        practicas_visibles = 0
+
     context = {                  
         'imgPerfil': imgPerfil,        
-        'usuario':user,        
+        'usuario': user,
+        'total_cursos': total_cursos,
+        'total_usuarios': total_usuarios,
+        'ultimos_usuarios': ultimos_usuarios,
+        'labels': labels,
+        'data': data,
+        'intervalo': intervalo,  # 👈 se pasa al template
+        'cursos_recientes': cursos_recientes,
+        'recursos_recientes': recursos_recientes,
+        'total_practicas': total_practicas,
+        'practicas_visibles': practicas_visibles,
+        'labels_cursos': labels_cursos,
+        'data_cursos': data_cursos,
+        'total_inscripciones': total_inscripciones,
     }   
     return render(request, 'usAdmin/admin-dashboard.html', context)
 
@@ -697,11 +815,23 @@ def editar_html(request, recurso_id):
 
     if request.method == 'POST':
         recurso.contenido_html = request.POST.get('contenido_html') or ''
+        recurso.es_simulacion = 'es_simulacion' in request.POST
         recurso.save()
         messages.success(request, "HTML embebido guardado correctamente.")
         return redirect('detalle_recurso', recurso.id)
 
     return render(request, 'usAdmin/editar_html.html', {'recurso': recurso})
+
+@login_required
+def lista_simulaciones(request):
+    simulaciones = Recurso.objects.filter(
+        tipo__nombre__iexact="html embebido",
+        es_simulacion=True
+    ).order_by("-fecha_creacion")
+
+    return render(request, "usAdmin/simulaciones.html", {
+        "simulaciones": simulaciones
+    })
 
 
 def crear_recurso(request, seccion_id):
@@ -728,6 +858,7 @@ def crear_recurso(request, seccion_id):
             imagen=imagen,
             seccion=seccion,
             visible_biblioteca=visible,
+            creado_por=request.user,
             contenido_texto=contenido_texto
         )
         print(f"Recurso creado {recurso}")
@@ -798,6 +929,7 @@ def crear_recurso(request, seccion_id):
         elif tipo.nombre.lower() == 'html embebido':
             contenido_html = request.POST.get('contenido_html') or ''
             recurso.contenido_html = contenido_html
+            recurso.es_simulacion = 'es_simulacion' in request.POST
             recurso.save()
             return redirect('editar_html', recurso.id)
 
@@ -805,7 +937,7 @@ def crear_recurso(request, seccion_id):
 
         return redirect('detalle_recurso',recurso.id)
 
-from .forms import AdminCrearUsuarioForm
+
 
 @role_required('Admin')
 def crear_usuario_admin(request):
@@ -1006,9 +1138,6 @@ def obtener_presigned_url(request):
             'url': url_publica
         })
 
-
-from .forms import CursoForm
-
 @role_required(['Admin', 'Docente'])
 def vistaCrearCurso(request):
     user = request.user    
@@ -1018,8 +1147,9 @@ def vistaCrearCurso(request):
         if form.is_valid():
             curso = form.save(commit=False)
             curso.profesor = request.user  # Asignar el usuario actual como profesor
-            curso.save()
+            curso.save()               
             return redirect('detalle_curso', curso.id) 
+        
     else:
         form = CursoForm() 
     context = {                  
@@ -1239,12 +1369,155 @@ def biblioteca_practicas(request):
     }
     return render(request, 'estudiante/biblioteca_practicas.html', context)
 
-
+from django.db.models.functions import TruncMonth, TruncWeek, TruncDay
 @role_required('Docente')
 def inicioDocente(request):
-    return render(request, 'docente/instructor-dashboard.html')
+    user = request.user
 
+    # Totales
+    total_cursos = Curso.objects.filter(profesor=user).count()
+    print(f"total cursos{total_cursos} y los cursos {Curso.objects.filter(profesor=user)}")
+    total_estudiantes = InscripcionCurso.objects.filter(
+        curso__profesor=user
+    ).values('estudiante').distinct().count()
+    print(total_estudiantes)
+    total_practicas = Recurso.objects.filter(
+        creado_por=user,
+        tipo__nombre__iexact="Practica",
+        visible_biblioteca=True
+    ).count()
+    print(total_practicas)    
+    # Cursos listados (con búsqueda/paginación como ya hicimos)
+    buscar = request.GET.get('buscar', '').strip()
+    cursos_qs = Curso.objects.filter(profesor=user).order_by('-fecha_creacion')
+    if buscar:
+        cursos_qs = cursos_qs.filter(
+            Q(titulo__icontains=buscar) |
+            Q(descripcion__icontains=buscar) |
+            Q(categoria__nombre__icontains=buscar)
+        )
+    paginator = Paginator(cursos_qs, 5)
+    page_number = request.GET.get('page')
+    cursos_page = paginator.get_page(page_number)
 
+    # 🔹 Intervalo dinámico
+    intervalo = request.GET.get('intervalo', 'mes')
+    if intervalo == 'dia':
+        trunc_func = TruncDay
+        formato = "%Y-%m-%d"
+    elif intervalo == 'semana':
+        trunc_func = TruncWeek
+        formato = "Semana %W %Y"
+    else:
+        trunc_func = TruncMonth
+        formato = "%Y-%m"
+
+    inscripciones = (
+        InscripcionCurso.objects.filter(curso__profesor=user)
+        .annotate(periodo=trunc_func('fecha_inscripcion'))
+        .values('periodo', 'curso__titulo')
+        .annotate(total=Count('id'))
+        .order_by('periodo')
+    )
+
+    # Reestructurar datos para Chart.js
+    periodos = sorted(set([i['periodo'].strftime(formato) for i in inscripciones]))
+    cursos_series = {}
+    for i in inscripciones:
+        curso = i['curso__titulo']
+        periodo = i['periodo'].strftime(formato)
+        if curso not in cursos_series:
+            cursos_series[curso] = {p: 0 for p in periodos}
+        cursos_series[curso][periodo] = i['total']
+
+    datasets = [
+        {
+            "label": curso,
+            "data": [series[p] for p in periodos],
+        }
+        for curso, series in cursos_series.items()
+    ]
+    print(f"total cursos al final {total_cursos} y los cursos {Curso.objects.filter(profesor=user)}")
+    print(total_estudiantes)
+    print(total_practicas)
+    context = {
+        'imgPerfil': user.imgPerfil,
+        'usuario': user.username,
+        'cursos': cursos_page,
+        'buscar': buscar,
+        'intervalo': intervalo,
+        'chart_labels': json.dumps(periodos),
+        'chart_datasets': json.dumps(datasets),
+        'total_cursos': total_cursos,
+        'total_estudiantes': total_estudiantes,
+        'total_practicas': total_practicas,
+    }
+
+    return render(request, 'docente/instructor-dashboard.html', context)
+
+@role_required('Docente')
+@login_required
+def mis_cursos_docente(request):
+    user = request.user
+    cursos = Curso.objects.filter(profesor=request.user).order_by('-fecha_creacion')
+     # 🔹 Búsqueda
+    buscar = request.GET.get('buscar', '').strip()
+    cursos_qs = Curso.objects.filter(profesor=user).order_by('-fecha_creacion')
+
+    if buscar:
+        cursos_qs = cursos_qs.filter(
+            Q(titulo__icontains=buscar) |
+            Q(descripcion__icontains=buscar) |
+            Q(categoria__nombre__icontains=buscar)
+        )
+
+    # 🔹 Paginación
+    paginator = Paginator(cursos_qs, 5)  # 5 cursos por página
+    page_number = request.GET.get('page')
+    cursos_page = paginator.get_page(page_number)
+    return render(request, 'docente/mis_cursos.html', {        
+        'usuario': request.user,
+        'total_cursos': cursos,        
+        'cursos': cursos_page, 
+        'buscar': buscar,
+    })
+
+@role_required('Docente')
+@login_required
+def alumnos_mis_cursos(request):
+    cursos_docente = Curso.objects.filter(profesor=request.user)
+
+    curso_id = request.GET.get('curso')
+    buscar = request.GET.get('buscar', '').strip()
+
+    inscripciones = InscripcionCurso.objects.filter(
+        curso__in=cursos_docente
+    ).select_related('estudiante', 'curso')
+
+    # 🔹 Filtro por curso
+    if curso_id and curso_id.isdigit():
+        inscripciones = inscripciones.filter(curso_id=curso_id)
+
+    # 🔹 Filtro por búsqueda (nombre, apellido, username o email)
+    if buscar:
+        inscripciones = inscripciones.filter(
+            Q(estudiante__first_name__icontains=buscar) |
+            Q(estudiante__last_name__icontains=buscar) |
+            Q(estudiante__username__icontains=buscar) |
+            Q(estudiante__email__icontains=buscar)
+        )
+
+    # 🔹 Paginación
+    paginator = Paginator(inscripciones, 10)  # 10 por página
+    page_number = request.GET.get('page')
+    inscripciones_page = paginator.get_page(page_number)
+
+    return render(request, 'docente/alumnos_mis_cursos.html', {
+        'inscripciones': inscripciones_page,
+        'cursos_docente': cursos_docente,
+        'curso_id': int(curso_id) if curso_id and curso_id.isdigit() else None,
+        'buscar': buscar,  # para mantener valor en input search
+    })
 
 """def custom_login(request):
     print("entre a la funcion custom")

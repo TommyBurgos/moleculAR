@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  {% load static %}
   <meta charset="UTF-8" />
   <title>Constructor de moléculas (2D)</title>
 
@@ -24,67 +25,166 @@
     .info-row { font-size:14px; margin:4px 0; }
     @media (max-width:900px){ .wrap { grid-template-columns:1fr; } }
   </style>
+
+  <!--INICIO ESTILOS Y DEMAS DEL SIDEBAR-->
+  <script>
+		const storedTheme = localStorage.getItem('theme')
+ 
+		const getPreferredTheme = () => {
+			if (storedTheme) {
+				return storedTheme
+			}
+			return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'light'
+		}
+
+		const setTheme = function (theme) {
+			if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.setAttribute('data-bs-theme', 'dark')
+			} else {
+				document.documentElement.setAttribute('data-bs-theme', theme)
+			}
+		}
+
+		setTheme(getPreferredTheme())
+
+		window.addEventListener('DOMContentLoaded', () => {
+		    var el = document.querySelector('.theme-icon-active');
+			if(el != 'undefined' && el != null) {
+				const showActiveTheme = theme => {
+				const activeThemeIcon = document.querySelector('.theme-icon-active use')
+				const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+				const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+				document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+					element.classList.remove('active')
+				})
+
+				btnToActive.classList.add('active')
+				activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+			}
+
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				if (storedTheme !== 'light' || storedTheme !== 'dark') {
+					setTheme(getPreferredTheme())
+				}
+			})
+
+			showActiveTheme(getPreferredTheme())
+
+			document.querySelectorAll('[data-bs-theme-value]')
+				.forEach(toggle => {
+					toggle.addEventListener('click', () => {
+						const theme = toggle.getAttribute('data-bs-theme-value')
+						localStorage.setItem('theme', theme)
+						setTheme(theme)
+						showActiveTheme(theme)
+					})
+				})
+
+			}
+		})
+		
+	</script>
+
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+	<!-- Google Font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+	<!-- Plugins CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/apexcharts/css/apexcharts.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/overlay-scrollbar/css/overlayscrollbars.min.css' %} ">
+
+	<!-- Theme CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+  <!--fin ESTILOS Y JS SIDEBAR-->
 </head>
 <body>
 
-<div class="wrap">
-  <!-- Izquierda -->
-  <div class="panel">
-    <h3>🔧 Constructor de moléculas</h3>
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+	
+<!-- Sidebar START -->
+{% include 'usAdmin/baseSideBar.html' %}
+<!-- Sidebar END -->
 
-    <div class="toolbar">
-      <span><b>Añadir átomo:</b></span>
-      <button class="btn" data-atom="C">C</button>
-      <button class="btn" data-atom="H">H</button>
-      <button class="btn" data-atom="O">O</button>
-      <button class="btn" data-atom="N">N</button>
+<!-- Page content START -->
+<div class="page-content">
 
-      <span style="flex:1;"></span>
+	<!-- Top bar START -->
+	{% include 'usAdmin/navBar.html' %}
+	<!-- Top bar END -->
 
-      <!-- Cargar por SMILES / PubChem (unificado) -->
-      <input id="inp-query" class="btn input" list="pubchem_suggestions" placeholder="Nombre / SMILES / CID">
-    <datalist id="pubchem_suggestions"></datalist>
-      <label style="display:flex;align-items:center;gap:6px;">
-        <input type="checkbox" id="chk-inventario"> Cargar como inventario
-      </label>
-      <button id="btn-cargar" class="btn">Cargar</button>
+	<!-- Page main content START -->
+	<div class="page-content-wrapper border">
 
-      <label style="display:flex;align-items:center;gap:6px;margin-left:8px;">
-        Evaluación:
-        <select id="sel-eval" class="btn">
-          <option value="strict">Estricta (SMILES)</option>
-          <option value="counts">Por conteo</option>
-        </select>
-      </label>
+    <div class="wrap">
+    <!-- Izquierda -->
+    <div class="panel">
+      <h3>🔧 Constructor de moléculas</h3>
 
-      <button id="btn-clear" class="btn warn">Limpiar</button>
-      <button id="btn-check" class="btn success">Comprobar</button>
-      <!-- Objetivo SMILES + Guardar práctica -->
-        <input id="inp-objetivo" class="btn input" placeholder="SMILES objetivo (opcional)" value="{{ objetivo_smiles }}">
-        <button id="btn-save" class="btn">Guardar práctica</button>
+      <div class="toolbar">
+        <span><b>Añadir átomo:</b></span>
+        <button class="btn" data-atom="C">C</button>
+        <button class="btn" data-atom="H">H</button>
+        <button class="btn" data-atom="O">O</button>
+        <button class="btn" data-atom="N">N</button>
 
+        <span style="flex:1;"></span>
+
+        <!-- Cargar por SMILES / PubChem (unificado) -->
+        <input id="inp-query" class="btn input" list="pubchem_suggestions" placeholder="Nombre / SMILES / CID">
+      <datalist id="pubchem_suggestions"></datalist>
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="chk-inventario"> Cargar como inventario
+        </label>
+        <button id="btn-cargar" class="btn">Cargar</button>
+
+        <label style="display:flex;align-items:center;gap:6px;margin-left:8px;">
+          Evaluación:
+          <select id="sel-eval" class="btn">
+            <option value="strict">Estricta (SMILES)</option>
+            <option value="counts">Por conteo</option>
+          </select>
+        </label>
+
+        <button id="btn-clear" class="btn warn">Limpiar</button>
+        <button id="btn-check" class="btn success">Comprobar</button>
+        <!-- Objetivo SMILES + Guardar práctica -->
+          <input id="inp-objetivo" class="btn input" placeholder="SMILES objetivo (opcional)" value="{{ objetivo_smiles }}">
+          <button id="btn-save" class="btn">Guardar práctica</button>
+
+      </div>
+
+      <div class="canvas-box">
+        <div id="konvaStage"></div>
+      </div>
     </div>
 
-    <div class="canvas-box">
-      <div id="konvaStage"></div>
+    <!-- Derecha -->
+    <div class="panel">
+      <h3>ℹ️ Información</h3>
+      <div id="info">
+        <div class="info-row">Selecciona un átomo para ver detalles.</div>
+        <small>Tip: clic en un átomo (se marca en naranja) y luego en otro para crear un enlace. Clic sobre el enlace para alternar simple ⇄ doble ⇄ triple.</small>
+      </div>
+      <hr>
+      <h3>🎯 Objetivo</h3>
+      <div class="info-row"><b>Título:</b> {{ practica.titulo_objetivo|default:practica.titulo }}</div>
+      <div class="info-row"><b>SMILES objetivo:</b> {{ objetivo_smiles }}</div>
+      <hr>
+      <div id="feedback"></div>
     </div>
   </div>
-
-  <!-- Derecha -->
-  <div class="panel">
-    <h3>ℹ️ Información</h3>
-    <div id="info">
-      <div class="info-row">Selecciona un átomo para ver detalles.</div>
-      <small>Tip: clic en un átomo (se marca en naranja) y luego en otro para crear un enlace. Clic sobre el enlace para alternar simple ⇄ doble ⇄ triple.</small>
-    </div>
-    <hr>
-    <h3>🎯 Objetivo</h3>
-    <div class="info-row"><b>Título:</b> {{ practica.titulo_objetivo|default:practica.titulo }}</div>
-    <div class="info-row"><b>SMILES objetivo:</b> {{ objetivo_smiles }}</div>
-    <hr>
-    <div id="feedback"></div>
   </div>
 </div>
+</main>
 
 <script>
 (function(){

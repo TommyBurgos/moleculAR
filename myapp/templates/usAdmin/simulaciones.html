@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% load static %}
+	<title>Eduport- LMS, Education and Course Theme</title>
+
+			<!-- Hotjar - Seguimiento usuarios -->
+	<script>
+		(function(h,o,t,j,a,r){
+			h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+			h._hjSettings={hjid:6485293,hjsv:6};
+			a=o.getElementsByTagName('head')[0];
+			r=o.createElement('script');r.async=1;
+			r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+			a.appendChild(r);
+		})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+	</script>
+
+	<!-- Meta Tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="author" content="Webestica.com">
+	<meta name="description" content="Eduport- LMS, Education and Course Theme">
+
+	<!-- Dark mode -->
+	<script>
+		const storedTheme = localStorage.getItem('theme')
+ 
+		const getPreferredTheme = () => {
+			if (storedTheme) {
+				return storedTheme
+			}
+			return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'light'
+		}
+
+		const setTheme = function (theme) {
+			if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.setAttribute('data-bs-theme', 'dark')
+			} else {
+				document.documentElement.setAttribute('data-bs-theme', theme)
+			}
+		}
+
+		setTheme(getPreferredTheme())
+
+		window.addEventListener('DOMContentLoaded', () => {
+		    var el = document.querySelector('.theme-icon-active');
+			if(el != 'undefined' && el != null) {
+				const showActiveTheme = theme => {
+				const activeThemeIcon = document.querySelector('.theme-icon-active use')
+				const btnToActive = document.querySelector(`[data-bs-theme-value="${theme}"]`)
+				const svgOfActiveBtn = btnToActive.querySelector('.mode-switch use').getAttribute('href')
+
+				document.querySelectorAll('[data-bs-theme-value]').forEach(element => {
+					element.classList.remove('active')
+				})
+
+				btnToActive.classList.add('active')
+				activeThemeIcon.setAttribute('href', svgOfActiveBtn)
+			}
+
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+				if (storedTheme !== 'light' || storedTheme !== 'dark') {
+					setTheme(getPreferredTheme())
+				}
+			})
+
+			showActiveTheme(getPreferredTheme())
+
+			document.querySelectorAll('[data-bs-theme-value]')
+				.forEach(toggle => {
+					toggle.addEventListener('click', () => {
+						const theme = toggle.getAttribute('data-bs-theme-value')
+						localStorage.setItem('theme', theme)
+						setTheme(theme)
+						showActiveTheme(theme)
+					})
+				})
+
+			}
+		})
+		
+	</script>
+
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="assets/images/favicon.ico">
+
+	<!-- Google Font -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap">
+
+	<!-- Plugins CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/apexcharts/css/apexcharts.css' %} ">
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/overlay-scrollbar/css/overlayscrollbars.min.css' %} ">
+
+	<!-- Theme CSS -->
+	<link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+</head>
+
+<body>
+
+
+<!-- **************** MAIN CONTENT START **************** -->
+<main>
+	
+<!-- Sidebar START -->
+{% include 'usAdmin/baseSideBar.html' %}
+<!-- Sidebar END -->
+
+<!-- Page content START -->
+<div class="page-content">
+
+	<!-- Top bar START -->
+	{% include 'usAdmin/navBar.html' %}
+	<!-- Top bar END -->
+
+    	<!-- Page main content START -->
+        <div class="page-content-wrapper border">
+            <div class="container py-5">
+
+                <!-- Encabezado -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold mb-0">🧪 Simulaciones Interactivas</h2>
+                    <span class="badge bg-primary fs-6">
+                    {{ simulaciones|length }} disponibles
+                    </span>
+                </div>
+
+                {% if simulaciones %}
+                    <div class="row g-4">
+                    {% for recurso in simulaciones %}
+                        <div class="col-sm-6 col-lg-4">
+                        <div class="card border-0 shadow-lg h-100">
+                            
+                            <!-- Imagen referencial o ícono -->
+                            {% if recurso.imagen %}
+                            <img src="{{ recurso.imagen.url }}" class="card-img-top" alt="{{ recurso.titulo }}">
+                            {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-light" 
+                                style="height:180px; border-radius: .5rem .5rem 0 0;">
+                                <i class="bi bi-pc-display-horizontal fs-1 text-primary"></i>
+                            </div>
+                            {% endif %}
+
+                            <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-bold">{{ recurso.titulo }}</h5>
+                            <p class="card-text text-muted small mb-3">
+                                {{ recurso.descripcion|default:"Sin descripción" }}
+                            </p>
+
+                            <!-- Etiquetas -->
+                            <div class="mb-3">
+                                <span class="badge bg-success">Simulación</span>
+                                <span class="badge bg-secondary">{{ recurso.seccion.curso.titulo }}</span>
+                            </div>
+
+                            <!-- Botón de acción -->
+                            <a href="{% url 'detalle_recurso' recurso.id %}" 
+                                class="btn btn-primary mt-auto w-100">
+                                <i class="bi bi-play-circle me-1"></i> Ver simulación
+                            </a>
+                            </div>
+                        </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Estado vacío -->
+                    <div class="alert alert-info text-center p-4 mt-5" role="alert">
+                    <i class="bi bi-info-circle fs-4 me-2"></i>
+                    No hay simulaciones disponibles aún.
+                    </div>
+                {% endif %}
+
+                </div>
+        </div>
+    </div>
+    <canvas id="grafico-macro" class="mt-3"></canvas>    
+</main>
+
+
+<!-- Bootstrap JS -->
+<script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+
+<!-- Vendors -->
+<script src="{% static 'assets/vendor/purecounterjs/dist/purecounter_vanilla.js' %}"></script>
+<script src="{% static 'assets/vendor/apexcharts/js/apexcharts.min.js' %}"></script>
+<script src="{% static 'assets/vendor/overlay-scrollbar/js/overlayscrollbars.min.js' %}"></script>
+
+<!-- Template Functions -->
+<script src="{% static 'assets/js/functions.js' %}"></script>
+</body>
+</html>

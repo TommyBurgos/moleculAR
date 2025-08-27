@@ -410,6 +410,15 @@
 				  <textarea name="contenido_texto" id="contenido_texto" rows="8" class="form-control"></textarea>					
 				</div>
 
+				<!--Si es html-->
+				<div class="form-check mt-2">
+					<input class="form-check-input" type="checkbox" id="es_simulacion" name="es_simulacion">
+					<label class="form-check-label" for="es_simulacion">
+						Marcar como simulación
+					</label>
+				</div>
+
+
 				<!-- Solo visible si se selecciona tipo 'competencia' -->
 				<div id="campo-instrucciones-competencia" style="display:none;">
 				<label for="instrucciones_competencia">Instrucciones:</label>
@@ -631,6 +640,29 @@ document.getElementById("formAgregarRecurso").addEventListener("submit", functio
       }
     });
   });
+
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const tipoSelect = document.getElementById("tipo");  // el select de tipo de recurso
+    const simulacionCheckbox = document.getElementById("es_simulacion").closest(".form-check");
+
+    function toggleSimulacionField() {
+        const selected = tipoSelect.options[tipoSelect.selectedIndex].text.toLowerCase();
+        if (selected.includes("html embebido")) {
+            simulacionCheckbox.style.display = "block";
+        } else {
+            simulacionCheckbox.style.display = "none";
+            document.getElementById("es_simulacion").checked = false; // resetea si cambian de tipo
+        }
+    }
+
+    // Inicializar al cargar
+    toggleSimulacionField();
+
+    // Escuchar cambios en el selector
+    tipoSelect.addEventListener("change", toggleSimulacionField);
+});
+
 </script>
 
 
