@@ -1,0 +1,1044 @@
+<!-- Lista de Ranking -->
+<div class="panel-header">
+    <h5>
+        <i class="fas fa-trophy me-3"></i>Ranking en Vivo
+        {% if competencia.modalidad == 'grupal' %}
+            <span class="ranking-mode-badge">Por Grupos</span>
+        {% else %}
+            <span class="ranking-mode-badge">Individual</span>
+        {% endif %}
+    </h5>
+    <div class="panel-actions">
+        <button class="btn btn-sm btn-outline-primary" onclick="actualizarRanking()">
+            <i class="fas fa-sync-alt me-1"></i>Actualizar
+        </button>
+        {% if competencia.estado in 'activa,finalizada' %}
+        <button class="btn btn-sm btn-outline-success" onclick="exportarRanking()">
+            <i class="fas fa-download me-1"></i>Exportar
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel-body">
+    {% if competencia.estado == 'configuracion' %}
+    <!-- Estado: Configuración -->
+    <div class="ranking-placeholder">
+        <div class="placeholder-icon">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <h6>Ranking no disponible</h6>
+        <p class="text-muted">El ranking se mostrará una vez que inicies la competencia</p>
+    </div>
+    
+    {% elif competencia.estado == 'esperando' %}
+    <!-- Estado: Esperando -->
+    <div class="ranking-placeholder">
+        <div class="placeholder-icon waiting">
+            <i class="fas fa-users"></i>
+        </div>
+        <h6>Esperando participantes...</h6>
+        <p class="text-muted">
+            El ranking aparecerá cuando los estudiantes empiecen a responder
+            <br><strong>{{ total_participantes }} participante{{ total_participantes|pluralize:"s" }}</strong> esperando
+        </p>
+    </div>
+    
+    {% else %}
+    <!-- Ranking Activo -->
+    
+    <!-- Controles de visualización -->
+    {% if competencia.estado == 'activa' or competencia.estado == 'finalizada' %}
+    <div class="ranking-controls">
+        <div class="view-options">
+            {% if competencia.modalidad == 'grupal' %}
+                <button class="view-toggle active" data-view="groups" onclick="cambiarVistaRanking('groups')">
+                    <i class="fas fa-layer-group me-1"></i>Por Grupos
+                </button>
+                <button class="view-toggle" data-view="individual" onclick="cambiarVistaRanking('individual')">
+                    <i class="fas fa-user me-1"></i>Individual
+                </button>
+            {% endif %}
+        </div>
+        
+        <div class="ranking-stats">
+            <span class="stat-item">
+                <i class="fas fa-medal me-1"></i>
+                Top 3: <strong id="top-three-count">{{ top_participantes|length|default:0 }}</strong>
+            </span>
+            {% if competencia.estado == 'finalizada' %}
+            <span class="stat-item">
+                <i class="fas fa-chart-line me-1"></i>
+                Promedio: <strong>{{ promedio_puntos|floatformat:1 }}</strong>
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Podio Top 3 -->
+    {% if participantes_ranking or grupos_ranking %}
+    <div class="podium-container">
+        {% if competencia.modalidad == 'grupal' and grupos_ranking %}
+            <!-- Podio de Grupos -->
+            {% for grupo in grupos_ranking|slice:":3" %}
+            <div class="podium-place place-{{ forloop.counter }}">
+                <div class="podium-medal">
+                    {% if forloop.counter == 1 %}
+                        <i class="fas fa-crown"></i>
+                    {% elif forloop.counter == 2 %}
+                        <i class="fas fa-medal"></i>
+                    {% else %}
+                        <i class="fas fa-award"></i>
+                    {% endif %}
+                </div>
+                <div class="podium-info">
+                    <div class="podium-name">{{ grupo.nombre }}</div>
+                    <div class="podium-score">{{ grupo.puntaje_total|default:0 }} pts</div>
+                    <div class="podium-members">
+                        {{ grupo.miembros.count }} miembro{{ grupo.miembros.count|pluralize:"s" }}
+                    </div>
+                </div>
+                <div class="podium-rank">#{{ forloop.counter }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Podio Individual -->
+            {% for participante in participantes_ranking|slice:":3" %}
+            <div class="podium-place place-{{ forloop.counter }}">
+                <div class="podium-avatar">
+                    {% if participante.usuario.avatar %}
+                        <img src="{{ participante.usuario.avatar.url }}" alt="{{ participante.usuario.get_full_name }}">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            {{ participante.usuario.first_name|first|upper }}{{ participante.usuario.last_name|first|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="podium-medal">
+                    {% if forloop.counter == 1 %}
+                        <i class="fas fa-crown gold"></i>
+                    {% elif forloop.counter == 2 %}
+                        <i class="fas fa-medal silver"></i>
+                    {% else %}
+                        <i class="fas fa-award bronze"></i>
+                    {% endif %}
+                </div>
+                <div class="podium-info">
+                    <div class="podium-name">{{ participante.usuario.get_full_name|default:participante.usuario.username }}</div>
+                    <div class="podium-score">{{ participante.puntaje_total|default:0 }} pts</div>
+                    {% if competencia.estado == 'finalizada' %}
+                    <div class="podium-time">{{ participante.tiempo_total|default:"--:--" }}</div>
+                    {% endif %}
+                </div>
+                <div class="podium-rank">#{{ forloop.counter }}</div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    {% endif %}
+    <!-- Lista Completa de Ranking -->
+    <div class="ranking-list" id="ranking-list">
+        {% if competencia.modalidad == 'grupal' %}
+            <!-- Vista de Grupos -->
+            <div class="ranking-view" id="groups-view">
+                <h6 class="ranking-section-title">
+                    <i class="fas fa-layer-group me-2"></i>Ranking por Grupos
+                </h6>
+                {% for grupo in grupos_ranking %}
+                <div class="ranking-item group-item" data-rank="{{ forloop.counter }}">
+                    <div class="rank-number">
+                        {% if forloop.counter <= 3 %}
+                            <i class="fas fa-medal rank-medal rank-{{ forloop.counter }}"></i>
+                        {% else %}
+                            {{ forloop.counter }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="ranking-info">
+                        <div class="ranking-main">
+                            <div class="team-name">
+                                <i class="fas fa-users me-2"></i>{{ grupo.nombre }}
+                            </div>
+                            <div class="team-members">
+                                {% for miembro in grupo.miembros.all %}
+                                    <span class="member-tag">{{ miembro.usuario.get_full_name|default:miembro.usuario.username }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="ranking-stats">
+                            <div class="stat-primary">
+                                <span class="stat-value">{{ grupo.puntaje_total|default:0 }}</span>
+                                <span class="stat-label">puntos</span>
+                            </div>
+                            {% if competencia.estado == 'finalizada' %}
+                            <div class="stat-secondary">
+                                <span class="stat-value">{{ grupo.tiempo_promedio|default:"--:--" }}</span>
+                                <span class="stat-label">tiempo</span>
+                            </div>
+                            {% endif %}
+                            <div class="stat-secondary">
+                                <span class="stat-value">{{ grupo.respuestas_correctas|default:0 }}</span>
+                                <span class="stat-label">correctas</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ranking-actions">
+                        <button class="ranking-btn" onclick="verDetallesGrupo({{ grupo.id }})" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-ranking">
+                    <p class="text-muted">No hay grupos para mostrar en el ranking</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Vista Individual (Oculta por defecto en modo grupal) -->
+            <div class="ranking-view" id="individual-view" style="display: none;">
+                <h6 class="ranking-section-title">
+                    <i class="fas fa-user me-2"></i>Ranking Individual
+                </h6>
+                {% for participante in participantes_ranking %}
+                <div class="ranking-item individual-item" data-rank="{{ forloop.counter }}">
+                    <div class="rank-number">
+                        {% if forloop.counter <= 3 %}
+                            <i class="fas fa-medal rank-medal rank-{{ forloop.counter }}"></i>
+                        {% else %}
+                            {{ forloop.counter }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="participant-avatar-small">
+                        {% if participante.usuario.avatar %}
+                            <img src="{{ participante.usuario.avatar.url }}" alt="{{ participante.usuario.get_full_name }}">
+                        {% else %}
+                            <div class="avatar-placeholder-small">
+                                {{ participante.usuario.first_name|first|upper }}{{ participante.usuario.last_name|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="ranking-info">
+                        <div class="ranking-main">
+                            <div class="participant-name">{{ participante.usuario.get_full_name|default:participante.usuario.username }}</div>
+                            {% if participante.grupo %}
+                            <div class="group-indicator">
+                                <i class="fas fa-users me-1"></i>{{ participante.grupo.nombre }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="ranking-stats">
+                            <div class="stat-primary">
+                                <span class="stat-value">{{ participante.puntaje_total|default:0 }}</span>
+                                <span class="stat-label">puntos</span>
+                            </div>
+                            {% if competencia.estado == 'finalizada' %}
+                            <div class="stat-secondary">
+                                <span class="stat-value">{{ participante.tiempo_total|default:"--:--" }}</span>
+                                <span class="stat-label">tiempo</span>
+                            </div>
+                            {% endif %}
+                            <div class="stat-secondary">
+                                <span class="stat-value">{{ participante.respuestas_correctas|default:0 }}</span>
+                                <span class="stat-label">correctas</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ranking-actions">
+                        <button class="ranking-btn" onclick="verDetallesParticipante({{ participante.id }})" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-ranking">
+                    <p class="text-muted">No hay participantes para mostrar en el ranking</p>
+                </div>
+                {% endfor %}
+            </div>
+            
+        {% else %}
+            <!-- Solo Vista Individual -->
+            {% for participante in participantes_ranking %}
+            <div class="ranking-item individual-item" data-rank="{{ forloop.counter }}">
+                <div class="rank-number">
+                    {% if forloop.counter <= 3 %}
+                        <i class="fas fa-medal rank-medal rank-{{ forloop.counter }}"></i>
+                    {% else %}
+                        {{ forloop.counter }}
+                    {% endif %}
+                </div>
+                
+                <div class="participant-avatar-small">
+                    {% if participante.usuario.avatar %}
+                        <img src="{{ participante.usuario.avatar.url }}" alt="{{ participante.usuario.get_full_name }}">
+                    {% else %}
+                        <div class="avatar-placeholder-small">
+                            {{ participante.usuario.first_name|first|upper }}{{ participante.usuario.last_name|first|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="ranking-info">
+                    <div class="ranking-main">
+                        <div class="participant-name">{{ participante.usuario.get_full_name|default:participante.usuario.username }}</div>
+                        <div class="participant-progress">
+                            {{ participante.respuestas.count }}/{{ preguntas.count }} respuestas
+                        </div>
+                    </div>
+                    
+                    <div class="ranking-stats">
+                        <div class="stat-primary">
+                            <span class="stat-value">{{ participante.puntaje_total|default:0 }}</span>
+                            <span class="stat-label">puntos</span>
+                        </div>
+                        {% if competencia.estado == 'finalizada' %}
+                        <div class="stat-secondary">
+                            <span class="stat-value">{{ participante.tiempo_total|default:"--:--" }}</span>
+                            <span class="stat-label">tiempo</span>
+                        </div>
+                        {% endif %}
+                        <div class="stat-secondary">
+                            <span class="stat-value">{{ participante.respuestas_correctas|default:0 }}</span>
+                            <span class="stat-label">correctas</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ranking-actions">
+                    <button class="ranking-btn" onclick="verDetallesParticipante({{ participante.id }})" title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-ranking">
+                <p class="text-muted">No hay participantes para mostrar en el ranking</p>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* ===== ESTILOS PARA RANKING ===== */
+.ranking-mode-badge {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    margin-left: 1rem;
+}
+
+.ranking-placeholder {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6c757d;
+}
+
+.placeholder-icon {
+    font-size: 3rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.placeholder-icon.waiting {
+    color: #17a2b8;
+    animation: pulse 2s infinite;
+}
+
+.ranking-placeholder h6 {
+    color: #495057;
+    margin-bottom: 0.75rem;
+}
+
+.ranking-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.view-options {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.view-toggle {
+    background: rgba(0,123,255,0.1);
+    border: 1px solid rgba(0,123,255,0.2);
+    color: #007bff;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-toggle:hover {
+    background: rgba(0,123,255,0.2);
+}
+
+.view-toggle.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.ranking-stats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.stat-item {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.stat-item strong {
+    color: #2c3e50;
+}
+
+/* ===== PODIO ===== */
+.podium-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem 0;
+}
+
+.podium-place {
+    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.podium-place::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: 15px 15px 0 0;
+}
+
+.podium-place.place-1 {
+    border-color: #ffd700;
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.3);
+}
+
+.podium-place.place-1::before {
+    background: linear-gradient(90deg, #ffd700, #ffed4a);
+}
+
+.podium-place.place-2 {
+    border-color: #c0c0c0;
+    box-shadow: 0 8px 25px rgba(192, 192, 192, 0.3);
+}
+
+.podium-place.place-2::before {
+    background: linear-gradient(90deg, #c0c0c0, #e6e6fa);
+}
+
+.podium-place.place-3 {
+    border-color: #cd7f32;
+    box-shadow: 0 8px 25px rgba(205, 127, 50, 0.3);
+}
+
+.podium-place.place-3::before {
+    background: linear-gradient(90deg, #cd7f32, #daa520);
+}
+
+.podium-place:hover {
+    transform: translateY(-5px);
+}
+
+.podium-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    position: relative;
+}
+
+.podium-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.podium-medal {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.podium-medal .gold { color: #ffd700; }
+.podium-medal .silver { color: #c0c0c0; }
+.podium-medal .bronze { color: #cd7f32; }
+
+.podium-info {
+    position: relative;
+    z-index: 2;
+}
+
+.podium-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.podium-score {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #e74c3c;
+    margin-bottom: 0.25rem;
+}
+
+.podium-time, .podium-members {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.podium-rank {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0,0,0,0.1);
+    color: #2c3e50;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* ===== LISTA DE RANKING ===== */
+.ranking-section-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.ranking-list {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255,255,255,0.7);
+    border-radius: 12px;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.ranking-item:hover {
+    background: rgba(255,255,255,0.9);
+    transform: translateX(5px);
+    border-color: rgba(0,123,255,0.2);
+}
+
+.rank-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #495057;
+    flex-shrink: 0;
+}
+
+.rank-medal {
+    font-size: 1.2rem;
+}
+
+.rank-medal.rank-1 { color: #ffd700; }
+.rank-medal.rank-2 { color: #c0c0c0; }
+.rank-medal.rank-3 { color: #cd7f32; }
+
+.participant-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.participant-avatar-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder-small {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.ranking-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ranking-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.participant-name, .team-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.team-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+}
+
+.member-tag {
+    background: rgba(0,123,255,0.1);
+    color: #007bff;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+}
+
+.participant-progress, .group-indicator {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.group-indicator {
+    color: #856404;
+}
+
+.ranking-stats {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.stat-primary {
+    text-align: center;
+}
+
+.stat-primary .stat-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #e74c3c;
+    display: block;
+    line-height: 1;
+}
+
+.stat-primary .stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.stat-secondary {
+    text-align: center;
+}
+
+.stat-secondary .stat-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #495057;
+    display: block;
+    line-height: 1;
+}
+
+.stat-secondary .stat-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.ranking-actions {
+    flex-shrink: 0;
+}
+
+.ranking-btn {
+    background: rgba(0,123,255,0.1);
+    border: 1px solid rgba(0,123,255,0.2);
+    color: #007bff;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ranking-btn:hover {
+    background: #007bff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.empty-ranking {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ranking-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .view-options {
+        justify-content: center;
+    }
+    
+    .ranking-stats {
+        justify-content: center;
+    }
+    
+    .podium-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .ranking-item {
+        padding: 0.75rem;
+    }
+    
+    .ranking-info {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .ranking-stats {
+        gap: 1rem;
+        justify-content: space-around;
+    }
+    
+    .team-members {
+        justify-content: center;
+    }
+}
+</style>
+
+<!-- JavaScript adicional para ranking -->
+<script>
+// Funciones específicas del ranking
+function actualizarRankingEnVivo() {
+    if (!panelInstance) return;
+    panelInstance.updateRanking();
+}
+
+function toggleRankingAnimation() {
+    document.querySelectorAll('.ranking-item').forEach((item, index) => {
+        setTimeout(() => {
+            item.style.transform = 'translateX(-10px)';
+            setTimeout(() => {
+                item.style.transform = 'translateX(0)';
+            }, 200);
+        }, index * 100);
+    });
+}
+
+// Auto-actualización del podio
+function actualizarPodio(rankingData) {
+    const podiumPlaces = document.querySelectorAll('.podium-place');
+    
+    rankingData.slice(0, 3).forEach((item, index) => {
+        const place = podiumPlaces[index];
+        if (!place) return;
+        
+        const score = place.querySelector('.podium-score');
+        const name = place.querySelector('.podium-name');
+        const time = place.querySelector('.podium-time');
+        
+        if (score) {
+            const newScore = item.puntaje_total || 0;
+            const currentScore = parseInt(score.textContent) || 0;
+            
+            if (newScore !== currentScore) {
+                // Animación de cambio
+                score.style.transform = 'scale(1.3)';
+                score.style.color = '#e74c3c';
+                
+                setTimeout(() => {
+                    score.textContent = `${newScore} pts`;
+                    score.style.transform = 'scale(1)';
+                    score.style.color = '';
+                }, 300);
+            }
+        }
+        
+        if (time && item.tiempo_total) {
+            time.textContent = item.tiempo_total;
+        }
+    });
+}
+
+// Efectos visuales para cambios de ranking
+function animarCambioRanking(elementId, newPosition) {
+    const element = document.querySelector(`[data-participant-id="${elementId}"]`);
+    if (!element) return;
+    
+    // Efecto de "subida" o "bajada"
+    element.style.transform = 'scale(1.05)';
+    element.style.boxShadow = '0 0 20px rgba(231, 76, 60, 0.5)';
+    element.style.transition = 'all 0.5s ease';
+    
+    setTimeout(() => {
+        element.style.transform = 'scale(1)';
+        element.style.boxShadow = '';
+    }, 1000);
+}
+
+// Sonidos para cambios importantes (opcional)
+function reproducirSonidoRanking(tipo) {
+    if (!window.AudioContext) return;
+    
+    try {
+        const audioContext = new AudioContext();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        const frequencies = {
+            'subida': 800,
+            'bajada': 400,
+            'nuevo_lider': 1000
+        };
+        
+        oscillator.frequency.value = frequencies[tipo] || 600;
+        oscillator.type = 'sine';
+        
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+        console.warn('Audio no disponible:', error);
+    }
+}
+
+// Actualización automática de medallas y posiciones
+function actualizarMedallasRanking() {
+    document.querySelectorAll('.ranking-item').forEach((item, index) => {
+        const rankNumber = item.querySelector('.rank-number');
+        const position = index + 1;
+        
+        if (rankNumber) {
+            if (position <= 3) {
+                const medalClass = `rank-${position}`;
+                rankNumber.innerHTML = `<i class="fas fa-medal rank-medal ${medalClass}"></i>`;
+            } else {
+                rankNumber.textContent = position;
+            }
+        }
+        
+        // Actualizar atributo data-rank
+        item.setAttribute('data-rank', position);
+    });
+}
+
+// Función para resaltar cambios en el ranking
+function resaltarCambiosPosicion(cambios) {
+    cambios.forEach(cambio => {
+        const element = document.querySelector(`[data-participant-id="${cambio.id}"]`);
+        if (!element) return;
+        
+        // Aplicar efecto según el tipo de cambio
+        if (cambio.tipo === 'subida') {
+            element.style.background = 'linear-gradient(135deg, rgba(40, 167, 69, 0.2) 0%, rgba(40, 167, 69, 0.1) 100%)';
+            element.style.borderColor = '#28a745';
+            
+            // Sonido opcional
+            reproducirSonidoRanking('subida');
+            
+        } else if (cambio.tipo === 'bajada') {
+            element.style.background = 'linear-gradient(135deg, rgba(220, 53, 69, 0.2) 0%, rgba(220, 53, 69, 0.1) 100%)';
+            element.style.borderColor = '#dc3545';
+            
+            // Sonido opcional
+            reproducirSonidoRanking('bajada');
+        }
+        
+        // Quitar efectos después de un tiempo
+        setTimeout(() => {
+            element.style.background = '';
+            element.style.borderColor = '';
+        }, 3000);
+    });
+}
+
+// Función para mostrar estadísticas del ranking
+function mostrarEstadisticasRanking() {
+    const rankingItems = document.querySelectorAll('.ranking-item');
+    const totalParticipantes = rankingItems.length;
+    
+    if (totalParticipantes === 0) return;
+    
+    // Calcular estadísticas
+    let totalPuntos = 0;
+    let mejorTiempo = null;
+    let peorTiempo = null;
+    
+    rankingItems.forEach(item => {
+        const scoreElement = item.querySelector('.stat-primary .stat-value');
+        const timeElement = item.querySelector('.stat-secondary .stat-value');
+        
+        if (scoreElement) {
+            const puntos = parseInt(scoreElement.textContent) || 0;
+            totalPuntos += puntos;
+        }
+        
+        if (timeElement && timeElement.textContent !== '--:--') {
+            const tiempo = timeElement.textContent;
+            if (!mejorTiempo || tiempo < mejorTiempo) {
+                mejorTiempo = tiempo;
+            }
+            if (!peorTiempo || tiempo > peorTiempo) {
+                peorTiempo = tiempo;
+            }
+        }
+    });
+    
+    const promedio = totalParticipantes > 0 ? Math.round(totalPuntos / totalParticipantes) : 0;
+    
+    // Actualizar elementos de estadísticas si existen
+    const promedioElement = document.querySelector('.ranking-stats strong');
+    if (promedioElement) {
+        promedioElement.textContent = promedio;
+    }
+    
+    console.log('📊 Estadísticas del ranking:', {
+        participantes: totalParticipantes,
+        promedio: promedio,
+        mejorTiempo: mejorTiempo,
+        peorTiempo: peorTiempo
+    });
+}
+
+// Función para exportar ranking (placeholder)
+function exportarRankingData() {
+    const rankingData = [];
+    
+    document.querySelectorAll('.ranking-item').forEach((item, index) => {
+        const nameElement = item.querySelector('.participant-name, .team-name');
+        const scoreElement = item.querySelector('.stat-primary .stat-value');
+        const timeElement = item.querySelector('.stat-secondary .stat-value');
+        const correctElement = item.querySelector('.stat-secondary:last-child .stat-value');
+        
+        if (nameElement && scoreElement) {
+            rankingData.push({
+                posicion: index + 1,
+                nombre: nameElement.textContent.trim(),
+                puntos: parseInt(scoreElement.textContent) || 0,
+                tiempo: timeElement ? timeElement.textContent : '--:--',
+                correctas: correctElement ? parseInt(correctElement.textContent) || 0 : 0
+            });
+        }
+    });
+    
+    return rankingData;
+}
+
+// Inicializar funciones del ranking cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar medallas inicialmente
+    setTimeout(() => {
+        actualizarMedallasRanking();
+        mostrarEstadisticasRanking();
+    }, 1000);
+    
+    // Configurar observador para cambios en el ranking
+    const rankingList = document.getElementById('ranking-list');
+    if (rankingList && window.MutationObserver) {
+        const observer = new MutationObserver(() => {
+            actualizarMedallasRanking();
+            mostrarEstadisticasRanking();
+        });
+        
+        observer.observe(rankingList, {
+            childList: true,
+            subtree: true
+        });
+    }
+});
+</script>

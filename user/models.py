@@ -263,7 +263,7 @@ class Competencia(models.Model):
     fecha_modificacion = models.DateTimeField(auto_now=True)
     
     preguntas = GenericRelation('PreguntaCuestionario', related_query_name='competencia_pregunta')
-    
+
     # ============== CLASE META CORREGIDA ==============
     class Meta:
         ordering = ['-fecha_creacion']
@@ -395,34 +395,32 @@ class Competencia(models.Model):
         ).last()
     
     @property
-    def preguntas(self):
-        """Manager para acceder a las preguntas de esta competencia"""
+    def preguntas_manager(self):
+        """Acceso seguro a las preguntas de esta competencia"""
         from django.contrib.contenttypes.models import ContentType
         competencia_ct = ContentType.objects.get_for_model(Competencia)
-        
+
         class PreguntasManager:
-            def all(self):
+            def all(self_nonlocal):
                 return PreguntaCuestionario.objects.filter(
                     content_type=competencia_ct,
                     object_id=self.id
                 ).order_by('orden')
-            
-            def count(self):
-                return self.all().count()
-            
-            def exists(self):
-                return self.all().exists()
-            
-            def aggregate(self, **kwargs):
-                return self.all().aggregate(**kwargs)
-            
-            def filter(self, **kwargs):
-                return self.all().filter(**kwargs)
-        
-        # Necesitamos pasar self al manager
-        manager = PreguntasManager()
-        manager.id = self.id
-        return manager
+
+            def count(self_nonlocal):
+                return self_nonlocal.all().count()
+
+            def exists(self_nonlocal):
+                return self_nonlocal.all().exists()
+
+            def aggregate(self_nonlocal, **kwargs):
+                return self_nonlocal.all().aggregate(**kwargs)
+
+            def filter(self_nonlocal, **kwargs):
+                return self_nonlocal.all().filter(**kwargs)
+
+        mgr = PreguntasManager()
+        return mgr
 
 class GrupoCompetencia(models.Model):
     """Modelo para manejar grupos en competencias grupales"""
@@ -533,6 +531,12 @@ class ParticipacionCompetencia(models.Model):
     tiempo_total_segundos = models.PositiveIntegerField(null=True, blank=True)
     posicion = models.PositiveIntegerField(null=True, blank=True, help_text='Posición en el ranking')
     
+    #Avatar
+    avatar_elegido = models.CharField(max_length=10, blank=True, null=True, help_text='Emoji del avatar molecular')
+    avatar_nombre = models.CharField(max_length=100, blank=True, null=True, help_text='Nombre de la molécula')
+    avatar_formula = models.CharField(max_length=50, blank=True, null=True, help_text='Fórmula química')
+    avatar_molecule = models.CharField(max_length=50, blank=True, null=True, help_text='Clave de la molécula')
+
     # ============== CLASE META CORREGIDA ==============
     class Meta:
         unique_together = ['competencia', 'estudiante']
@@ -549,13 +553,24 @@ class ParticipacionCompetencia(models.Model):
         return f"{self.estudiante.username} - {self.competencia.recurso.titulo}{grupo_info}"
     
     def calcular_puntaje_actual(self):
-        """Calcula el puntaje actual del participante"""
-        puntaje = self.respuestas.aggregate(
-            total=models.Sum('puntaje_obtenido')
-        )['total'] or 0
-        self.puntaje_total = puntaje
-        self.save()
-        return puntaje
+        """Calcular puntaje total de la participación"""
+        try:
+            puntaje_total = 0
+            
+            # Sumar puntajes de todas las respuestas
+            for respuesta in self.respuestas.all():
+                puntaje_total += respuesta.puntaje_obtenido
+            
+            # Actualizar puntaje total
+            self.puntaje_total = puntaje_total
+            self.save()
+            
+            print(f"💯 Puntaje calculado para {self.estudiante.username}: {puntaje_total}")
+            return puntaje_total
+            
+        except Exception as e:
+            print(f"❌ Error calculando puntaje: {str(e)}")
+            return 0
     
     # ============== MÉTODOS NUEVOS AGREGADOS ==============
     def get_respuestas_correctas(self):
@@ -602,6 +617,28 @@ class ParticipacionCompetencia(models.Model):
                 self.grupo is None and 
                 self.competencia.grupos_abiertos and
                 self.competencia.estado in ['configuracion', 'esperando'])
+    
+    def get_nombre_display(self):
+        """Obtiene el nombre para mostrar del estudiante"""
+        if self.estudiante.first_name:
+            if self.estudiante.last_name:
+                return f"{self.estudiante.first_name} {self.estudiante.last_name}"
+            return self.estudiante.first_name
+        return self.estudiante.username
+
+    def get_info_completa(self):
+        """Obtiene información completa para mostrar"""
+        return {
+            'id': self.estudiante.id,
+            'nombre': self.get_nombre_display(),
+            'avatar_elegido': self.avatar_elegido or '🧪',
+            'avatar_nombre': self.avatar_nombre or 'Molécula Química',
+            'avatar_formula': self.avatar_formula or '',
+            'es_usuario_actual': False,  
+            'activo': self.activo,
+            'puntaje': float(self.puntaje_total),
+            'grupo': self.grupo.nombre if self.grupo else None
+        }
 
 
 class RespuestaCompetencia(models.Model):

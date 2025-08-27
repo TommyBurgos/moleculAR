@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Resultados de Competencia - {{ competencia.recurso.titulo }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap/dist/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    
+    <style>
+        :root {
+            --kahoot-purple: #662d91;
+            --kahoot-blue: #1368ce;
+            --kahoot-green: #26890d;
+            --kahoot-yellow: #ffa602;
+            --kahoot-red: #e21b3c;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--kahoot-purple) 0%, var(--kahoot-blue) 100%);
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+
+        .results-container {
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .results-header h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .score-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            color: #333;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .avatar-display {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .score-number {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--kahoot-purple);
+            margin: 20px 0;
+        }
+
+        .position-badge {
+            background: var(--kahoot-yellow);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .actions-section {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .btn-action {
+            background: var(--kahoot-green);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: var(--kahoot-blue);
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes confetti {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--kahoot-yellow);
+            animation: confetti 3s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="results-container">
+        <!-- Header -->
+        <div class="results-header">
+            <h1>🏆 ¡Competencia Finalizada!</h1>
+            <h2>{{ competencia.recurso.titulo }}</h2>
+        </div>
+
+        <!-- Score Card -->
+        <div class="score-card">
+            {% if participacion.avatar_elegido %}
+                <div class="avatar-display">{{ participacion.avatar_elegido }}</div>
+                <h3>{{ participacion.avatar_nombre|default:"Tu Avatar" }}</h3>
+            {% endif %}
+            
+            <h2>{{ participacion.estudiante.first_name|default:participacion.estudiante.username }}</h2>
+            
+            {% if participacion.posicion %}
+                <div class="position-badge">
+                    Posición #{{ participacion.posicion }}
+                </div>
+            {% endif %}
+            
+            <div class="score-number">{{ participacion.puntaje_total|floatformat:0 }}</div>
+            <p>puntos obtenidos</p>
+            
+            {% if puntaje_porcentaje %}
+                <div style="margin: 20px 0;">
+                    <div style="background: #eee; border-radius: 10px; height: 20px; overflow: hidden;">
+                        <div style="background: var(--kahoot-green); height: 100%; width: {{ puntaje_porcentaje }}%; transition: width 2s ease;"></div>
+                    </div>
+                    <p style="margin-top: 10px;">{{ puntaje_porcentaje|floatformat:1 }}% de respuestas correctas</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ respuestas.count }}</div>
+                <div>Preguntas<br>Respondidas</div>
+            </div>
+            
+            {% if tiempo_minutos %}
+                <div class="stat-card">
+                    <div class="stat-number">{{ tiempo_minutos|floatformat:1 }}</div>
+                    <div>Minutos<br>Totales</div>
+                </div>
+            {% endif %}
+            
+            {% if mejor_que_porcentaje %}
+                <div class="stat-card">
+                    <div class="stat-number">{{ mejor_que_porcentaje }}%</div>
+                    <div>Mejor que<br>otros participantes</div>
+                </div>
+            {% endif %}
+            
+            <div class="stat-card">
+                <div class="stat-number">{{ competencia.participaciones.count }}</div>
+                <div>Total<br>Participantes</div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="actions-section">
+            <a href="{% url 'student_dashboard' %}" class="btn btn-action">
+                <i class="fas fa-home me-2"></i>Ir al Dashboard
+            </a>
+            
+            {% if competencia.estado == 'finalizada' %}
+                <button onclick="verDetalles()" class="btn btn-action btn-secondary">
+                    <i class="fas fa-chart-bar me-2"></i>Ver Detalles
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- Detalles de respuestas (oculto inicialmente) -->
+        {% if mostrar_resultados %}
+        <div id="detallesRespuestas" style="display: none; margin-top: 40px; max-width: 800px; width: 100%;">
+            <h3 style="text-align: center; margin-bottom: 30px;">📊 Detalles de tus Respuestas</h3>
+            
+            {% for respuesta in respuestas %}
+            <div style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 20px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4>Pregunta {{ forloop.counter }}</h4>
+                    <div style="background: {% if respuesta.puntaje_obtenido > 0 %}var(--kahoot-green){% else %}var(--kahoot-red){% endif %}; 
+                                color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;">
+                        {{ respuesta.puntaje_obtenido|floatformat:0 }}/{{ respuesta.pregunta.puntaje }} pts
+                    </div>
+                </div>
+                
+                <p><strong>{{ respuesta.pregunta.enunciado }}</strong></p>
+                
+                {% if respuesta.pregunta.tipo.nombre == 'opcion_unica' or respuesta.pregunta.tipo.nombre == 'falso_verdadero' %}
+                    <p><strong>Tu respuesta:</strong> 
+                        {% if respuesta.opcion_seleccionada %}
+                            {{ respuesta.opcion_seleccionada.texto }}
+                            {% if respuesta.opcion_seleccionada.es_correcta %}
+                                <span style="color: var(--kahoot-green);">✓ Correcta</span>
+                            {% else %}
+                                <span style="color: var(--kahoot-red);">✗ Incorrecta</span>
+                            {% endif %}
+                        {% else %}
+                            <em>Sin respuesta</em>
+                        {% endif %}
+                    </p>
+                
+                {% elif respuesta.pregunta.tipo.nombre == 'respuesta_abierta' %}
+                    <p><strong>Tu respuesta:</strong> {{ respuesta.respuesta_texto|default:"Sin respuesta" }}</p>
+                
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Celebración -->
+    <div class="celebration" id="celebration"></div>
+
+    <!-- Scripts -->
+    <script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+    
+    <script>
+        // Crear confetti de celebración
+        function createConfetti() {
+            const celebration = document.getElementById('celebration');
+            const colors = ['#662d91', '#1368ce', '#26890d', '#ffa602', '#e21b3c'];
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                celebration.appendChild(confetti);
+            }
+            
+            // Remover confetti después de 5 segundos
+            setTimeout(() => {
+                celebration.innerHTML = '';
+            }, 5000);
+        }
+
+        // Función para mostrar detalles
+        function verDetalles() {
+            const detalles = document.getElementById('detallesRespuestas');
+            if (detalles) {
+                detalles.style.display = detalles.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        // Inicializar celebración
+        document.addEventListener('DOMContentLoaded', function() {
+            createConfetti();
+            
+            // Animar barra de progreso
+            setTimeout(() => {
+                const barra = document.querySelector('[style*="width:"]');
+                if (barra) {
+                    barra.style.width = '{{ puntaje_porcentaje }}%';
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>

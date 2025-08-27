@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Selecciona tu Avatar Molecular - EduCompete</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+    <!-- Custom CSS - Avatar Selection Molecular Style -->
+    <style>
+        :root {
+            --kahoot-purple: #662d91;
+            --kahoot-blue: #1368ce;
+            --kahoot-red: #e21b3c;
+            --kahoot-yellow: #ffa602;
+            --kahoot-green: #26890d;
+            --kahoot-dark: #1a1a1a;
+            --kahoot-light: #f2f2f2;
+            --kahoot-orange: #ff8c00;
+            --kahoot-pink: #ff69b4;
+            --kahoot-cyan: #00bcd4;
+            --molecule-carbon: #2c3e50;
+            --molecule-oxygen: #e74c3c;
+            --molecule-nitrogen: #3498db;
+            --molecule-hydrogen: #ecf0f1;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--kahoot-purple) 0%, var(--kahoot-blue) 50%, var(--kahoot-green) 100%);
+            min-height: 100vh;
+            font-family: 'Heebo', sans-serif;
+            color: white;
+            overflow-x: hidden;
+            animation: gradient-shift 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes gradient-shift {
+            0% {
+                background: linear-gradient(135deg, var(--kahoot-purple) 0%, var(--kahoot-blue) 50%, var(--kahoot-green) 100%);
+            }
+            100% {
+                background: linear-gradient(135deg, var(--kahoot-blue) 0%, var(--kahoot-green) 50%, var(--kahoot-purple) 100%);
+            }
+        }
+
+        /* ===== HEADER ===== */
+        .avatar-header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            border: none;
+            padding: 15px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .competition-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .competition-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .pin-display {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* ===== CONTENEDOR PRINCIPAL ===== */
+        .main-container {
+            padding: 100px 20px 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* ===== TÍTULO PRINCIPAL ===== */
+        .main-title {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .main-title h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(45deg, #fff, var(--kahoot-yellow), #fff);
+            background-size: 200% 200%;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .main-title .subtitle {
+            font-size: 1.4rem;
+            opacity: 0.95;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+
+        .main-title .description {
+            font-size: 1rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-container {
+            max-width: 600px;
+            margin: 0 auto 50px;
+        }
+
+        .progress {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--kahoot-green), var(--kahoot-yellow), var(--kahoot-orange));
+            transition: width 0.8s ease;
+            height: 100%;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: progress-shine 2s infinite;
+        }
+
+        @keyframes progress-shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        /* ===== CATEGORÍAS DE MOLÉCULAS ===== */
+        .molecule-categories {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 30px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            font-weight: 700;
+            font-size: 0.95rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .category-btn:hover::before {
+            left: 100%;
+        }
+
+        .category-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .category-btn.active {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+            color: var(--kahoot-purple);
+            border-color: white;
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        .category-btn.active::before {
+            display: none;
+        }
+
+        /* ===== CONTENEDOR DE AVATARES ===== */
+        .avatars-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .avatars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 30px;
+            padding: 20px;
+            justify-items: center;
+        }
+
+        /* ===== TARJETA DE AVATAR MOLECULAR ===== */
+        .avatar-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            width: 180px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid transparent;
+            backdrop-filter: blur(5px);
+        }
+        .avatar-card::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, var(--kahoot-purple), var(--kahoot-blue), var(--kahoot-green), var(--kahoot-yellow), var(--kahoot-red));
+            border-radius: 28px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            animation: rotate-gradient 4s linear infinite;
+        }
+
+        @keyframes rotate-gradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .avatar-card:hover {
+            transform: translateY(-12px) scale(1.08);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .avatar-card:hover::before {
+            opacity: 1;
+        }
+
+        .avatar-card.selected {
+            transform: translateY(-12px) scale(1.12);
+            box-shadow: 0 25px 60px rgba(102, 45, 145, 0.4);
+            border-color: var(--kahoot-purple);
+            animation: selected-glow 2s ease-in-out infinite;
+        }
+
+        .avatar-card.selected::before {
+            opacity: 1;
+        }
+
+        @keyframes selected-glow {
+            0%, 100% { box-shadow: 0 25px 60px rgba(102, 45, 145, 0.4); }
+            50% { box-shadow: 0 25px 60px rgba(102, 45, 145, 0.7); }
+        }
+
+        /* ===== ICONO MOLECULAR ===== */
+        .molecule-icon {
+            font-size: 4.5rem;
+            margin-bottom: 15px;
+            filter: drop-shadow(3px 3px 6px rgba(0, 0, 0, 0.3));
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .avatar-card:hover .molecule-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .avatar-card.selected .molecule-icon {
+            animation: molecule-bounce 0.8s ease;
+        }
+
+        @keyframes molecule-bounce {
+            0%, 100% { transform: scale(1.1) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(5deg); }
+            75% { transform: scale(1.15) rotate(-5deg); }
+        }
+
+        /* ===== INFORMACIÓN DE LA MOLÉCULA ===== */
+        .molecule-name {
+            color: var(--kahoot-dark);
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .molecule-formula {
+            color: var(--kahoot-purple);
+            font-weight: 600;
+            font-size: 0.85rem;
+            opacity: 0.8;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
+        }
+
+        .molecule-description {
+            color: #666;
+            font-size: 0.75rem;
+            margin-top: 8px;
+            opacity: 0.7;
+            line-height: 1.3;
+        }
+
+        /* ===== CHECKMARK PARA SELECCIONADO ===== */
+        .avatar-card .checkmark {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--kahoot-green);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transform: scale(0);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 5px 15px rgba(38, 137, 13, 0.4);
+            border: 3px solid white;
+        }
+
+        .avatar-card.selected .checkmark {
+            transform: scale(1);
+        }
+
+        /* ===== EFECTOS ESPECIALES POR CATEGORÍA ===== */
+        .avatar-card[data-category="organicas"] {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(255, 255, 255, 0.95));
+        }
+
+        .avatar-card[data-category="inorganicas"] {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(255, 255, 255, 0.95));
+        }
+
+        .avatar-card[data-category="farmaceuticas"] {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.1), rgba(255, 255, 255, 0.95));
+        }
+
+        .avatar-card[data-category="elementos"] {
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.1), rgba(255, 255, 255, 0.95));
+        }
+
+        .avatar-card[data-category="complejos"] {
+            background: linear-gradient(135deg, rgba(241, 196, 15, 0.1), rgba(255, 255, 255, 0.95));
+        }
+
+        /* ===== BOTÓN CONTINUAR ===== */
+        .continue-section {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .btn-continue {
+            background: linear-gradient(135deg, var(--kahoot-green) 0%, var(--kahoot-blue) 100%);
+            color: white;
+            padding: 20px 60px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.5;
+            transform: translateY(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-continue::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-continue:hover::before {
+            left: 100%;
+        }
+
+        .btn-continue:hover:not(:disabled) {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(38, 137, 13, 0.4);
+        }
+
+        .btn-continue:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: translateY(20px);
+        }
+
+        .btn-continue.enabled {
+            opacity: 1;
+            transform: translateY(0);
+            animation: ready-pulse 3s infinite;
+        }
+
+        @keyframes ready-pulse {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-3px) scale(1.02); box-shadow: 0 15px 35px rgba(38, 137, 13, 0.5); }
+        }
+
+        /* ===== INFORMACIÓN DEL JUGADOR ===== */
+        .player-preview {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 40px;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .preview-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--kahoot-yellow);
+        }
+
+        .player-card-preview {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            color: var(--kahoot-dark);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .preview-avatar {
+            font-size: 3rem;
+            flex-shrink: 0;
+        }
+
+        .preview-info h4 {
+            margin: 0 0 5px 0;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .preview-info p {
+            margin: 0;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .preview-molecule-name {
+            color: var(--kahoot-purple);
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        /* ===== EFECTOS DE FONDO ===== */
+        .floating-molecules {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-molecule {
+            position: absolute;
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.1);
+            animation: float-molecule 12s ease-in-out infinite;
+        }
+
+        .floating-molecule:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; }
+        .floating-molecule:nth-child(2) { top: 50%; right: 15%; animation-delay: 2s; }
+        .floating-molecule:nth-child(3) { top: 80%; left: 20%; animation-delay: 4s; }
+        .floating-molecule:nth-child(4) { top: 30%; right: 25%; animation-delay: 6s; }
+        .floating-molecule:nth-child(5) { bottom: 20%; left: 30%; animation-delay: 8s; }
+        .floating-molecule:nth-child(6) { bottom: 60%; right: 10%; animation-delay: 10s; }
+
+        @keyframes float-molecule {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 0.1;
+            }
+            25% {
+                transform: translateY(-30px) rotate(90deg) scale(1.1);
+                opacity: 0.2;
+            }
+            50% {
+                transform: translateY(-60px) rotate(180deg) scale(0.9);
+                opacity: 0.15;
+            }
+            75% {
+                transform: translateY(-30px) rotate(270deg) scale(1.05);
+                opacity: 0.25;
+            }
+        }
+        /* ===== PARTÍCULAS QUÍMICAS ===== */
+        .chemical-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        .chemical-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: particle-float 10s linear infinite;
+        }
+
+        .chemical-particle.carbon { background: var(--molecule-carbon); }
+        .chemical-particle.oxygen { background: var(--molecule-oxygen); }
+        .chemical-particle.nitrogen { background: var(--molecule-nitrogen); }
+        .chemical-particle.hydrogen { background: var(--molecule-hydrogen); }
+
+        @keyframes particle-float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 1;
+            }
+            10% {
+                transform: translateY(90vh) scale(1);
+                opacity: 0.8;
+            }
+            90% {
+                transform: translateY(10vh) scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-10vh) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* ===== TOOLTIP PARA INFORMACIÓN ===== */
+        .molecule-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            max-width: 200px;
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .molecule-tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .molecule-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid rgba(0, 0, 0, 0.9);
+        }
+
+        /* ===== ANIMACIONES DE ENTRADA ===== */
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.6s ease-out forwards;
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .main-title h1 {
+                font-size: 2.5rem;
+            }
+            
+            .main-title .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .avatars-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 20px;
+                padding: 15px;
+            }
+            
+            .avatar-card {
+                width: 140px;
+                height: 180px;
+                padding: 20px 15px;
+            }
+            
+            .molecule-icon {
+                font-size: 3.5rem;
+            }
+            
+            .btn-continue {
+                padding: 15px 40px;
+                font-size: 1.2rem;
+            }
+            
+            .molecule-categories {
+                gap: 10px;
+            }
+            
+            .category-btn {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+            }
+
+            .player-preview {
+                margin: 0 15px 30px;
+                padding: 20px;
+            }
+
+            .player-card-preview {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-container {
+                padding: 90px 15px 30px;
+            }
+
+            .main-title h1 {
+                font-size: 2rem;
+            }
+            
+            .avatars-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .avatar-card {
+                width: 120px;
+                height: 160px;
+                padding: 15px 10px;
+            }
+            
+            .molecule-icon {
+                font-size: 3rem;
+                margin-bottom: 10px;
+            }
+
+            .molecule-name {
+                font-size: 0.9rem;
+            }
+
+            .molecule-formula {
+                font-size: 0.75rem;
+            }
+
+            .molecule-categories {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* ===== LOADING STATES ===== */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-molecule {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: loading-spin 2s linear infinite;
+        }
+
+        @keyframes loading-spin {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(90deg) scale(1.1); }
+            50% { transform: rotate(180deg) scale(1); }
+            75% { transform: rotate(270deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        /* ===== SEARCH Y FILTER ===== */
+        .avatar-controls {
+            max-width: 800px;
+            margin: 0 auto 30px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 1rem;
+            width: 250px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .search-box::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--kahoot-yellow);
+            box-shadow: 0 0 20px rgba(255, 166, 2, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .filter-random {
+            background: rgba(255, 166, 2, 0.8);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-random:hover {
+            background: var(--kahoot-yellow);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 166, 2, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Moléculas flotantes de fondo -->
+    <div class="floating-molecules">
+        <div class="floating-molecule">⚗️</div>
+        <div class="floating-molecule">🧪</div>
+        <div class="floating-molecule">⚛️</div>
+        <div class="floating-molecule">💊</div>
+        <div class="floating-molecule">🔬</div>
+        <div class="floating-molecule">🌡️</div>
+    </div>
+
+    <!-- Partículas químicas -->
+    <div class="chemical-particles">
+        <!-- Las partículas se generarán dinámicamente con JavaScript -->
+    </div>
+
+    <!-- Header -->
+    <nav class="avatar-header">
+        <div class="container-fluid">
+            <div class="competition-info">
+                <div class="competition-title">
+                    <i class="fas fa-trophy me-2"></i>
+                    {{ competencia.recurso.titulo }}
+                </div>
+                <div class="pin-display">
+                    PIN: {{ competencia.pin_acceso }}
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Título principal -->
+        <div class="main-title fade-in-up">
+            <div style="font-size: 3rem; margin-bottom: 15px;">🧬</div>
+            <h1>Elige tu Avatar Molecular</h1>
+            <p class="subtitle">Selecciona la molécula que te representará en la competencia</p>
+            <p class="description">
+                Cada molécula tiene su personalidad única. ¿Serás explosivo como la Nitroglicerina, 
+                esencial como el Agua, o complejo como la Cafeína?
+            </p>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="progress-container slide-in-left">
+            <div class="progress">
+                <div class="progress-bar" style="width: 60%;"></div>
+            </div>
+            <div class="progress-text">Paso 2 de 3 - Personalización</div>
+        </div>
+
+        <!-- Preview del jugador -->
+        <div class="player-preview slide-in-right" id="playerPreview" style="display: none;">
+            <div class="preview-title">
+                <i class="fas fa-eye me-2"></i>Vista Previa
+            </div>
+            <div class="player-card-preview">
+                <div class="preview-avatar" id="previewAvatar">🧪</div>
+                <div class="preview-info">
+                    <h4>{{ user.first_name|default:user.username }}</h4>
+                    <p>Listo para competir</p>
+                    <div class="preview-molecule-name" id="previewMoleculeName">
+                        Selecciona tu molécula
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles de avatar -->
+        <div class="avatar-controls fade-in-up">
+            <input type="text" class="search-box" id="searchMolecules" 
+                   placeholder="🔍 Buscar molécula..." 
+                   onkeyup="filterMolecules()">
+            <button class="filter-random" onclick="selectRandomMolecule()">
+                <i class="fas fa-random me-2"></i>Sorpréndeme
+            </button>
+        </div>
+
+        <!-- Categorías de moléculas -->
+        <div class="molecule-categories fade-in-up">
+            <button class="category-btn active" data-category="todas" onclick="filterByCategory('todas')">
+                <i class="fas fa-th me-2"></i>Todas
+            </button>
+            <button class="category-btn" data-category="organicas" onclick="filterByCategory('organicas')">
+                <i class="fas fa-leaf me-2"></i>Orgánicas
+            </button>
+            <button class="category-btn" data-category="inorganicas" onclick="filterByCategory('inorganicas')">
+                <i class="fas fa-atom me-2"></i>Inorgánicas
+            </button>
+            <button class="category-btn" data-category="farmaceuticas" onclick="filterByCategory('farmaceuticas')">
+                <i class="fas fa-pills me-2"></i>Farmacéuticas
+            </button>
+            <button class="category-btn" data-category="elementos" onclick="filterByCategory('elementos')">
+                <i class="fas fa-table me-2"></i>Elementos
+            </button>
+            <button class="category-btn" data-category="complejos" onclick="filterByCategory('complejos')">
+                <i class="fas fa-project-diagram me-2"></i>Complejos
+            </button>
+        </div>
+
+        <!-- Contenedor de avatares -->
+        <div class="avatars-container">
+            <div class="avatars-grid fade-in-up" id="avatarsGrid">
+                
+                <!-- MOLÉCULAS ORGÁNICAS -->
+                <div class="avatar-card" data-category="organicas" data-molecule="caffeine" onclick="selectAvatar(this, '☕', 'Cafeína', 'C₈H₁₀N₄O₂')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">☕</div>
+                    <div class="molecule-name">Cafeína</div>
+                    <div class="molecule-formula">C₈H₁₀N₄O₂</div>
+                    <div class="molecule-description">Energía pura</div>
+                </div>
+
+                <div class="avatar-card" data-category="organicas" data-molecule="glucose" onclick="selectAvatar(this, '🍯', 'Glucosa', 'C₆H₁₂O₆')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🍯</div>
+                    <div class="molecule-name">Glucosa</div>
+                    <div class="molecule-formula">C₆H₁₂O₆</div>
+                    <div class="molecule-description">Combustible vital</div>
+                </div>
+
+                <div class="avatar-card" data-category="organicas" data-molecule="ethanol" onclick="selectAvatar(this, '🍷', 'Etanol', 'C₂H₆O')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🍷</div>
+                    <div class="molecule-name">Etanol</div>
+                    <div class="molecule-formula">C₂H₆O</div>
+                    <div class="molecule-description">Espíritu festivo</div>
+                </div>
+
+                <div class="avatar-card" data-category="organicas" data-molecule="benzene" onclick="selectAvatar(this, '⬡', 'Benceno', 'C₆H₆')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">⬡</div>
+                    <div class="molecule-name">Benceno</div>
+                    <div class="molecule-formula">C₆H₆</div>
+                    <div class="molecule-description">Anillo perfecto</div>
+                </div>
+
+                <div class="avatar-card" data-category="organicas" data-molecule="methane" onclick="selectAvatar(this, '💨', 'Metano', 'CH₄')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">💨</div>
+                    <div class="molecule-name">Metano</div>
+                    <div class="molecule-formula">CH₄</div>
+                    <div class="molecule-description">Simplicidad gaseosa</div>
+                </div>
+
+                <div class="avatar-card" data-category="organicas" data-molecule="acetylene" onclick="selectAvatar(this, '🔥', 'Acetileno', 'C₂H₂')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🔥</div>
+                    <div class="molecule-name">Acetileno</div>
+                    <div class="molecule-formula">C₂H₂</div>
+                    <div class="molecule-description">Llama eterna</div>
+                </div>
+
+                <!-- MOLÉCULAS INORGÁNICAS -->
+                <div class="avatar-card" data-category="inorganicas" data-molecule="water" onclick="selectAvatar(this, '💧', 'Agua', 'H₂O')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">💧</div>
+                    <div class="molecule-name">Agua</div>
+                    <div class="molecule-formula">H₂O</div>
+                    <div class="molecule-description">Esencia de vida</div>
+                </div>
+
+                <div class="avatar-card" data-category="inorganicas" data-molecule="ammonia" onclick="selectAvatar(this, '🌪️', 'Amoníaco', 'NH₃')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🌪️</div>
+                    <div class="molecule-name">Amoníaco</div>
+                    <div class="molecule-formula">NH₃</div>
+                    <div class="molecule-description">Fuerza alcalina</div>
+                </div>
+
+                <div class="avatar-card" data-category="inorganicas" data-molecule="carbondioxide" onclick="selectAvatar(this, '🫧', 'Dióxido de Carbono', 'CO₂')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🫧</div>
+                    <div class="molecule-name">Dióxido de Carbono</div>
+                    <div class="molecule-formula">CO₂</div>
+                    <div class="molecule-description">Respiración del planeta</div>
+                </div>
+
+                <div class="avatar-card" data-category="inorganicas" data-molecule="sulfuricacid" onclick="selectAvatar(this, '⚠️', 'Ácido Sulfúrico', 'H₂SO₄')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">⚠️</div>
+                    <div class="molecule-name">Ácido Sulfúrico</div>
+                    <div class="molecule-formula">H₂SO₄</div>
+                    <div class="molecule-description">Poder corrosivo</div>
+                </div>
+
+                <div class="avatar-card" data-category="inorganicas" data-molecule="hydrogenperoxide" onclick="selectAvatar(this, '💥', 'Peróxido de Hidrógeno', 'H₂O₂')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">💥</div>
+                    <div class="molecule-name">Peróxido de Hidrógeno</div>
+                    <div class="molecule-formula">H₂O₂</div>
+                    <div class="molecule-description">Oxidante explosivo</div>
+                </div>
+
+                <div class="avatar-card" data-category="inorganicas" data-molecule="sodium chloride" onclick="selectAvatar(this, '🧂', 'Cloruro de Sodio', 'NaCl')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🧂</div>
+                    <div class="molecule-name">Cloruro de Sodio</div>
+                    <div class="molecule-formula">NaCl</div>
+                    <div class="molecule-description">Sal de la tierra</div>
+                </div>
+
+                <!-- MOLÉCULAS FARMACÉUTICAS -->
+                <div class="avatar-card" data-category="farmaceuticas" data-molecule="aspirin" onclick="selectAvatar(this, '💊', 'Aspirina', 'C₉H₈O₄')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">💊</div>
+                    <div class="molecule-name">Aspirina</div>
+                    <div class="molecule-formula">C₉H₈O₄</div>
+                    <div class="molecule-description">Alivio universal</div>
+                </div>
+
+                <div class="avatar-card" data-category="farmaceuticas" data-molecule="morphine" onclick="selectAvatar(this, '😴', 'Morfina', 'C₁₇H₁₉NO₃')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">😴</div>
+                    <div class="molecule-name">Morfina</div>
+                    <div class="molecule-formula">C₁₇H₁₉NO₃</div>
+                    <div class="molecule-description">Sueño profundo</div>
+                </div>
+
+                <div class="avatar-card" data-category="farmaceuticas" data-molecule="penicillin" onclick="selectAvatar(this, '🛡️', 'Penicilina', 'C₁₆H₁₈N₂O₄S')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🛡️</div>
+                    <div class="molecule-name">Penicilina</div>
+                    <div class="molecule-formula">C₁₆H₁₈N₂O₄S</div>
+                    <div class="molecule-description">Defensor antibiótico</div>
+                </div>
+
+                <div class="avatar-card" data-category="farmaceuticas" data-molecule="ibuprofen" onclick="selectAvatar(this, '🦴', 'Ibuprofeno', 'C₁₃H₁₈O₂')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🦴</div>
+                    <div class="molecule-name">Ibuprofeno</div>
+                    <div class="molecule-formula">C₁₃H₁₈O₂</div>
+                    <div class="molecule-description">Antiinflamatorio</div>
+                </div>
+
+                <!-- ELEMENTOS PUROS -->
+                <div class="avatar-card" data-category="elementos" data-molecule="carbon" onclick="selectAvatar(this, '💎', 'Carbono', 'C')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">💎</div>
+                    <div class="molecule-name">Carbono</div>
+                    <div class="molecule-formula">C</div>
+                    <div class="molecule-description">Base de la vida</div>
+                </div>
+
+                <div class="avatar-card" data-category="elementos" data-molecule="oxygen" onclick="selectAvatar(this, '🌬️', 'Oxígeno', 'O₂')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🌬️</div>
+                    <div class="molecule-name">Oxígeno</div>
+                    <div class="molecule-formula">O₂</div>
+                    <div class="molecule-description">Aliento vital</div>
+                </div>
+
+                <div class="avatar-card" data-category="elementos" data-molecule="nitrogen" onclick="selectAvatar(this, '🌌', 'Nitrógeno', 'N₂')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🌌</div>
+                    <div class="molecule-name">Nitrógeno</div>
+                    <div class="molecule-formula">N₂</div>
+                    <div class="molecule-description">Atmósfera silenciosa</div>
+                </div>
+
+                <div class="avatar-card" data-category="elementos" data-molecule="gold" onclick="selectAvatar(this, '🥇', 'Oro', 'Au')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🥇</div>
+                    <div class="molecule-name">Oro</div>
+                    <div class="molecule-formula">Au</div>
+                    <div class="molecule-description">Noble eterno</div>
+                </div>
+
+                <div class="avatar-card" data-category="elementos" data-molecule="iron" onclick="selectAvatar(this, '⚔️', 'Hierro', 'Fe')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">⚔️</div>
+                    <div class="molecule-name">Hierro</div>
+                    <div class="molecule-formula">Fe</div>
+                    <div class="molecule-description">Fuerza magnética</div>
+                </div>
+
+                <!-- COMPLEJOS MOLECULARES -->
+                <div class="avatar-card" data-category="complejos" data-molecule="hemoglobin" onclick="selectAvatar(this, '🩸', 'Hemoglobina', 'C₂₉₅₂H₄₆₆₄N₈₁₂O₈₇₆S₁₂Fe₄')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🩸</div>
+                    <div class="molecule-name">Hemoglobina</div>
+                    <div class="molecule-formula">C₂₉₅₂H₄₆₆₄N₈₁₂O₈₇₆S₁₂Fe₄</div>
+                    <div class="molecule-description">Transportador de oxígeno</div>
+                </div>
+
+                <div class="avatar-card" data-category="complejos" data-molecule="chlorophyll" onclick="selectAvatar(this, '🌿', 'Clorofila', 'C₅₅H₇₂MgN₄O₅')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🌿</div>
+                    <div class="molecule-name">Clorofila</div>
+                    <div class="molecule-formula">C₅₅H₇₂MgN₄O₅</div>
+                    <div class="molecule-description">Verde fotosintético</div>
+                </div>
+
+                <div class="avatar-card" data-category="complejos" data-molecule="dna" onclick="selectAvatar(this, '🧬', 'ADN', 'C₄H₅N₅')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">🧬</div>
+                    <div class="molecule-name">ADN</div>
+                    <div class="molecule-formula">C₄H₅N₅</div>
+                    <div class="molecule-description">Código de la vida</div>
+                </div>
+
+                <div class="avatar-card" data-category="complejos" data-molecule="nitroglycerin" onclick="selectAvatar(this, '💥', 'Nitroglicerina', 'C₃H₅N₃O₉')">
+                    <div class="checkmark">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="molecule-icon">💥</div>
+                    <div class="molecule-name">Nitroglicerina</div>
+                    <div class="molecule-formula">C₃H₅N₃O₉</div>
+                    <div class="molecule-description">Poder explosivo</div>
+                </div>
+            </div>
+        </div>
+        <!-- Sección continuar -->
+        <div class="continue-section">
+            <button type="button" 
+                    id="continueButton" 
+                    class="btn-continue"
+                    onclick="continuarAlSiguientePaso()">
+                <i class="fas fa-arrow-right me-2"></i>
+                Continuar a la Competencia
+            </button>
+        </div>
+    </div>
+
+    <!-- Tooltip para información -->
+    <div class="molecule-tooltip" id="moleculeTooltip"></div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-molecule">⚛️</div>
+            <div class="loading-text">Configurando tu avatar molecular...</div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        // =====================================================
+        // VARIABLES GLOBALES
+        // =====================================================
+        
+        let avatarSeleccionado = null;
+        let competenciaId = {{ competencia.id }};
+        let participacionId = {{ participacion.id|default:'null' }};
+        
+        const moleculesData = {
+            // Orgánicas
+            caffeine: { name: 'Cafeína', icon: '☕', formula: 'C₈H₁₀N₄O₂', description: 'Estimulante natural presente en el café', benefits: ['Aumenta el estado de alerta', 'Mejora la concentración', 'Estimulante del sistema nervioso'] },
+            glucose: { name: 'Glucosa', icon: '🍯', formula: 'C₆H₁₂O₆', description: 'Principal fuente de energía celular', benefits: ['Combustible esencial', 'Energía inmediata', 'Base del metabolismo'] },
+            ethanol: { name: 'Etanol', icon: '🍷', formula: 'C₂H₆O', description: 'Alcohol presente en bebidas fermentadas', benefits: ['Solvente universal', 'Desinfectante', 'Combustible ecológico'] },
+            benzene: { name: 'Benceno', icon: '⬡', formula: 'C₆H₆', description: 'Hidrocarburo aromático fundamental', benefits: ['Estructura aromática perfecta', 'Base de síntesis orgánica', 'Estabilidad química'] },
+            methane: { name: 'Metano', icon: '💨', formula: 'CH₄', description: 'Gas natural más simple', benefits: ['Combustible limpio', 'Molécula más simple', 'Fuente de energía'] },
+            acetylene: { name: 'Acetileno', icon: '🔥', formula: 'C₂H₂', description: 'Gas combustible de alta temperatura', benefits: ['Llama más caliente', 'Soldadura industrial', 'Triple enlace C≡C'] },
+            
+            // Inorgánicas
+            water: { name: 'Agua', icon: '💧', formula: 'H₂O', description: 'Molécula esencial para la vida', benefits: ['Solvente universal', 'Regulador térmico', 'Medio de transporte biológico'] },
+            ammonia: { name: 'Amoníaco', icon: '🌪️', formula: 'NH₃', description: 'Base fuerte con olor penetrante', benefits: ['Fertilizante agrícola', 'Agente de limpieza', 'Refrigerante industrial'] },
+            carbondioxide: { name: 'Dióxido de Carbono', icon: '🫧', formula: 'CO₂', description: 'Gas producto de la respiración', benefits: ['Fotosíntesis vegetal', 'Regulador del pH', 'Extintor de incendios'] },
+            sulfuricacid: { name: 'Ácido Sulfúrico', icon: '⚠️', formula: 'H₂SO₄', description: 'Ácido fuerte industrial', benefits: ['Reactivo químico esencial', 'Producción de fertilizantes', 'Refinado de petróleo'] },
+            hydrogenperoxide: { name: 'Peróxido de Hidrógeno', icon: '💥', formula: 'H₂O₂', description: 'Agente oxidante y desinfectante', benefits: ['Blanqueador ecológico', 'Antiséptico suave', 'Propulsor de cohetes'] },
+            'sodium chloride': { name: 'Cloruro de Sodio', icon: '🧂', formula: 'NaCl', description: 'Sal común de mesa', benefits: ['Conservante natural', 'Electrolito esencial', 'Regulador osmótico'] },
+            
+            // Farmacéuticas
+            aspirin: { name: 'Aspirina', icon: '💊', formula: 'C₉H₈O₄', description: 'Analgésico y antiinflamatorio', benefits: ['Alivio del dolor', 'Reduce inflamación', 'Prevención cardiovascular'] },
+            morphine: { name: 'Morfina', icon: '😴', formula: 'C₁₇H₁₉NO₃', description: 'Analgésico opioide potente', benefits: ['Alivio de dolor severo', 'Sedante natural', 'Uso médico controlado'] },
+            penicillin: { name: 'Penicilina', icon: '🛡️', formula: 'C₁₆H₁₈N₂O₄S', description: 'Primer antibiótico descubierto', benefits: ['Combate infecciones bacterianas', 'Revolucionó la medicina', 'Salvó millones de vidas'] },
+            ibuprofen: { name: 'Ibuprofeno', icon: '🦴', formula: 'C₁₃H₁₈O₂', description: 'Antiinflamatorio no esteroideo', benefits: ['Reduce dolor e inflamación', 'Baja la fiebre', 'Uso seguro común'] },
+            
+            // Elementos
+            carbon: { name: 'Carbono', icon: '💎', formula: 'C', description: 'Elemento base de la vida orgánica', benefits: ['Forma enlaces estables', 'Base de compuestos orgánicos', 'Diamante y grafito'] },
+            oxygen: { name: 'Oxígeno', icon: '🌬️', formula: 'O₂', description: 'Gas esencial para la respiración', benefits: ['Respiración celular', 'Combustión', 'Ozono protector'] },
+            nitrogen: { name: 'Nitrógeno', icon: '🌌', formula: 'N₂', description: '78% de la atmósfera terrestre', benefits: ['Gas inerte', 'Ciclo del nitrógeno', 'Conservación de alimentos'] },
+            gold: { name: 'Oro', icon: '🥇', formula: 'Au', description: 'Metal precioso incorruptible', benefits: ['No se oxida', 'Conductor excelente', 'Valor monetario estable'] },
+            iron: { name: 'Hierro', icon: '⚔️', formula: 'Fe', description: 'Metal magnético esencial', benefits: ['Hemoglobina sanguínea', 'Construcción estructural', 'Campo magnético'] },
+            
+            // Complejos
+            hemoglobin: { name: 'Hemoglobina', icon: '🩸', formula: 'C₂₉₅₂H₄₆₆₄N₈₁₂O₈₇₆S₁₂Fe₄', description: 'Proteína transportadora de oxígeno', benefits: ['Transporte de oxígeno', 'Color rojo de la sangre', 'Complejo con hierro'] },
+            chlorophyll: { name: 'Clorofila', icon: '🌿', formula: 'C₅₅H₇₂MgN₄O₅', description: 'Pigmento fotosintético verde', benefits: ['Captura luz solar', 'Fotosíntesis', 'Convierte CO₂ en O₂'] },
+            dna: { name: 'ADN', icon: '🧬', formula: 'C₄H₅N₅', description: 'Ácido desoxirribonucleico', benefits: ['Información genética', 'Herencia biológica', 'Evolución'] },
+            nitroglycerin: { name: 'Nitroglicerina', icon: '💥', formula: 'C₃H₅N₃O₉', description: 'Explosivo sensible al impacto', benefits: ['Explosivo potente', 'Medicamento cardíaco', 'Energía concentrada'] }
+        };
+
+        // =====================================================
+        // INICIALIZACIÓN
+        // =====================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Inicializando selección de avatar molecular...');
+            
+            // Crear partículas químicas de fondo
+            createChemicalParticles();
+            
+            // Configurar tooltips
+            setupTooltips();
+            
+            // Animar entrada de elementos
+            animateElementsEntry();
+            
+            console.log('✅ Sistema de avatares inicializado');
+        });
+
+        // =====================================================
+        // FUNCIONES DE SELECCIÓN
+        // =====================================================
+
+        /**
+         * Selecciona un avatar molecular
+         */
+        function selectAvatar(card, icon, name, formula) {
+            console.log('🎯 Avatar seleccionado:', { icon, name, formula });
+            
+            // Remover selección anterior
+            document.querySelectorAll('.avatar-card').forEach(c => {
+                c.classList.remove('selected');
+            });
+            
+            // Seleccionar nuevo avatar
+            card.classList.add('selected');
+            
+            // Guardar selección
+            avatarSeleccionado = {
+                icon: icon,
+                name: name,
+                formula: formula,
+                molecule: card.dataset.molecule
+            };
+            
+            // Actualizar preview
+            updatePlayerPreview();
+            
+            // Habilitar botón continuar
+            enableContinueButton();
+            
+            // Reproducir sonido de selección (opcional)
+            playSelectionSound();
+        }
+
+        /**
+         * Selecciona molécula aleatoria
+         */
+        function selectRandomMolecule() {
+            const visibleCards = document.querySelectorAll('.avatar-card:not([style*="display: none"])');
+            const randomCard = visibleCards[Math.floor(Math.random() * visibleCards.length)];
+            
+            if (randomCard) {
+                // Animar la selección aleatoria
+                randomCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                setTimeout(() => {
+                    randomCard.click();
+                    
+                    // Efecto especial para selección aleatoria
+                    randomCard.style.animation = 'none';
+                    setTimeout(() => {
+                        randomCard.style.animation = 'selected-glow 2s ease-in-out infinite';
+                    }, 10);
+                }, 800);
+            }
+        }
+
+        // =====================================================
+        // FUNCIONES DE FILTRADO
+        // =====================================================
+
+        /**
+         * Filtra moléculas por categoría
+         */
+        function filterByCategory(category) {
+            console.log('🔍 Filtrando por categoría:', category);
+            
+            // Actualizar botones de categoría
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-category="${category}"]`).classList.add('active');
+            
+            // Filtrar tarjetas
+            const cards = document.querySelectorAll('.avatar-card');
+            cards.forEach(card => {
+                if (category === 'todas' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                    card.style.animation = 'fadeInUp 0.5s ease forwards';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        /**
+         * Filtra moléculas por búsqueda de texto
+         */
+        function filterMolecules() {
+            const searchTerm = document.getElementById('searchMolecules').value.toLowerCase();
+            const cards = document.querySelectorAll('.avatar-card');
+            
+            cards.forEach(card => {
+                const name = card.querySelector('.molecule-name').textContent.toLowerCase();
+                const formula = card.querySelector('.molecule-formula').textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || formula.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+        // =====================================================
+        // FUNCIONES DE UI
+        // =====================================================
+
+        /**
+         * Actualiza la vista previa del jugador
+         */
+        function updatePlayerPreview() {
+            const preview = document.getElementById('playerPreview');
+            const previewAvatar = document.getElementById('previewAvatar');
+            const previewMoleculeName = document.getElementById('previewMoleculeName');
+            
+            if (avatarSeleccionado) {
+                previewAvatar.textContent = avatarSeleccionado.icon;
+                previewMoleculeName.textContent = `${avatarSeleccionado.name} (${avatarSeleccionado.formula})`;
+                preview.style.display = 'block';
+                
+                // Animar entrada
+                preview.classList.add('slide-in-right');
+            }
+        }
+
+        /**
+         * Habilita el botón continuar
+         */
+        function enableContinueButton() {
+            const button = document.getElementById('continueButton');
+            button.disabled = false;
+            button.classList.add('enabled');
+        }
+
+        /**
+         * Configura tooltips para información adicional
+         */
+        function setupTooltips() {
+            const cards = document.querySelectorAll('.avatar-card');
+            const tooltip = document.getElementById('moleculeTooltip');
+            
+            cards.forEach(card => {
+                const molecule = card.dataset.molecule;
+                const data = moleculesData[molecule];
+                
+                if (data) {
+                    card.addEventListener('mouseenter', (e) => {
+                        tooltip.innerHTML = `
+                            <strong>${data.name}</strong><br>
+                            <em>${data.description}</em><br>
+                            <small>Propiedades: ${data.benefits.slice(0, 2).join(', ')}</small>
+                        `;
+                        
+                        const rect = card.getBoundingClientRect();
+                        tooltip.style.left = rect.left + rect.width / 2 - 100 + 'px';
+                        tooltip.style.top = rect.top - 10 + 'px';
+                        tooltip.classList.add('show');
+                    });
+                    
+                    card.addEventListener('mouseleave', () => {
+                        tooltip.classList.remove('show');
+                    });
+                }
+            });
+        }
+
+        /**
+         * Crea partículas químicas de fondo
+         */
+        function createChemicalParticles() {
+            const particlesContainer = document.querySelector('.chemical-particles');
+            const particleTypes = ['carbon', 'oxygen', 'nitrogen', 'hydrogen'];
+            
+            setInterval(() => {
+                if (document.querySelectorAll('.chemical-particle').length < 30) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('chemical-particle');
+                    
+                    const type = particleTypes[Math.floor(Math.random() * particleTypes.length)];
+                    particle.classList.add(type);
+                    
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                    particle.style.animationDelay = Math.random() * 2 + 's';
+                    
+                    particlesContainer.appendChild(particle);
+                    
+                    setTimeout(() => {
+                        if (particlesContainer.contains(particle)) {
+                            particlesContainer.removeChild(particle);
+                        }
+                    }, 10000);
+                }
+            }, 800);
+        }
+
+        /**
+         * Anima la entrada de elementos
+         */
+        function animateElementsEntry() {
+            const elements = document.querySelectorAll('.fade-in-up, .slide-in-left, .slide-in-right');
+            elements.forEach((element, index) => {
+                element.style.animationDelay = (index * 0.1) + 's';
+            });
+        }
+
+        /**
+         * Reproduce sonido de selección
+         */
+        function playSelectionSound() {
+            // Crear audio context para efectos sonoros
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.log('🔇 Audio no disponible');
+            }
+        }
+
+        // =====================================================
+        // FUNCIÓN PRINCIPAL - CONTINUAR
+        // =====================================================
+
+        /**
+         * Continúa al siguiente paso de la competencia
+         */
+        async function continuarAlSiguientePaso() {
+            if (!avatarSeleccionado) {
+                alert('Por favor selecciona un avatar molecular');
+                return;
+            }
+            
+            console.log('🚀 Continuando con avatar:', avatarSeleccionado);
+            
+            try {
+                showLoading();
+                
+                const response = await fetch('/competencia/guardar-avatar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        participacion_id: participacionId,
+                        competencia_id: competenciaId,
+                        avatar_icon: avatarSeleccionado.icon,
+                        avatar_name: avatarSeleccionado.name,
+                        avatar_formula: avatarSeleccionado.formula,
+                        avatar_molecule: avatarSeleccionado.molecule
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('📥 Respuesta guardar avatar:', data);
+                
+                if (data.success) {
+                    // Éxito - mostrar animación de confirmación
+                    showSuccessAnimation();
+                    
+                    setTimeout(() => {
+                        if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            // Por defecto ir a sala de espera
+                            window.location.href = `/competencia/sala-espera/${participacionId}/`;
+                        }
+                    }, 2000);
+                    
+                } else {
+                    hideLoading();
+                    alert(data.error || 'Error al guardar el avatar');
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error('❌ Error al guardar avatar:', error);
+                alert('Error de conexión. Por favor intenta de nuevo.');
+            }
+        }
+
+
+        async function continuarACompetencia() {
+            if (!avatarSeleccionado) {
+                alert('Por favor selecciona un avatar');
+                return;
+            }
+
+            console.log('Guardando avatar...');
+
+            try {
+                const response = await fetch('/competencia/guardar-avatar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        participacion_id: participacionId,
+                        avatar_elegido: avatarSeleccionado.icon,
+                        avatar_nombre: avatarSeleccionado.name,
+                        avatar_formula: avatarSeleccionado.formula,
+                        nombre_estudiante: avatarSeleccionado.nombreEstudiante // AGREGAR ESTO
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log('Avatar guardado exitosamente');
+                    // IR A SALA DE ESPERA (NO A FINALIZAR)
+                    window.location.href = `/competencia/sala-espera/${participacionId}/`;
+                } else {
+                    alert('Error al guardar avatar: ' + (data.error || 'Error desconocido'));
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión');
+            }
+        }
+
+        // =====================================================
+        // FUNCIONES DE EFECTOS VISUALES
+        // =====================================================
+
+        /**
+         * Muestra animación de éxito
+         */
+        function showSuccessAnimation() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingContent = loadingOverlay.querySelector('.loading-content');
+            
+            loadingContent.innerHTML = `
+                <div style="font-size: 5rem; margin-bottom: 20px; animation: success-bounce 1s ease;">
+                    ${avatarSeleccionado.icon}
+                </div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--kahoot-green); margin-bottom: 10px;">
+                    ¡Avatar Configurado!
+                </div>
+                <div style="font-size: 1rem;">
+                    ${avatarSeleccionado.name} te acompañará en la competencia
+                </div>
+            `;
+            
+            // Crear confetti molecular
+            createMolecularConfetti();
+        }
+
+        /**
+         * Crea confetti con moléculas
+         */
+        function createMolecularConfetti() {
+            const molecules = ['⚛️', '🧪', '⚗️', '🔬', '💊', '🌡️'];
+            const body = document.body;
+            
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.cssText = `
+                        position: fixed;
+                        top: -10px;
+                        left: ${Math.random() * 100}%;
+                        font-size: 2rem;
+                        z-index: 9999;
+                        animation: confetti-fall 3s ease-out forwards;
+                        pointer-events: none;
+                    `;
+                    confetti.textContent = molecules[Math.floor(Math.random() * molecules.length)];
+                    
+                    body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        if (body.contains(confetti)) {
+                            body.removeChild(confetti);
+                        }
+                    }, 3000);
+                }, i * 100);
+            }
+        }
+
+        /**
+         * Muestra loading overlay
+         */
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        /**
+         * Oculta loading overlay
+         */
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // =====================================================
+        // FUNCIONES DE UTILIDAD
+        // =====================================================
+
+        /**
+         * Obtiene el valor de una cookie
+         */
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // =====================================================
+        // EVENT LISTENERS ADICIONALES
+        // =====================================================
+
+        // Atajos de teclado
+        document.addEventListener('keydown', function(event) {
+            // Enter para continuar si hay avatar seleccionado
+            if (event.key === 'Enter' && avatarSeleccionado) {
+                continuarAlSiguientePaso();
+            }
+            
+            // Números 1-9 para selección rápida
+            if (event.key >= '1' && event.key <= '9') {
+                const index = parseInt(event.key) - 1;
+                const visibleCards = document.querySelectorAll('.avatar-card:not([style*="display: none"])');
+                if (visibleCards[index]) {
+                    visibleCards[index].click();
+                }
+            }
+            
+            // R para selección aleatoria
+            if (event.key.toLowerCase() === 'r') {
+                selectRandomMolecule();
+            }
+        });
+
+        // Limpieza de búsqueda con Escape
+        document.getElementById('searchMolecules').addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                this.value = '';
+                filterMolecules();
+                this.blur();
+            }
+        });
+
+        // Detección de inactividad
+        let inactivityTimer = null;
+        
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                if (!avatarSeleccionado) {
+                    // Sugerir selección aleatoria después de 30 segundos de inactividad
+                    const suggestion = document.createElement('div');
+                    suggestion.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: var(--kahoot-yellow);
+                        color: var(--kahoot-dark);
+                        padding: 15px 25px;
+                        border-radius: 15px;
+                        font-weight: 600;
+                        z-index: 2000;
+                        animation: slideInRight 0.5s ease;
+                        cursor: pointer;
+                    `;
+                    suggestion.innerHTML = `
+                        <i class="fas fa-lightbulb me-2"></i>
+                        ¿Necesitas inspiración? Prueba "Sorpréndeme"
+                    `;
+                    suggestion.onclick = () => {
+                        selectRandomMolecule();
+                        document.body.removeChild(suggestion);
+                    };
+                    
+                    document.body.appendChild(suggestion);
+                    
+                    setTimeout(() => {
+                        if (document.body.contains(suggestion)) {
+                            document.body.removeChild(suggestion);
+                        }
+                    }, 5000);
+                }
+            }, 30000);
+        }
+
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keypress', resetInactivityTimer);
+        resetInactivityTimer();
+
+        // =====================================================
+        // LOG DE INICIALIZACIÓN
+        // =====================================================
+
+        console.log('🧪 Sistema de selección de avatar molecular inicializado');
+        console.log('🎯 Competencia ID:', competenciaId);
+        console.log('👤 Participación ID:', participacionId);
+        console.log('📋 Moléculas disponibles:', Object.keys(moleculesData).length);
+        console.log('⚡ Atajos de teclado:');
+        console.log('   - Enter: Continuar');
+        console.log('   - 1-9: Selección rápida');
+        console.log('   - R: Selección aleatoria');
+        console.log('   - Escape: Limpiar búsqueda');
+    </script>
+
+    <!-- Estilos adicionales para animaciones dinámicas -->
+    <style>
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes success-bounce {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(10deg); }
+            50% { transform: scale(1.1) rotate(-5deg); }
+            75% { transform: scale(1.15) rotate(5deg); }
+        }
+
+        /* Efectos hover mejorados */
+        .avatar-card:hover .molecule-name {
+            color: var(--kahoot-purple);
+            transform: scale(1.05);
+        }
+
+        .avatar-card:hover .molecule-formula {
+            color: var(--kahoot-blue);
+            font-weight: 700;
+        }
+
+        /* Animación de pulso para botón habilitado */
+        @keyframes ready-pulse {
+            0%, 100% { 
+                transform: translateY(0) scale(1);
+                box-shadow: 0 10px 30px rgba(38, 137, 13, 0.3);
+            }
+            50% { 
+                transform: translateY(-3px) scale(1.02);
+                box-shadow: 0 20px 40px rgba(38, 137, 13, 0.5);
+            }
+        }
+        
+        /* Responsive adicional */
+        @media (max-width: 320px) {
+            .avatars-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .main-title h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</body>
+</html>

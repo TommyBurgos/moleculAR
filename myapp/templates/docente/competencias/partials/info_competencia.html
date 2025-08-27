@@ -1,0 +1,419 @@
+<!-- Información de la Competencia -->
+
+<!-- Configuración -->
+<div class="info-section">
+    <h6 class="section-title">
+        <i class="fas fa-cog me-2"></i>Configuración
+    </h6>
+    <div class="info-items">
+        <div class="info-item">
+            <span class="info-label">
+                <i class="fas fa-clock text-primary me-2"></i>Duración
+            </span>
+            <span class="info-value">{{ competencia.tiempo_limite }} min</span>
+        </div>
+        
+        <div class="info-item">
+            <span class="info-label">
+                <i class="fas fa-users text-success me-2"></i>Modalidad
+            </span>
+            <span class="info-value">{{ competencia.get_modalidad_display }}</span>
+        </div>
+        
+        {% if competencia.modalidad == 'grupal' %}
+        <div class="info-item">
+            <span class="info-label">
+                <i class="fas fa-hashtag text-warning me-2"></i>Max por grupo
+            </span>
+            <span class="info-value">{{ competencia.max_miembros_grupo }}</span>
+        </div>
+        {% endif %}
+        
+        <div class="info-item">
+            <span class="info-label">
+                <i class="fas fa-list text-info me-2"></i>Preguntas
+            </span>
+            <span class="info-value">{{ preguntas.count }}</span>
+        </div>
+        
+        {% if competencia.fecha_inicio %}
+        <div class="info-item">
+            <span class="info-label">
+                <i class="fas fa-calendar text-secondary me-2"></i>Inicio
+            </span>
+            <span class="info-value">{{ competencia.fecha_inicio|date:"H:i" }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Estadísticas en Vivo -->
+{% if competencia.estado in 'esperando,activa,pausada' %}
+<div class="info-section">
+    <h6 class="section-title">
+        <i class="fas fa-chart-line me-2"></i>Estadísticas en Vivo
+        <span class="live-indicator"></span>
+    </h6>
+    <div class="live-stats">
+        <div class="stat-item">
+            <span class="stat-label">Conectados</span>
+            <span class="stat-value text-success" id="connected-participants">
+                {{ participantes_conectados|default:0 }}
+            </span>
+        </div>
+        
+        <div class="stat-item">
+            <span class="stat-label">Activos</span>
+            <span class="stat-value text-primary" id="active-participants-live">
+                {{ participantes_activos|default:0 }}
+            </span>
+        </div>
+        
+        {% if competencia.estado == 'activa' %}
+        <div class="stat-item">
+            <span class="stat-label">Respondiendo</span>
+            <span class="stat-value text-warning" id="answering-now">
+                {{ participantes_respondiendo|default:0 }}
+            </span>
+        </div>
+        {% endif %}
+        
+        <div class="stat-item">
+            <span class="stat-label">Finalizaron</span>
+            <span class="stat-value text-info" id="finished-live">
+                {{ participantes_finalizados|default:0 }}
+            </span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Control de Tiempo (Solo si está activa) -->
+{% if competencia.estado == 'activa' %}
+<div class="info-section">
+    <h6 class="section-title">
+        <i class="fas fa-stopwatch me-2"></i>Control de Tiempo
+    </h6>
+    <div class="time-info">
+        <div class="time-item">
+            <span class="time-label">Transcurrido</span>
+            <span class="time-value" id="elapsed-time">
+                {{ tiempo_transcurrido|default:"0:00" }}
+            </span>
+        </div>
+        <div class="time-item">
+            <span class="time-label">Restante</span>
+            <span class="time-value time-remaining" id="remaining-time-info">
+                {{ tiempo_restante_formateado|default:"--:--" }}
+            </span>
+        </div>
+        
+        <div class="time-progress">
+            <div class="progress">
+                <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" 
+                     id="general-time-progress"
+                     style="width: {% if tiempo_restante and competencia.tiempo_limite %}{% widthratio tiempo_transcurrido_minutos competencia.tiempo_limite 100 %}{% else %}0{% endif %}%">
+                </div>
+            </div>
+            <small class="progress-text">
+                {% if competencia.tiempo_limite %}
+                    {{ tiempo_transcurrido_minutos|floatformat:0 }} de {{ competencia.tiempo_limite }} minutos
+                {% else %}
+                    Tiempo ilimitado
+                {% endif %}
+            </small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Acciones Rápidas -->
+<div class="info-section">
+    <h6 class="section-title">
+        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+    </h6>
+    <div class="quick-actions">
+        {% if competencia.estado in 'esperando,activa' %}
+        <button type="button" class="quick-action-btn" onclick="actualizarTodo()">
+            <i class="fas fa-sync-alt me-2"></i>Actualizar Todo
+        </button>
+        {% endif %}
+        
+        <button type="button" class="quick-action-btn" onclick="copiarPin('{{ competencia.pin_acceso }}')">
+            <i class="fas fa-copy me-2"></i>Copiar PIN
+        </button>
+        
+        {% if competencia.estado != 'configuracion' %}
+        <button type="button" class="quick-action-btn" onclick="descargarQR()">
+            <i class="fas fa-qrcode me-2"></i>Código QR
+        </button>
+        {% endif %}
+        
+        <button type="button" class="quick-action-btn" onclick="abrirAyuda()">
+            <i class="fas fa-question-circle me-2"></i>Ayuda
+        </button>
+        
+        {% if competencia.estado == 'activa' %}
+        <button type="button" class="quick-action-btn" onclick="verRankingCompleto()">
+            <i class="fas fa-trophy me-2"></i>Ranking Completo
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Información del Sistema -->
+<div class="info-section">
+    <h6 class="section-title">
+        <i class="fas fa-info-circle me-2"></i>Estado del Sistema
+    </h6>
+    <div class="system-info">
+        <div class="system-item">
+            <span class="system-label">Última actualización</span>
+            <span class="system-value" id="last-update">
+                {{ now|date:"H:i:s" }}
+            </span>
+        </div>
+        <div class="system-item">
+            <span class="system-label">Conexión</span>
+            <span class="system-value">
+                <span class="connection-status online" id="connection-status">
+                    <i class="fas fa-circle me-1"></i>Conectado
+                </span>
+            </span>
+        </div>
+        {% if competencia.estado == 'activa' %}
+        <div class="system-item">
+            <span class="system-label">Actualizaciones</span>
+            <span class="system-value">
+                <span class="updates-status active" id="updates-status">
+                    <i class="fas fa-sync-alt fa-spin me-1"></i>Activas
+                </span>
+            </span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* ===== ESTILOS PARA INFO PANEL ===== */
+.info-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+}
+
+.info-section:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    color: #495057;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+}
+
+.live-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #dc3545;
+    border-radius: 50%;
+    margin-left: 8px;
+    animation: pulse 1.5s infinite;
+}
+
+.info-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.info-label {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.info-value {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 0.9rem;
+}
+
+.live-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: translateX(5px);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.time-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.time-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+}
+
+.time-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.time-value {
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #2c3e50;
+    font-family: 'Courier New', monospace;
+}
+
+.time-remaining {
+    color: #e74c3c !important;
+}
+
+.time-progress {
+    margin-top: 1rem;
+}
+
+.progress-text {
+    display: block;
+    text-align: center;
+    color: #6c757d;
+    margin-top: 0.5rem;
+}
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quick-action-btn {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #495057;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-align: left;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: #007bff;
+    color: #007bff;
+    transform: translateX(5px);
+}
+
+.system-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.system-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.system-label {
+    color: #6c757d;
+}
+
+.system-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.connection-status.online {
+    color: #28a745;
+}
+
+.connection-status.offline {
+    color: #dc3545;
+}
+
+.updates-status.active {
+    color: #17a2b8;
+}
+
+.updates-status.inactive {
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .info-items,
+    .live-stats,
+    .time-info {
+        gap: 0.5rem;
+    }
+    
+    .stat-item,
+    .time-item {
+        padding: 0.5rem;
+    }
+    
+    .quick-action-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+    
+    .section-title {
+        font-size: 0.85rem;
+    }
+}
+</style>

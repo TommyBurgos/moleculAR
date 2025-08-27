@@ -702,7 +702,7 @@
                                 <div class="panel-body">
                                     <!-- Control según Estado -->
                                     <div class="state-control" id="state-control-{{ competencia.estado }}">
-                                        {% include 'docente/partials/control_states.html' %}
+                                        {% include 'docente/competencias/partials/estados_control.html' %}
                                     </div>
                                 </div>
                             </div>
@@ -715,7 +715,7 @@
                                     <h5><i class="fas fa-info-circle me-3"></i>Información</h5>
                                 </div>
                                 <div class="panel-body">
-                                    {% include 'docente/partials/competition_info.html' %}
+                                    {% include 'docente/competencias/partials/info_competencia.html' %}
                                 </div>
                             </div>
                         </div>
@@ -730,14 +730,14 @@
                         <!-- Lista de Participantes -->
                         <div class="col-lg-6">
                             <div class="participants-panel">
-                                {% include 'docente/partials/participants_list.html' %}
+                                {% include 'docente/competencias/partials/lista_participantes.html' %}
                             </div>
                         </div>
                         
                         <!-- Ranking -->
                         <div class="col-lg-6">
                             <div class="ranking-panel">
-                                {% include 'docente/partials/ranking_list.html' %}
+                                {% include 'docente/competencias/partials/lista_ranking.html' %}
                             </div>
                         </div>
                     </div>
@@ -749,7 +749,7 @@
             <section class="questions-control-section">
                 <div class="container-fluid">
                     <div class="questions-control-panel">
-                        {% include 'docente/partials/questions_control.html' %}
+                        {% include 'docente/competencias/partials/control_preguntas.html' %}
                     </div>
                 </div>
             </section>
@@ -760,7 +760,7 @@
             <section class="groups-section">
                 <div class="container-fluid">
                     <div class="groups-panel">
-                        {% include 'docente/partials/groups_management.html' %}
+                        {% include 'docente/competencias/partials/gestion_grupos.html' %}
                     </div>
                 </div>
             </section>

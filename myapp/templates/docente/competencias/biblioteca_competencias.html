@@ -701,10 +701,97 @@ function verDetallesCompetencia(competenciaId) {
  */
 function abrirPanelControl(competenciaId) {
     console.log('🎮 Abriendo panel de control para competencia:', competenciaId);
-    // Por ahora solo mostramos un mensaje, después implementarás el panel real
-    mostrarToast('Panel de control en desarrollo', 'info');
-    // window.location.href = `/competencia/${competenciaId}/panel/`;
+    
+    // Validar ID
+    if (!competenciaId) {
+        mostrarToast('ID de competencia no válido', 'error');
+        return;
+    }
+    
+    // Mostrar loading
+    mostrarToast('Abriendo panel de control...', 'info');
+    
+    // Redirigir al panel de control
+    const url = `/docente/competencia/panel/${competenciaId}/`;
+    
+    try {
+        window.location.href = url;
+    } catch (error) {
+        console.error('Error al abrir panel:', error);
+        mostrarToast('Error al abrir panel de control', 'error');
+    }
 }
+
+/**
+ * Verificar estado de competencia antes de abrir panel
+ */
+function verificarYAbrirPanel(competenciaId) {
+    console.log('🔍 Verificando estado de competencia:', competenciaId);
+    
+    // Hacer petición AJAX para verificar estado
+    fetch(`/docente/competencia/estado/${competenciaId}/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const estado = data.estado;
+            
+            if (estado === 'configuracion') {
+                mostrarConfirmacion(
+                    'Competencia en Configuración',
+                    '⚠️ Esta competencia aún está en configuración. ¿Deseas abrirla para terminar de configurarla?',
+                    function() {
+                        window.location.href = `/docente/editar_competencia/${competenciaId}/`;
+                    }
+                );
+            } else if (estado === 'finalizada') {
+                mostrarConfirmacion(
+                    'Competencia Finalizada',
+                    'Esta competencia ya ha finalizado. ¿Deseas ver los resultados?',
+                    function() {
+                        window.location.href = `/docente/competencia/resultados/${competenciaId}/`;
+                    }
+                );
+            } else {
+                // Estado esperando o activa - ir al panel
+                abrirPanelControl(competenciaId);
+            }
+        } else {
+            console.error('Error al verificar estado:', data.error);
+            // Si hay error, intentar abrir panel de todas formas
+            abrirPanelControl(competenciaId);
+        }
+    })
+    .catch(error => {
+        console.error('Error en verificación:', error);
+        // Si hay error de red, intentar abrir panel de todas formas
+        abrirPanelControl(competenciaId);
+    });
+}
+
+/**
+ * Función alternativa más simple si no necesitas verificación de estado
+ */
+function abrirPanelDirecto(competenciaId) {
+    console.log('🎮 Abriendo panel directo para competencia:', competenciaId);
+    window.location.href = `/docente/competencia/panel/${competenciaId}/`;
+}
+
+/**
+ * Función para manejar errores de panel
+ */
+function manejarErrorPanel(competenciaId, error) {
+    console.error(`Error en panel para competencia ${competenciaId}:`, error);
+    mostrarToast(`Error al acceder al panel: ${error}`, 'error');
+}
+
+console.log('✅ Funciones de panel de control cargadas correctamente');
+
 
 /**
  * Ver resultados de competencia

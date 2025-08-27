@@ -206,25 +206,32 @@ urlpatterns = [
     # Acceso inicial
     path('competencia/acceder/<str:pin>/', views.acceder_competencia, name='acceder_competencia'),
     path('competencia/buscar-por-codigo/', views.buscar_competencia_codigo, name='buscar_competencia_codigo'),
-    path('competencia/unirse/<int:competencia_id>/', views.unirse_competencia, name='unirse_competencia'),
+    path('competencias/unirse/', views.unirse_competencia, name='competencia_unirse'),
     path('competencia/salir/<int:participacion_id>/', views.salir_competencia, name='salir_competencia'),
-    
+    path('estudiante/competencias/unirse/', views.unirse_competencia_principal, name='unirse_competencia_principal'),
+    path('competencia/participar/<int:participacion_id>/', views.participar_competencia, name='participar_competencia'),
+    path('competencia/finalizar-participacion/<int:participacion_id>/', views.finalizar_participacion, name='finalizar_participacion'),
+
     # Gestión de grupos (estudiante)
     path('competencia/seleccionar-grupo/<int:competencia_id>/', views.seleccionar_grupo, name='seleccionar_grupo'),
     path('competencia/crear-grupo/<int:competencia_id>/', views.crear_grupo_estudiante, name='crear_grupo_estudiante'),
     path('competencia/unirse-grupo/<int:grupo_id>/', views.unirse_grupo, name='unirse_grupo'),
     path('competencia/salir-grupo/<int:participacion_id>/', views.salir_grupo, name='salir_grupo'),
     path('competencia/info-grupo/<int:grupo_id>/', views.info_grupo, name='info_grupo'),
-    
+    path('competencia/seleccionar-avatar/<int:competencia_id>/', views.seleccionar_avatar_competencia, name='seleccionar_avatar_competencia'),
+    #path('competencias/<int:competencia_id>/avatar/', views.seleccionar_avatar, name='competencia_avatar'),
+
     # Participación en competencia
     path('competencia/sala-espera/<int:participacion_id>/', views.sala_espera_competencia, name='sala_espera_competencia'),
     path('competencia/participar/<int:participacion_id>/', views.participar_competencia, name='participar_competencia'),
     path('competencia/responder/', views.responder_competencia, name='responder_competencia'),
-    path('competencia/finalizar-participacion/<int:participacion_id>/', views.finalizar_participacion, name='finalizar_participacion'),
+    #path('competencia/finalizar-participacion/<int:participacion_id>/', views.finalizar_participacion, name='finalizar_participacion'),
     path('competencia/abandonar/<int:participacion_id>/', views.abandonar_competencia, name='abandonar_competencia'),
-    
+    path('competencia/guardar-avatar/', views.guardar_avatar, name='guardar_avatar'),
+    path('competencia/participantes/<int:competencia_id>/', views.obtener_participantes_sala_espera, name='obtener_participantes_sala_espera'),
+
     # Resultados y historial (estudiante)
-    path('competencia/resultados-participacion/<int:participacion_id>/', views.resultados_participacion, name='resultados_participacion'),
+    #path('competencia/resultados-participacion/<int:participacion_id>/', views.resultados_participacion, name='resultados_participacion'),
     path('competencia/resultados-grupo/<int:grupo_id>/', views.resultados_grupo, name='resultados_grupo'),
     path('competencia/historial-competencias/', views.historial_competencias_estudiante, name='historial_competencias_estudiante'),
     path('competencia/certificado/<int:participacion_id>/', views.generar_certificado, name='generar_certificado'),
@@ -244,9 +251,9 @@ urlpatterns = [
     path('competencia/estadisticas-live/<int:competencia_id>/', views.estadisticas_live, name='estadisticas_live'),
     
     # Preguntas en tiempo real
-    path('competencia/pregunta-actual/<int:competencia_id>/', views.obtener_pregunta_actual, name='obtener_pregunta_actual'),
     path('competencia/siguiente-pregunta-info/<int:competencia_id>/', views.info_siguiente_pregunta, name='info_siguiente_pregunta'),
     path('competencia/tiempo-restante/<int:competencia_id>/', views.tiempo_restante_competencia, name='tiempo_restante_competencia'),
+    path('competencia/pregunta-actual-estudiante/<int:competencia_id>/', views.obtener_pregunta_actual_estudiante, name='obtener_pregunta_actual_estudiante'),
     
     # Chat y comunicación (opcional)
     path('competencia/chat/<int:competencia_id>/', views.chat_competencia, name='chat_competencia'),
@@ -275,6 +282,13 @@ urlpatterns = [
     path('webhook/competencia/inicio/', views.webhook_inicio_competencia, name='webhook_inicio_competencia'),
     path('webhook/competencia/finalizacion/', views.webhook_finalizacion_competencia, name='webhook_finalizacion_competencia'),
     
+    #ADICIONALES
+    #path('competencias/<int:competencia_id>/sala-espera/', views.sala_espera_competencia, name='competencia_sala_espera'),
+    #path('competencias/<int:competencia_id>/participar/', views.participar_competencia, name='participar_competencia'),
+    path('competencias/<int:competencia_id>/resultados/<int:participacion_id>/', views.resultados_participacion, name='resultados_participacion'),
+
+    # Polling estado para pasar de "esperando" a "activa"
+    path('api/competencias/<int:competencia_id>/estado/', views.api_estado_competencia, name='api_estado_competencia'),
 
 
 ]

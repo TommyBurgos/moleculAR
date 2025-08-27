@@ -1,0 +1,2191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>{{ competencia.recurso.titulo }} - EduCompete</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/bootstrap-icons/bootstrap-icons.css' %}">
+    
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+    <!-- Custom CSS - Kahoot Competition Style -->
+    <style>
+        :root {
+            --kahoot-purple: #662d91;
+            --kahoot-blue: #1368ce;
+            --kahoot-red: #e21b3c;
+            --kahoot-yellow: #ffa602;
+            --kahoot-green: #26890d;
+            --kahoot-dark: #1a1a1a;
+            --kahoot-light: #f2f2f2;
+            --kahoot-orange: #ff8c00;
+            --kahoot-pink: #ff69b4;
+            --kahoot-cyan: #00bcd4;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--kahoot-purple) 0%, var(--kahoot-blue) 100%);
+            min-height: 100vh;
+            font-family: 'Heebo', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* ===== HEADER COMPETENCIA ===== */
+        .competition-header {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(15px);
+            border: none;
+            padding: 15px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .competition-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .competition-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .competition-stats {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--kahoot-yellow);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* ===== TIMER PRINCIPAL ===== */
+        .main-timer {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 25px;
+            padding: 15px 30px;
+            border: 3px solid var(--kahoot-yellow);
+            box-shadow: 0 8px 25px rgba(255, 166, 2, 0.4);
+            z-index: 999;
+        }
+
+        .timer-display {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--kahoot-yellow);
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .timer-label {
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* ===== CONTENEDOR PRINCIPAL ===== */
+        .main-container {
+            margin-top: 180px;
+            padding: 0 20px 40px;
+            min-height: calc(100vh - 180px);
+        }
+
+        /* ===== PREGUNTA PRINCIPAL ===== */
+        .question-container {
+            max-width: 1000px;
+            margin: 0 auto 40px;
+            text-align: center;
+        }
+
+        .question-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--kahoot-yellow);
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+
+        .question-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            color: var(--kahoot-dark);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .question-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: linear-gradient(90deg, var(--kahoot-red), var(--kahoot-yellow), var(--kahoot-green), var(--kahoot-blue));
+        }
+
+        .question-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 30px;
+            color: var(--kahoot-dark);
+        }
+
+        .question-media {
+            margin: 30px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .question-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 15px;
+        }
+
+        .question-video {
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            border-radius: 15px;
+        }
+
+        /* ===== OPCIONES DE RESPUESTA ===== */
+        .answers-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ===== BOTONES DE OPCIÓN KAHOOT STYLE ===== */
+        .answer-option {
+            background: var(--kahoot-red);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 25px 30px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .answer-option:nth-child(1) { 
+            background: linear-gradient(135deg, var(--kahoot-red) 0%, #c41e3a 100%);
+        }
+        
+        .answer-option:nth-child(2) { 
+            background: linear-gradient(135deg, var(--kahoot-blue) 0%, #0d47a1 100%);
+        }
+        
+        .answer-option:nth-child(3) { 
+            background: linear-gradient(135deg, var(--kahoot-yellow) 0%, #f57c00 100%);
+        }
+        
+        .answer-option:nth-child(4) { 
+            background: linear-gradient(135deg, var(--kahoot-green) 0%, #1b5e20 100%);
+        }
+        .answer-option::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, rgba(255,255,255,0.3), transparent);
+            border-radius: 22px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .answer-option:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .answer-option:hover::before {
+            opacity: 1;
+        }
+
+        .answer-option.selected {
+            transform: translateY(-8px) scale(1.08);
+            box-shadow: 0 15px 40px rgba(255, 255, 255, 0.3);
+            border: 4px solid white;
+            animation: pulse-answer 0.6s ease;
+        }
+
+        @keyframes pulse-answer {
+            0%, 100% { transform: translateY(-8px) scale(1.08); }
+            50% { transform: translateY(-8px) scale(1.12); }
+        }
+
+        .answer-option.correct {
+            background: linear-gradient(135deg, var(--kahoot-green) 0%, #2e7d32 100%);
+            animation: correct-answer 1s ease;
+        }
+
+        .answer-option.incorrect {
+            background: linear-gradient(135deg, #666 0%, #424242 100%);
+            opacity: 0.6;
+            animation: incorrect-shake 0.5s ease;
+        }
+
+        @keyframes correct-answer {
+            0%, 100% { transform: translateY(-8px) scale(1.08); }
+            50% { transform: translateY(-8px) scale(1.15); }
+        }
+
+        @keyframes incorrect-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* ===== ICONOS DE FORMAS GEOMÉTRICAS ===== */
+        .answer-shape {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+
+        .answer-option:nth-child(1) .answer-shape::before { content: '△'; }
+        .answer-option:nth-child(2) .answer-shape::before { content: '◇'; }
+        .answer-option:nth-child(3) .answer-shape::before { content: '○'; }
+        .answer-option:nth-child(4) .answer-shape::before { content: '⬜'; }
+
+        /* ===== TIPOS DE PREGUNTA ESPECÍFICOS ===== */
+
+        /* Completar texto */
+        .complete-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .complete-input {
+            background: white;
+            border: 3px solid var(--kahoot-purple);
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--kahoot-dark);
+            min-width: 120px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .complete-input:focus {
+            border-color: var(--kahoot-blue);
+            box-shadow: 0 0 15px rgba(19, 104, 206, 0.3);
+            outline: none;
+        }
+
+        /* Unir líneas */
+        .matching-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 40px;
+            align-items: start;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .matching-column {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .matching-item {
+            background: white;
+            border: 3px solid var(--kahoot-purple);
+            border-radius: 15px;
+            padding: 20px;
+            font-weight: 600;
+            color: var(--kahoot-dark);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+        }
+
+        .matching-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 45, 145, 0.3);
+        }
+
+        .matching-item.selected {
+            border-color: var(--kahoot-yellow);
+            background: var(--kahoot-yellow);
+            color: white;
+        }
+
+        .matching-connections {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+
+        /* Simulador de moléculas */
+        .molecule-simulator {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .simulator-canvas {
+            width: 100%;
+            height: 400px;
+            border: 2px solid var(--kahoot-purple);
+            border-radius: 15px;
+            background: white;
+        }
+
+        .simulator-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .simulator-btn {
+            background: var(--kahoot-purple);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .simulator-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 45, 145, 0.4);
+        }
+
+        /* ===== PROGRESS BAR ===== */
+        .progress-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 30px;
+            border-radius: 20px;
+            z-index: 999;
+        }
+
+        .progress-info {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .progress-bar-container {
+            width: 300px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--kahoot-green), var(--kahoot-yellow));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* ===== PLAYER INFO ===== */
+        .player-info {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 15px 20px;
+            border: 2px solid var(--kahoot-yellow);
+            z-index: 999;
+        }
+
+        .player-avatar {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .avatar-molecule {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .player-name {
+            font-weight: 700;
+            color: var(--kahoot-yellow);
+        }
+
+        .player-score {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* ===== EFECTOS VISUALES ===== */
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            animation: float-particle 8s linear infinite;
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1);
+                opacity: 0;
+            }
+        }
+        /* ===== ESTADOS DE ESPERA ===== */
+        .waiting-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .waiting-icon {
+            font-size: 4rem;
+            color: var(--kahoot-yellow);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        .waiting-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .waiting-subtext {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        /* ===== RESULTADOS INMEDIATOS ===== */
+        .results-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .results-card {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            color: var(--kahoot-dark);
+            max-width: 500px;
+            width: 90%;
+            animation: bounceIn 0.8s ease;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .result-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .result-icon.correct {
+            color: var(--kahoot-green);
+        }
+
+        .result-icon.incorrect {
+            color: var(--kahoot-red);
+        }
+
+        .result-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .result-points {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--kahoot-purple);
+            margin-bottom: 20px;
+        }
+
+        .result-explanation {
+            background: rgba(102, 45, 145, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        /* ===== RANKING INTERMEDIO ===== */
+        .ranking-display {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 600px;
+            color: var(--kahoot-dark);
+        }
+
+        .ranking-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--kahoot-purple);
+        }
+
+        .ranking-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 15px;
+            background: rgba(102, 45, 145, 0.05);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .ranking-item.current-player {
+            background: var(--kahoot-yellow);
+            color: white;
+            font-weight: 700;
+            animation: highlight 1s ease;
+        }
+
+        @keyframes highlight {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .ranking-position {
+            font-size: 1.5rem;
+            font-weight: 700;
+            width: 40px;
+            text-align: center;
+        }
+
+        .ranking-player {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .ranking-avatar {
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+
+        .ranking-name {
+            font-weight: 600;
+        }
+
+        .ranking-score {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--kahoot-purple);
+        }
+
+        .ranking-item.current-player .ranking-score {
+            color: white;
+        }
+
+        /* ===== ANIMACIONES DE ENTRADA ===== */
+        .fade-in {
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .slide-up {
+            animation: slideUp 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .main-timer {
+                top: 70px;
+                padding: 10px 20px;
+            }
+
+            .timer-display {
+                font-size: 2rem;
+            }
+
+            .main-container {
+                margin-top: 160px;
+                padding: 0 15px 40px;
+            }
+
+            .question-card {
+                padding: 25px;
+            }
+
+            .question-text {
+                font-size: 1.4rem;
+            }
+
+            .answers-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .answer-option {
+                padding: 20px;
+                font-size: 1.1rem;
+                min-height: 100px;
+            }
+
+            .competition-stats {
+                gap: 15px;
+            }
+
+            .stat-item {
+                padding: 6px 12px;
+            }
+
+            .player-info {
+                bottom: 20px;
+                right: 20px;
+                padding: 12px 15px;
+            }
+
+            .progress-container {
+                bottom: 20px;
+                padding: 12px 20px;
+            }
+
+            .progress-bar-container {
+                width: 250px;
+            }
+
+            .matching-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .simulator-canvas {
+                height: 250px;
+            }
+        }
+
+        /* ===== LOADING STATES ===== */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid var(--kahoot-yellow);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ===== EFECTOS ESPECIALES ===== */
+        .celebration-confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1500;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--kahoot-yellow);
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Partículas flotantes de fondo -->
+    <div class="floating-particles">
+        <!-- Las partículas se generarán dinámicamente con JavaScript -->
+    </div>
+    <!-- Header de la competencia -->
+    <nav class="competition-header">
+        <div class="container-fluid">
+            <div class="competition-info">
+                <div class="competition-title">
+                    <i class="fas fa-trophy me-2"></i>
+                    {{ competencia.recurso.titulo }}
+                </div>
+                
+                <div class="competition-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="currentQuestionNum">1</div>
+                        <div class="stat-label">de {{ total_preguntas }}</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div class="stat-value" id="currentScore">{{ participacion.puntaje_total|floatformat:0 }}</div>
+                        <div class="stat-label">Puntos</div>
+                    </div>
+                    
+                    {% if participacion.grupo %}
+                    <div class="stat-item">
+                        <div class="stat-value">{{ participacion.grupo.miembros_count }}</div>
+                        <div class="stat-label">Equipo</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="stat-item">
+                        <div class="stat-value" id="participantsCount">{{ participantes_activos }}</div>
+                        <div class="stat-label">Jugadores</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Timer principal -->
+    <div class="main-timer" id="mainTimer">
+        <div class="timer-display" id="timerDisplay">30</div>
+        <div class="timer-label">segundos</div>
+    </div>
+
+    <!-- Contenedor principal -->
+    <div class="main-container">
+        <!-- Estado de espera -->
+        <div id="waitingState" class="waiting-state" style="display: none;">
+            <div class="waiting-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="waiting-text">Esperando siguiente pregunta...</div>
+            <div class="waiting-subtext">El profesor está preparando la siguiente pregunta</div>
+        </div>
+
+        <!-- Contenedor de pregunta -->
+        <div id="questionContainer" class="question-container">
+            <div class="question-number" id="questionNumber">
+                Pregunta 1 de {{ total_preguntas }}
+            </div>
+
+            <div class="question-card fade-in" id="questionCard">
+                <!-- Aquí se cargará dinámicamente el contenido de la pregunta -->
+                <div id="questionContent">
+                    <!-- Contenido inicial o placeholder -->
+                    <div class="waiting-state">
+                        <div class="waiting-icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="waiting-text">Cargando pregunta...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Templates para diferentes tipos de preguntas -->
+        
+        <!-- Template: Opción única/múltiple -->
+        <template id="templateOpcionMultiple">
+            <div class="question-text"></div>
+            <div class="question-media" style="display: none;">
+                <img class="question-image" style="display: none;" alt="Imagen de la pregunta">
+                <iframe class="question-video" style="display: none;" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="answers-grid" id="answersGrid">
+                <!-- Las opciones se generarán dinámicamente -->
+            </div>
+        </template>
+
+        <!-- Template: Respuesta abierta -->
+        <template id="templateRespuestaAbierta">
+            <div class="question-text"></div>
+            <div class="question-media" style="display: none;">
+                <img class="question-image" style="display: none;" alt="Imagen de la pregunta">
+                <iframe class="question-video" style="display: none;" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="open-answer-container">
+                <textarea class="form-control" id="openAnswerText" placeholder="Escribe tu respuesta aquí..." 
+                         rows="6" style="font-size: 1.1rem; border-radius: 15px; border: 3px solid var(--kahoot-purple);"></textarea>
+                <button class="btn btn-primary mt-3" onclick="submitOpenAnswer()" 
+                        style="background: var(--kahoot-green); border: none; padding: 15px 40px; font-size: 1.2rem; border-radius: 25px;">
+                    <i class="fas fa-paper-plane me-2"></i>Enviar Respuesta
+                </button>
+            </div>
+        </template>
+
+        <!-- Template: Completar texto -->
+        <template id="templateCompletar">
+            <div class="question-text"></div>
+            <div class="question-media" style="display: none;">
+                <img class="question-image" style="display: none;" alt="Imagen de la pregunta">
+                <iframe class="question-video" style="display: none;" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="complete-container">
+                <div class="complete-inputs" id="completeInputs">
+                    <!-- Los inputs se generarán dinámicamente -->
+                </div>
+                <button class="btn btn-primary mt-4" onclick="submitCompleteAnswer()" 
+                        style="background: var(--kahoot-green); border: none; padding: 15px 40px; font-size: 1.2rem; border-radius: 25px;">
+                    <i class="fas fa-check me-2"></i>Enviar Respuestas
+                </button>
+            </div>
+        </template>
+
+        <!-- Template: Unir líneas -->
+        <template id="templateUnirLineas">
+            <div class="question-text"></div>
+            <div class="question-media" style="display: none;">
+                <img class="question-image" style="display: none;" alt="Imagen de la pregunta">
+                <iframe class="question-video" style="display: none;" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="matching-container">
+                <div class="matching-column" id="leftColumn">
+                    <!-- Columna izquierda -->
+                </div>
+                <div class="matching-connections">
+                    <button class="btn btn-success" onclick="submitMatchingAnswer()" 
+                            style="background: var(--kahoot-green); border: none; padding: 15px 30px; font-size: 1.1rem; border-radius: 20px;">
+                        <i class="fas fa-link me-2"></i>Enviar Conexiones
+                    </button>
+                </div>
+                <div class="matching-column" id="rightColumn">
+                    <!-- Columna derecha -->
+                </div>
+            </div>
+        </template>
+
+        <!-- Template: Simulador de moléculas -->
+        <template id="templateSimulador">
+            <div class="question-text"></div>
+            <div class="question-media" style="display: none;">
+                <img class="question-image" style="display: none;" alt="Imagen de la pregunta">
+                <iframe class="question-video" style="display: none;" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="molecule-simulator">
+                <div class="simulator-info mb-3">
+                    <strong>Instrucciones:</strong> <span id="simulatorInstructions">Construye la molécula solicitada</span>
+                </div>
+                <div id="moleculeCanvas" class="simulator-canvas"></div>
+                <div class="simulator-controls">
+                    <button class="simulator-btn" onclick="clearMolecule()">
+                        <i class="fas fa-eraser me-2"></i>Limpiar
+                    </button>
+                    <button class="simulator-btn" onclick="undoLastAction()">
+                        <i class="fas fa-undo me-2"></i>Deshacer
+                    </button>
+                    <button class="simulator-btn" onclick="validateMolecule()" 
+                            style="background: var(--kahoot-green);">
+                        <i class="fas fa-check me-2"></i>Validar
+                    </button>
+                    <button class="simulator-btn" onclick="submitMoleculeAnswer()" 
+                            style="background: var(--kahoot-blue);">
+                        <i class="fas fa-paper-plane me-2"></i>Enviar
+                    </button>
+                </div>
+                <div id="moleculeResult" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <strong>SMILES generado:</strong> <span id="generatedSmiles"></span>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+    <!-- Progress bar -->
+    <div class="progress-container">
+        <div class="progress-info">
+            <span id="progressText">Pregunta 1 de {{ total_preguntas }}</span>
+        </div>
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar" style="width: {{ progreso_porcentaje }}%;"></div>
+        </div>
+    </div>
+
+    <!-- Info del jugador -->
+    <div class="player-info">
+        <div class="player-avatar">
+            <div class="avatar-molecule">{{ participacion.avatar_elegido|default:"🧪" }}</div>
+        </div>
+        <div class="player-name">{{ user.first_name|default:user.username }}</div>
+        <div class="player-score" id="playerScore">{{ participacion.puntaje_total|floatformat:0 }} pts</div>
+    </div>
+
+    <!-- Overlay de resultados inmediatos -->
+    <div class="results-overlay" id="resultsOverlay">
+        <div class="results-card">
+            <div class="result-icon" id="resultIcon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="result-title" id="resultTitle">¡Correcto!</div>
+            <div class="result-points" id="resultPoints">+100 puntos</div>
+            <div class="result-explanation" id="resultExplanation" style="display: none;">
+                <!-- Explicación de la respuesta -->
+            </div>
+            <button class="btn btn-primary mt-3" onclick="closeResults()" 
+                    style="background: var(--kahoot-purple); border: none; padding: 10px 30px; border-radius: 20px;">
+                Continuar
+            </button>
+        </div>
+    </div>
+
+    <!-- Overlay de ranking intermedio -->
+    <div class="results-overlay" id="rankingOverlay">
+        <div class="ranking-display">
+            <div class="ranking-title">
+                <i class="fas fa-trophy me-2"></i>
+                Clasificación Actual
+            </div>
+            <ul class="ranking-list" id="rankingList">
+                <!-- El ranking se generará dinámicamente -->
+            </ul>
+            <button class="btn btn-primary mt-3" onclick="closeRanking()" 
+                    style="background: var(--kahoot-purple); border: none; padding: 10px 30px; border-radius: 20px;">
+                Siguiente Pregunta
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Cargando...</p>
+        </div>
+    </div>
+
+    <!-- Confetti para celebraciones -->
+    <div class="celebration-confetti" id="confettiContainer"></div>
+
+    <!-- Scripts -->
+    <script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        // =====================================================
+        // VARIABLES GLOBALES
+        // =====================================================
+        
+        let competenciaId = {{ competencia.id }};
+        let participacionId = {{ participacion.id }};
+        let preguntaActual = null;
+        let timerInterval = null;
+        let tiempoRestante = 30;
+        let respuestaEnviada = false;
+        let conexionesSeleccionadas = {};
+        let moleculeEditor = null;
+
+        // =====================================================
+        // INICIALIZACIÓN
+        // =====================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎮 Inicializando competencia participante...');
+            
+            // Crear partículas de fondo
+            createBackgroundParticles();
+            
+            // Obtener pregunta actual
+            obtenerPreguntaActual();
+            
+            // Iniciar heartbeat
+            iniciarHeartbeat();
+            
+            // Manejar eventos de ventana
+            window.addEventListener('beforeunload', function(e) {
+                // Advertir si el usuario trata de salir
+                if (!respuestaEnviada) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+            
+            console.log('✅ Competencia inicializada');
+        });
+
+        // =====================================================
+        // FUNCIONES DE COMUNICACIÓN CON EL SERVIDOR
+        // =====================================================
+
+        /**
+         * Obtiene la pregunta actual de la competencia
+         */
+        async function obtenerPreguntaActual() {
+            try {
+                showLoading();
+                
+                const response = await fetch(`/competencia/pregunta-actual-estudiante/${competenciaId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('📥 Pregunta recibida:', data);
+                
+                hideLoading();
+                
+                if (data.success) {
+                    if (data.pregunta) {
+                        preguntaActual = data.pregunta;
+                        mostrarPregunta(data.pregunta);
+                        iniciarTimer(data.tiempo_restante || 30);
+                    } else {
+                        mostrarEstadoEspera();
+                    }
+                } else {
+                    console.error('❌ Error al obtener pregunta:', data.error);
+                    mostrarError(data.error || 'Error al cargar la pregunta');
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error('❌ Error de conexión:', error);
+                mostrarError('Error de conexión. Reintentando...');
+                
+                // Reintentar después de 3 segundos
+                setTimeout(obtenerPreguntaActual, 3000);
+            }
+        }
+
+        /**
+         * Envía la respuesta del estudiante
+         */
+        async function enviarRespuesta(datosRespuesta) {
+            if (respuestaEnviada) return;
+            
+            try {
+                console.log('📤 Enviando respuesta:', datosRespuesta);
+                respuestaEnviada = true;
+                
+                const response = await fetch('/competencia/responder/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        participacion_id: participacionId,
+                        pregunta_id: preguntaActual.id,
+                        tiempo_respuesta: 30 - tiempoRestante,
+                        ...datosRespuesta
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('📥 Resultado respuesta:', data);
+                
+                if (data.success) {
+                    // Detener timer
+                    clearInterval(timerInterval);
+                    
+                    // Mostrar resultado
+                    mostrarResultadoRespuesta(data);
+                    
+                    // Actualizar puntaje
+                    actualizarPuntaje(data.puntaje_total || 0);
+                    
+                } else {
+                    console.error('❌ Error al enviar respuesta:', data.error);
+                    mostrarError(data.error || 'Error al enviar la respuesta');
+                    respuestaEnviada = false;
+                }
+                
+            } catch (error) {
+                console.error('❌ Error de conexión:', error);
+                mostrarError('Error de conexión al enviar la respuesta');
+                respuestaEnviada = false;
+            }
+        }
+
+        /**
+         * Heartbeat para mantener la conexión activa
+         */
+        function iniciarHeartbeat() {
+            setInterval(async () => {
+                try {
+                    await fetch(`/competencia/ping/${participacionId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    });
+                } catch (error) {
+                    console.warn('⚠️ Error en heartbeat:', error);
+                }
+            }, 10000); // Cada 10 segundos
+        }
+
+        // =====================================================
+        // FUNCIONES DE VISUALIZACIÓN
+        // =====================================================
+
+        /**
+         * Muestra una pregunta en la interfaz
+         */
+        function mostrarPregunta(pregunta) {
+            console.log('🎯 Mostrando pregunta:', pregunta);
+            
+            respuestaEnviada = false;
+            const container = document.getElementById('questionContent');
+            const questionNumber = document.getElementById('questionNumber');
+            
+            // Actualizar número de pregunta
+            questionNumber.textContent = `Pregunta ${pregunta.orden} de {{ total_preguntas }}`;
+            
+            // Determinar template según tipo
+            let templateId = '';
+            switch (pregunta.tipo) {
+                case 'opcion_unica':
+                case 'opcion_multiple':
+                case 'falso_verdadero':
+                    templateId = 'templateOpcionMultiple';
+                    break;
+                case 'respuesta_abierta':
+                    templateId = 'templateRespuestaAbierta';
+                    break;
+                case 'completar':
+                    templateId = 'templateCompletar';
+                    break;
+                case 'unir_lineas':
+                    templateId = 'templateUnirLineas';
+                    break;
+                case 'simulador_2d':
+                case 'simulador_3d':
+                    templateId = 'templateSimulador';
+                    break;
+                default:
+                    templateId = 'templateOpcionMultiple';
+            }
+            
+            // Obtener template y clonarlo
+            const template = document.getElementById(templateId);
+            const clone = template.content.cloneNode(true);
+            
+            // Configurar contenido básico
+            const questionText = clone.querySelector('.question-text');
+            questionText.textContent = pregunta.enunciado;
+            
+            // Configurar multimedia si existe
+            configurarMultimedia(clone, pregunta);
+            
+            // Configurar según tipo específico
+            switch (pregunta.tipo) {
+                case 'opcion_unica':
+                case 'opcion_multiple':
+                case 'falso_verdadero':
+                    configurarOpcionesMultiples(clone, pregunta);
+                    break;
+                case 'completar':
+                    configurarCompletar(clone, pregunta);
+                    break;
+                case 'unir_lineas':
+                    configurarUnirLineas(clone, pregunta);
+                    break;
+                case 'simulador_2d':
+                case 'simulador_3d':
+                    configurarSimulador(clone, pregunta);
+                    break;
+            }
+            
+            // Reemplazar contenido
+            container.innerHTML = '';
+            container.appendChild(clone);
+            
+            // Animar entrada
+            setTimeout(() => {
+                container.classList.add('fade-in');
+            }, 100);
+            
+            // Actualizar progreso
+            actualizarProgreso(pregunta.orden);
+            
+            // Ocultar estado de espera
+            document.getElementById('waitingState').style.display = 'none';
+            document.getElementById('questionContainer').style.display = 'block';
+        }
+        /**
+         * Configura multimedia en la pregunta
+         */
+        function configurarMultimedia(clone, pregunta) {
+            const mediaContainer = clone.querySelector('.question-media');
+            const questionImage = clone.querySelector('.question-image');
+            const questionVideo = clone.querySelector('.question-video');
+            
+            if (pregunta.imagen) {
+                questionImage.src = pregunta.imagen;
+                questionImage.style.display = 'block';
+                mediaContainer.style.display = 'block';
+            }
+            
+            if (pregunta.url_youtube) {
+                questionVideo.src = `https://www.youtube.com/embed/${pregunta.url_youtube}`;
+                questionVideo.style.display = 'block';
+                mediaContainer.style.display = 'block';
+            }
+        }
+
+        /**
+         * Configura opciones múltiples
+         */
+        function configurarOpcionesMultiples(clone, pregunta) {
+            const answersGrid = clone.querySelector('#answersGrid');
+            answersGrid.innerHTML = '';
+            
+            pregunta.opciones.forEach((opcion, index) => {
+                const button = document.createElement('button');
+                button.className = 'answer-option';
+                button.innerHTML = `
+                    <div class="answer-shape"></div>
+                    ${opcion.texto}
+                `;
+                
+                button.onclick = () => seleccionarOpcion(opcion.id, button, pregunta.tipo);
+                answersGrid.appendChild(button);
+            });
+        }
+
+        /**
+         * Configura preguntas de completar
+         */
+        function configurarCompletar(clone, pregunta) {
+            const inputsContainer = clone.querySelector('#completeInputs');
+            const textoCompleto = pregunta.texto_completar;
+            
+            if (!textoCompleto) return;
+            
+            const partes = textoCompleto.split('_____');
+            inputsContainer.innerHTML = '';
+            
+            for (let i = 0; i < partes.length; i++) {
+                if (i > 0) {
+                    // Crear input para el espacio en blanco
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'complete-input';
+                    input.placeholder = `Respuesta ${i}`;
+                    input.dataset.index = i - 1;
+                    inputsContainer.appendChild(input);
+                }
+                
+                if (partes[i].trim()) {
+                    // Crear span para el texto
+                    const span = document.createElement('span');
+                    span.textContent = partes[i];
+                    span.style.fontSize = '1.2rem';
+                    span.style.fontWeight = '600';
+                    inputsContainer.appendChild(span);
+                }
+            }
+        }
+
+        /**
+         * Configura preguntas de unir líneas
+         */
+        function configurarUnirLineas(clone, pregunta) {
+            const leftColumn = clone.querySelector('#leftColumn');
+            const rightColumn = clone.querySelector('#rightColumn');
+            
+            leftColumn.innerHTML = '';
+            rightColumn.innerHTML = '';
+            conexionesSeleccionadas = {};
+            
+            if (pregunta.columna_izquierda) {
+                const itemsIzq = pregunta.columna_izquierda.split('\n');
+                itemsIzq.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'matching-item';
+                    div.textContent = item.trim();
+                    div.dataset.id = `izq-${index}`;
+                    div.onclick = () => seleccionarParaConectar(div, 'izquierda');
+                    leftColumn.appendChild(div);
+                });
+            }
+            
+            if (pregunta.columna_derecha) {
+                const itemsDer = pregunta.columna_derecha.split('\n');
+                itemsDer.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'matching-item';
+                    div.textContent = item.trim();
+                    div.dataset.id = `der-${index}`;
+                    div.onclick = () => seleccionarParaConectar(div, 'derecha');
+                    rightColumn.appendChild(div);
+                });
+            }
+        }
+
+        /**
+         * Configura simulador de moléculas
+         */
+        function configurarSimulador(clone, pregunta) {
+            const instructions = clone.querySelector('#simulatorInstructions');
+            if (pregunta.descripcion_molecula) {
+                instructions.textContent = pregunta.descripcion_molecula;
+            }
+            
+            // Aquí se inicializaría el editor de moléculas
+            // Por simplicidad, usaremos un placeholder
+            console.log('🧪 Inicializando simulador para:', pregunta.smiles_objetivo);
+        }
+
+        // =====================================================
+        // FUNCIONES DE INTERACCIÓN
+        // =====================================================
+
+        /**
+         * Selecciona una opción en preguntas múltiples
+         */
+        function seleccionarOpcion(opcionId, button, tipoPregunta) {
+            if (respuestaEnviada) return;
+            
+            if (tipoPregunta === 'opcion_multiple') {
+                // Opción múltiple - permitir varias selecciones
+                button.classList.toggle('selected');
+            } else {
+                // Opción única - solo una selección
+                document.querySelectorAll('.answer-option').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                button.classList.add('selected');
+            }
+            
+            // Enviar respuesta automáticamente después de selección
+            setTimeout(() => {
+                if (!respuestaEnviada) {
+                    const datosRespuesta = obtenerRespuestasSeleccionadas(tipoPregunta);
+                    enviarRespuesta(datosRespuesta);
+                }
+            }, tipoPregunta === 'opcion_multiple' ? 2000 : 500);
+        }
+
+        /**
+         * Obtiene las respuestas seleccionadas
+         */
+        function obtenerRespuestasSeleccionadas(tipoPregunta) {
+            const seleccionadas = document.querySelectorAll('.answer-option.selected');
+            
+            if (tipoPregunta === 'opcion_multiple') {
+                const ids = Array.from(seleccionadas).map(btn => {
+                    // Extraer ID de la opción del onclick
+                    const onclick = btn.getAttribute('onclick');
+                    const match = onclick.match(/seleccionarOpcion\((\d+)/);
+                    return match ? match[1] : null;
+                }).filter(id => id !== null);
+                
+                return {
+                    opciones_multiples: ids.join(',')
+                };
+            } else {
+                if (seleccionadas.length > 0) {
+                    const onclick = seleccionadas[0].getAttribute('onclick');
+                    const match = onclick.match(/seleccionarOpcion\((\d+)/);
+                    return {
+                        opcion_seleccionada: match ? parseInt(match[1]) : null
+                    };
+                }
+            }
+            
+            return {};
+        }
+
+        /**
+         * Selecciona elementos para conectar
+         */
+        let elementoSeleccionado = null;
+        
+        function seleccionarParaConectar(elemento, lado) {
+            if (respuestaEnviada) return;
+            
+            if (elementoSeleccionado && elementoSeleccionado !== elemento) {
+                // Hacer conexión
+                const id1 = elementoSeleccionado.dataset.id;
+                const id2 = elemento.dataset.id;
+                
+                if ((id1.startsWith('izq-') && id2.startsWith('der-')) || 
+                    (id1.startsWith('der-') && id2.startsWith('izq-'))) {
+                    
+                    // Conexión válida
+                    const izqId = id1.startsWith('izq-') ? id1 : id2;
+                    const derId = id1.startsWith('der-') ? id1 : id2;
+                    
+                    conexionesSeleccionadas[izqId] = derId;
+                    
+                    // Marcar como conectados
+                    elementoSeleccionado.style.background = 'var(--kahoot-green)';
+                    elementoSeleccionado.style.color = 'white';
+                    elemento.style.background = 'var(--kahoot-green)';
+                    elemento.style.color = 'white';
+                }
+                
+                // Limpiar selección
+                elementoSeleccionado.classList.remove('selected');
+                elementoSeleccionado = null;
+                
+            } else {
+                // Seleccionar elemento
+                if (elementoSeleccionado) {
+                    elementoSeleccionado.classList.remove('selected');
+                }
+                
+                elemento.classList.add('selected');
+                elementoSeleccionado = elemento;
+            }
+        }
+
+        /**
+         * Envía respuesta abierta
+         */
+        function submitOpenAnswer() {
+            if (respuestaEnviada) return;
+            
+            const textarea = document.getElementById('openAnswerText');
+            const respuesta = textarea.value.trim();
+            
+            if (!respuesta) {
+                alert('Por favor escribe una respuesta');
+                return;
+            }
+            
+            enviarRespuesta({
+                respuesta_texto: respuesta
+            });
+        }
+
+        /**
+         * Envía respuestas de completar
+         */
+        function submitCompleteAnswer() {
+            if (respuestaEnviada) return;
+            
+            const inputs = document.querySelectorAll('.complete-input');
+            const respuestas = Array.from(inputs).map(input => input.value.trim());
+            
+            enviarRespuesta({
+                respuestas_completar: respuestas.join('|')
+            });
+        }
+
+        /**
+         * Envía conexiones realizadas
+         */
+        function submitMatchingAnswer() {
+            if (respuestaEnviada) return;
+            
+            enviarRespuesta({
+                conexiones_realizadas: JSON.stringify(conexionesSeleccionadas)
+            });
+        }
+
+        /**
+         * Envía respuesta del simulador
+         */
+        function submitMoleculeAnswer() {
+            if (respuestaEnviada) return;
+            
+            // Aquí se obtendría el SMILES del editor de moléculas
+            const smiles = 'C1=CC=CC=C1'; // Placeholder
+            
+            enviarRespuesta({
+                respuesta_smiles: smiles
+            });
+        }
+
+        // =====================================================
+        // FUNCIONES DEL TIMER
+        // =====================================================
+
+        /**
+         * Inicia el timer de la pregunta
+         */
+        function iniciarTimer(tiempo) {
+            tiempoRestante = tiempo;
+            clearInterval(timerInterval);
+            
+            actualizarDisplayTimer();
+            
+            timerInterval = setInterval(() => {
+                tiempoRestante--;
+                actualizarDisplayTimer();
+                
+                if (tiempoRestante <= 0) {
+                    clearInterval(timerInterval);
+                    
+                    // Tiempo agotado - enviar respuesta vacía si no se ha enviado
+                    if (!respuestaEnviada) {
+                        enviarRespuesta({});
+                    }
+                }
+            }, 1000);
+        }
+
+        /**
+         * Actualiza la visualización del timer
+         */
+        function actualizarDisplayTimer() {
+            const display = document.getElementById('timerDisplay');
+            display.textContent = tiempoRestante;
+            
+            // Cambiar color según tiempo restante
+            const timer = document.getElementById('mainTimer');
+            if (tiempoRestante <= 5) {
+                timer.style.borderColor = 'var(--kahoot-red)';
+                display.style.color = 'var(--kahoot-red)';
+                timer.classList.add('timer-urgent');
+            } else if (tiempoRestante <= 10) {
+                timer.style.borderColor = 'var(--kahoot-yellow)';
+                display.style.color = 'var(--kahoot-yellow)';
+            }
+        }
+
+        // =====================================================
+        // FUNCIONES DE RESULTADOS Y FEEDBACK
+        // =====================================================
+
+        /**
+         * Muestra el resultado de la respuesta
+         */
+        function mostrarResultadoRespuesta(data) {
+            const overlay = document.getElementById('resultsOverlay');
+            const icon = document.getElementById('resultIcon');
+            const title = document.getElementById('resultTitle');
+            const points = document.getElementById('resultPoints');
+            const explanation = document.getElementById('resultExplanation');
+            
+            // Configurar según resultado
+            if (data.es_correcta) {
+                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                icon.className = 'result-icon correct';
+                title.textContent = '¡Correcto!';
+                title.style.color = 'var(--kahoot-green)';
+                
+                // Crear confetti
+                createConfetti();
+            } else if (data.es_correcta === false) {
+                icon.innerHTML = '<i class="fas fa-times-circle"></i>';
+                icon.className = 'result-icon incorrect';
+                title.textContent = 'Incorrecto';
+                title.style.color = 'var(--kahoot-red)';
+            } else {
+                icon.innerHTML = '<i class="fas fa-hourglass-half"></i>';
+                icon.className = 'result-icon';
+                title.textContent = 'Respuesta Enviada';
+                title.style.color = 'var(--kahoot-blue)';
+            }
+            
+            // Mostrar puntos obtenidos
+            const puntosObtenidos = data.puntaje_obtenido || 0;
+            points.textContent = puntosObtenidos > 0 ? `+${puntosObtenidos} puntos` : '0 puntos';
+            
+            // Mostrar explicación si existe
+            if (data.explicacion) {
+                explanation.innerHTML = `<strong>Explicación:</strong><br>${data.explicacion}`;
+                explanation.style.display = 'block';
+            } else {
+                explanation.style.display = 'none';
+            }
+            
+            // Mostrar overlay
+            overlay.style.display = 'flex';
+            
+            // Auto-cerrar después de 3 segundos si no hay explicación
+            if (!data.explicacion) {
+                setTimeout(() => {
+                    closeResults();
+                }, 3000);
+            }
+        }
+
+        /**
+         * Cierra el overlay de resultados
+         */
+        function closeResults() {
+            document.getElementById('resultsOverlay').style.display = 'none';
+            
+            // Esperar siguiente pregunta o mostrar ranking
+            mostrarEstadoEspera();
+            
+            // Verificar si hay más preguntas
+            setTimeout(() => {
+                obtenerPreguntaActual();
+            }, 2000);
+        }
+
+        /**
+         * Muestra el estado de espera
+         */
+        function mostrarEstadoEspera() {
+            document.getElementById('questionContainer').style.display = 'none';
+            document.getElementById('waitingState').style.display = 'block';
+            
+            // Detener timer
+            clearInterval(timerInterval);
+            document.getElementById('timerDisplay').textContent = '--';
+        }
+
+        // =====================================================
+        // FUNCIONES DE UI Y EFECTOS
+        // =====================================================
+
+        /**
+         * Actualiza el puntaje del jugador
+         */
+        function actualizarPuntaje(nuevoPuntaje) {
+            const scoreElement = document.getElementById('playerScore');
+            const currentScoreElement = document.getElementById('currentScore');
+            
+            // Animar cambio de puntaje
+            scoreElement.style.transform = 'scale(1.2)';
+            scoreElement.style.color = 'var(--kahoot-green)';
+            
+            setTimeout(() => {
+                scoreElement.textContent = `${nuevoPuntaje} pts`;
+                currentScoreElement.textContent = nuevoPuntaje;
+                
+                scoreElement.style.transform = 'scale(1)';
+                scoreElement.style.color = 'white';
+            }, 200);
+        }
+
+        /**
+         * Actualiza la barra de progreso
+         */
+        function actualizarProgreso(preguntaNumero) {
+            const totalPreguntas = {{ total_preguntas }};
+            const porcentaje = (preguntaNumero / totalPreguntas) * 100;
+            
+            document.getElementById('progressBar').style.width = `${porcentaje}%`;
+            document.getElementById('progressText').textContent = `Pregunta ${preguntaNumero} de ${totalPreguntas}`;
+            document.getElementById('currentQuestionNum').textContent = preguntaNumero;
+        }
+
+        /**
+         * Crea partículas de fondo
+         */
+        function createBackgroundParticles() {
+            const particlesContainer = document.querySelector('.floating-particles');
+            
+            setInterval(() => {
+                if (document.querySelectorAll('.particle').length < 20) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    
+                    // Posición aleatoria en X
+                    particle.style.left = Math.random() * 100 + '%';
+                    
+                    // Duración aleatoria
+                    particle.style.animationDuration = (Math.random() * 3 + 5) + 's';
+                    
+                    // Color aleatorio
+                    const colors = ['rgba(255,255,255,0.4)', 'rgba(255,166,2,0.3)', 'rgba(38,137,13,0.3)', 'rgba(19,104,206,0.3)'];
+                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    particlesContainer.appendChild(particle);
+                    
+                    // Eliminar después de la animación
+                    setTimeout(() => {
+                        if (particlesContainer.contains(particle)) {
+                            particlesContainer.removeChild(particle);
+                        }
+                    }, 8000);
+                }
+            }, 500);
+        }
+
+        /**
+         * Crea efecto confetti para respuestas correctas
+         */
+        function createConfetti() {
+            const container = document.getElementById('confettiContainer');
+            const colors = ['var(--kahoot-yellow)', 'var(--kahoot-green)', 'var(--kahoot-blue)', 'var(--kahoot-red)'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti-piece';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    
+                    container.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        if (container.contains(confetti)) {
+                            container.removeChild(confetti);
+                        }
+                    }, 3000);
+                }, i * 50);
+            }
+        }
+        /**
+         * Muestra loading overlay
+         */
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        /**
+         * Oculta loading overlay
+         */
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        /**
+         * Muestra mensaje de error
+         */
+        function mostrarError(mensaje) {
+            // Crear notificación de error
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                background: var(--kahoot-red);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 15px;
+                z-index: 3000;
+                font-weight: 600;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                animation: slideInRight 0.3s ease;
+            `;
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${mensaje}
+            `;
+            
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (document.body.contains(errorDiv)) {
+                    document.body.removeChild(errorDiv);
+                }
+            }, 5000);
+        }
+
+        // =====================================================
+        // FUNCIONES DE SIMULADOR (PLACEHOLDER)
+        // =====================================================
+
+        /**
+         * Funciones del simulador de moléculas
+         */
+        function clearMolecule() {
+            console.log('🧹 Limpiar molécula');
+            // Implementar limpieza del editor
+        }
+
+        function undoLastAction() {
+            console.log('↶ Deshacer última acción');
+            // Implementar deshacer
+        }
+
+        function validateMolecule() {
+            console.log('✓ Validar molécula');
+            // Implementar validación
+            
+            const resultDiv = document.getElementById('moleculeResult');
+            const smilesSpan = document.getElementById('generatedSmiles');
+            
+            // Simulación de SMILES generado
+            const simulatedSmiles = 'C1=CC=CC=C1'; // Benzeno como ejemplo
+            smilesSpan.textContent = simulatedSmiles;
+            resultDiv.style.display = 'block';
+        }
+
+        // =====================================================
+        // FUNCIONES DE UTILIDAD
+        // =====================================================
+
+        /**
+         * Obtiene el valor de una cookie
+         */
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        /**
+         * Formatea tiempo en MM:SS
+         */
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        /**
+         * Maneja errores de red
+         */
+        function handleNetworkError() {
+            mostrarError('Conexión perdida. Reintentando...');
+            
+            // Intentar reconectar después de 5 segundos
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000);
+        }
+
+        // =====================================================
+        // FUNCIONES DE RANKING (PARA IMPLEMENTAR)
+        // =====================================================
+
+        /**
+         * Muestra ranking intermedio
+         */
+        function mostrarRanking(rankingData) {
+            const overlay = document.getElementById('rankingOverlay');
+            const rankingList = document.getElementById('rankingList');
+            
+            rankingList.innerHTML = '';
+            
+            rankingData.forEach((participante, index) => {
+                const li = document.createElement('li');
+                li.className = 'ranking-item';
+                
+                if (participante.es_actual) {
+                    li.classList.add('current-player');
+                }
+                
+                li.innerHTML = `
+                    <div class="ranking-position">${index + 1}</div>
+                    <div class="ranking-player">
+                        <div class="ranking-avatar">${participante.avatar || '🧪'}</div>
+                        <div class="ranking-name">${participante.nombre}</div>
+                    </div>
+                    <div class="ranking-score">${participante.puntaje}</div>
+                `;
+                
+                rankingList.appendChild(li);
+            });
+            
+            overlay.style.display = 'flex';
+        }
+
+        /**
+         * Cierra ranking
+         */
+        function closeRanking() {
+            document.getElementById('rankingOverlay').style.display = 'none';
+        }
+
+        // =====================================================
+        // EVENTOS DE TECLADO
+        // =====================================================
+
+        document.addEventListener('keydown', function(event) {
+            // Teclas numéricas para seleccionar opciones (1-4)
+            if (event.key >= '1' && event.key <= '4') {
+                const opciones = document.querySelectorAll('.answer-option');
+                const indice = parseInt(event.key) - 1;
+                
+                if (opciones[indice] && !respuestaEnviada) {
+                    opciones[indice].click();
+                }
+            }
+            
+            // Enter para enviar respuestas abiertas
+            if (event.key === 'Enter') {
+                const textarea = document.getElementById('openAnswerText');
+                if (textarea && document.activeElement === textarea && !respuestaEnviada) {
+                    event.preventDefault();
+                    submitOpenAnswer();
+                }
+            }
+        });
+
+        // =====================================================
+        // MANEJO DE DESCONEXIÓN
+        // =====================================================
+
+        window.addEventListener('online', function() {
+            console.log('🌐 Conexión restaurada');
+            mostrarError('Conexión restaurada');
+            
+            // Recargar estado actual
+            setTimeout(() => {
+                obtenerPreguntaActual();
+            }, 1000);
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('🚫 Conexión perdida');
+            mostrarError('Sin conexión a internet');
+        });
+
+        // =====================================================
+        // DEBUG TOOLS (Solo en desarrollo)
+        // =====================================================
+
+        {% if debug %}
+        window.debugCompetencia = {
+            saltarPregunta: () => {
+                if (!respuestaEnviada) {
+                    enviarRespuesta({});
+                }
+            },
+            simularRespuestaCorrecta: () => {
+                mostrarResultadoRespuesta({
+                    es_correcta: true,
+                    puntaje_obtenido: 100,
+                    explicacion: 'Respuesta simulada correcta'
+                });
+            },
+            mostrarRankingDemo: () => {
+                mostrarRanking([
+                    { nombre: 'Tú', puntaje: 850, avatar: '🧪', es_actual: true },
+                    { nombre: 'Ana García', puntaje: 920, avatar: '⚗️' },
+                    { nombre: 'Carlos López', puntaje: 780, avatar: '🔬' },
+                    { nombre: 'María Silva', puntaje: 650, avatar: '💊' }
+                ]);
+            }
+        };
+        
+        console.log('🛠️ Debug tools available:', window.debugCompetencia);
+        {% endif %}
+
+        // =====================================================
+        // LOG DE INICIALIZACIÓN
+        // =====================================================
+
+        console.log('🎮 Sistema de competencias inicializado');
+        console.log('📊 Competencia ID:', competenciaId);
+        console.log('👤 Participación ID:', participacionId);
+        console.log('🎯 Total preguntas: {{ total_preguntas }}');
+        console.log('🏆 Modalidad: {{ competencia.modalidad }}');
+        {% if participacion.grupo %}
+        console.log('👥 Grupo: {{ participacion.grupo.nombre }}');
+        {% endif %}
+        
+    </script>
+
+    <!-- Estilos adicionales para animaciones -->
+    <style>
+        .timer-urgent {
+            animation: pulse-urgent 1s infinite;
+        }
+
+        @keyframes pulse-urgent {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Estilo adicional para elementos seleccionados */
+        .answer-option.selected {
+            animation: selected-pulse 0.6s ease;
+        }
+
+        @keyframes selected-pulse {
+            0% { transform: translateY(-8px) scale(1.08); }
+            50% { transform: translateY(-8px) scale(1.15); box-shadow: 0 20px 50px rgba(255,255,255,0.5); }
+            100% { transform: translateY(-8px) scale(1.08); }
+        }
+
+        /* Mejoras responsive adicionales */
+        @media (max-width: 480px) {
+            .competition-stats {
+                gap: 10px;
+            }
+            
+            .stat-item {
+                padding: 4px 8px;
+                font-size: 0.8rem;
+            }
+            
+            .question-text {
+                font-size: 1.2rem;
+            }
+            
+            .answer-option {
+                font-size: 1rem;
+                padding: 15px;
+                min-height: 80px;
+            }
+        }
+    </style>
+</body>
+</html>

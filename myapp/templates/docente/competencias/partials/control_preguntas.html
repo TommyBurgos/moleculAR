@@ -1,0 +1,862 @@
+<!-- Control de Preguntas (Solo durante competencia activa) -->
+<div class="panel-header">
+    <h4>
+        <i class="fas fa-question-circle me-3"></i>Control de Preguntas
+        <span class="question-progress-badge">
+            {{ competencia.pregunta_actual.orden|default:0 }} / {{ preguntas.count }}
+        </span>
+    </h4>
+    <div class="panel-actions">
+        <button class="btn btn-sm btn-outline-info" onclick="mostrarVistaPrevia()" title="Vista previa">
+            <i class="fas fa-eye me-1"></i>Preview
+        </button>
+        <button class="btn btn-sm btn-outline-warning" onclick="pausarTiempoPregunta()" title="Pausar tiempo">
+            <i class="fas fa-pause me-1"></i>Pausar
+        </button>
+    </div>
+</div>
+
+<div class="panel-body">
+    <!-- Pregunta Actual -->
+    {% if competencia.pregunta_actual %}
+    <div class="current-question-display">
+        <div class="question-header">
+            <div class="question-number">{{ competencia.pregunta_actual.orden }}</div>
+            <div class="question-content">
+                <h5 class="question-title">Pregunta Actual</h5>
+                <div class="question-text">{{ competencia.pregunta_actual.enunciado }}</div>
+                <div class="question-meta">
+                    <span class="question-type-badge">
+                        <i class="fas fa-tag me-1"></i>{{ competencia.pregunta_actual.tipo.descripcion }}
+                    </span>
+                    <span class="question-points">
+                        <i class="fas fa-star me-1"></i>{{ competencia.pregunta_actual.puntaje }} puntos
+                    </span>
+                    <span class="question-time">
+                        <i class="fas fa-clock me-1"></i>{{ tiempo_pregunta_actual|default:"--:--" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Opciones de la pregunta actual (si las tiene) -->
+        {% if competencia.pregunta_actual.opciones.all %}
+        <div class="question-options">
+            <h6 class="options-title">
+                <i class="fas fa-list me-2"></i>Opciones de Respuesta
+            </h6>
+            <div class="options-list">
+                {% for opcion in competencia.pregunta_actual.opciones.all %}
+                <div class="option-item {% if opcion.es_correcta %}correct-option{% endif %}">
+                    <div class="option-letter">
+                        {% if forloop.counter == 1 %}A{% elif forloop.counter == 2 %}B{% elif forloop.counter == 3 %}C{% elif forloop.counter == 4 %}D{% elif forloop.counter == 5 %}E{% else %}{{ forloop.counter }}{% endif %}
+                    </div>
+                    <div class="option-text">{{ opcion.texto }}</div>
+                    {% if opcion.es_correcta %}
+                    <div class="correct-indicator">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    {% endif %}
+                    <div class="option-stats">
+                        <span class="response-count" id="option-{{ opcion.id }}-count">
+                            {{ opcion.respuestas_count|default:0 }}
+                        </span>
+                        <small class="response-percentage" id="option-{{ opcion.id }}-percent">
+                            ({{ opcion.respuestas_percentage|default:0 }}%)
+                        </small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Estadísticas de la pregunta actual -->
+        <div class="question-stats">
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-icon respondieron">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="answered-count">{{ pregunta_actual_stats.respondieron|default:0 }}</div>
+                        <div class="stat-label">Respondieron</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon correctas">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="correct-count">{{ pregunta_actual_stats.correctas|default:0 }}</div>
+                        <div class="stat-label">Correctas</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon promedio">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="average-time">{{ pregunta_actual_stats.tiempo_promedio|default:"--:--" }}</div>
+                        <div class="stat-label">Tiempo Promedio</div>
+                    </div>
+                </div>
+                
+                <div class="stat-item">
+                    <div class="stat-icon esperando">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-number" id="pending-count">{{ pregunta_actual_stats.pendientes|default:0 }}</div>
+                        <div class="stat-label">Pendientes</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Barra de progreso de respuestas -->
+            <div class="response-progress">
+                <div class="progress-label">Progreso de Respuestas</div>
+                <div class="progress">
+                    <div class="progress-bar bg-success" id="response-progress-bar"
+                         style="width: {% if pregunta_actual_stats.porcentaje_respuestas %}{{ pregunta_actual_stats.porcentaje_respuestas }}{% else %}0{% endif %}%">
+                    </div>
+                </div>
+                <div class="progress-text">
+                    <span id="response-progress-text">
+                        {{ pregunta_actual_stats.respondieron|default:0 }} de {{ total_participantes|default:0 }} participantes
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Controles de Navegación -->
+    <div class="navigation-controls">
+        <div class="nav-buttons">
+            <button class="nav-btn prev" onclick="preguntaAnterior()" 
+                    {% if not competencia.pregunta_actual or competencia.pregunta_actual.orden <= 1 %}disabled{% endif %}>
+                <i class="fas fa-step-backward me-2"></i>
+                <div class="btn-content">
+                    <span class="btn-title">Anterior</span>
+                    {% if competencia.pregunta_actual and competencia.pregunta_actual.orden > 1 %}
+                    <small class="btn-subtitle">Pregunta {{ competencia.pregunta_actual.orden|add:"-1" }}</small>
+                    {% endif %}
+                </div>
+            </button>
+            
+            <div class="current-position">
+                <div class="position-display">
+                    <span class="current-num">{{ competencia.pregunta_actual.orden|default:0 }}</span>
+                    <span class="separator">/</span>
+                    <span class="total-num">{{ preguntas.count }}</span>
+                </div>
+                <div class="position-label">Pregunta Actual</div>
+            </div>
+            
+            <button class="nav-btn next" onclick="siguientePregunta()"
+                    {% if not competencia.pregunta_actual or competencia.pregunta_actual.orden >= preguntas.count %}disabled{% endif %}>
+                <div class="btn-content">
+                    <span class="btn-title">
+                        {% if competencia.pregunta_actual.orden >= preguntas.count %}Finalizar{% else %}Siguiente{% endif %}
+                    </span>
+                    {% if competencia.pregunta_actual.orden < preguntas.count %}
+                    <small class="btn-subtitle">Pregunta {{ competencia.pregunta_actual.orden|add:"1" }}</small>
+                    {% else %}
+                    <small class="btn-subtitle">Terminar competencia</small>
+                    {% endif %}
+                </div>
+                <i class="fas fa-step-forward ms-2"></i>
+            </button>
+        </div>
+        
+        <!-- Opciones adicionales -->
+        <div class="additional-controls">
+            <button class="control-option-btn" onclick="mostrarResultadosInstantaneos()">
+                <i class="fas fa-chart-bar me-2"></i>
+                Mostrar Resultados Instantáneos
+            </button>
+            <button class="control-option-btn" onclick="darTiempoExtra()">
+                <i class="fas fa-plus-circle me-2"></i>
+                Dar Tiempo Extra (+30s)
+            </button>
+            <button class="control-option-btn" onclick="saltarPregunta()">
+                <i class="fas fa-forward me-2"></i>
+                Saltar Pregunta
+            </button>
+        </div>
+    </div>
+    
+    <!-- Navegador de Preguntas -->
+    <div class="questions-navigator">
+        <h6 class="navigator-title">
+            <i class="fas fa-list-ol me-2"></i>Navegador de Preguntas
+        </h6>
+        <div class="questions-grid">
+            {% for pregunta in preguntas %}
+            <div class="question-nav-item {% if competencia.pregunta_actual.id == pregunta.id %}current{% elif pregunta.orden < competencia.pregunta_actual.orden %}completed{% endif %}"
+                 onclick="irAPregunta({{ pregunta.id }})"
+                 title="{{ pregunta.enunciado|truncatechars:50 }}">
+                <div class="nav-item-number">{{ pregunta.orden }}</div>
+                <div class="nav-item-type">
+                    {% if pregunta.tipo.nombre == 'opcion_unica' %}
+                        <i class="fas fa-dot-circle"></i>
+                    {% elif pregunta.tipo.nombre == 'opcion_multiple' %}
+                        <i class="fas fa-check-square"></i>
+                    {% elif pregunta.tipo.nombre == 'falso_verdadero' %}
+                        <i class="fas fa-balance-scale"></i>
+                    {% elif pregunta.tipo.nombre == 'respuesta_abierta' %}
+                        <i class="fas fa-edit"></i>
+                    {% else %}
+                        <i class="fas fa-question"></i>
+                    {% endif %}
+                </div>
+                {% if pregunta.orden < competencia.pregunta_actual.orden %}
+                <div class="nav-item-status completed">
+                    <i class="fas fa-check"></i>
+                </div>
+                {% elif pregunta.id == competencia.pregunta_actual.id %}
+                <div class="nav-item-status current">
+                    <i class="fas fa-play"></i>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* ===== ESTILOS PARA CONTROL DE PREGUNTAS ===== */
+.question-progress-badge {
+    background: linear-gradient(45deg, #17a2b8, #138496);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    margin-left: 1rem;
+}
+
+.current-question-display {
+    background: linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(19, 132, 150, 0.1) 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 2px solid rgba(23, 162, 184, 0.2);
+}
+
+.question-header {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.question-number {
+    background: linear-gradient(45deg, #17a2b8, #138496);
+    color: white;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 900;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.question-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.question-title {
+    color: #17a2b8;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.question-text {
+    font-size: 1.1rem;
+    color: #2c3e50;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 1rem;
+    border-radius: 10px;
+    border-left: 4px solid #17a2b8;
+}
+
+.question-meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.question-type-badge,
+.question-points,
+.question-time {
+    background: rgba(255, 255, 255, 0.9);
+    color: #495057;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.question-type-badge {
+    border-left: 4px solid #6c757d;
+}
+
+.question-points {
+    border-left: 4px solid #ffc107;
+}
+
+.question-time {
+    border-left: 4px solid #dc3545;
+}
+
+/* ===== OPCIONES DE RESPUESTA ===== */
+.question-options {
+    margin-top: 1.5rem;
+}
+
+.options-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.options-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 1rem;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.option-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateX(5px);
+}
+
+.option-item.correct-option {
+    border-color: #28a745;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+}
+
+.option-letter {
+    background: linear-gradient(45deg, #6c757d, #495057);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.correct-option .option-letter {
+    background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.option-text {
+    flex: 1;
+    font-size: 1rem;
+    color: #2c3e50;
+    line-height: 1.5;
+}
+
+.correct-indicator {
+    color: #28a745;
+    font-size: 1.2rem;
+}
+
+.option-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 60px;
+    text-align: center;
+}
+
+.response-count {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    min-width: 2rem;
+    display: inline-block;
+}
+
+.response-percentage {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* ===== ESTADÍSTICAS DE PREGUNTA ===== */
+.question-stats {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stat-icon.respondieron {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+}
+
+.stat-icon.correctas {
+    background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.stat-icon.promedio {
+    background: linear-gradient(45deg, #17a2b8, #138496);
+}
+
+.stat-icon.esperando {
+    background: linear-gradient(45deg, #ffc107, #e0a800);
+}
+
+.stat-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #2c3e50;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.response-progress {
+    margin-top: 1rem;
+}
+
+.progress-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.progress {
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.progress-text {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* ===== CONTROLES DE NAVEGACIÓN ===== */
+.navigation-controls {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.nav-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.nav-btn {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+    border: 2px solid #dee2e6;
+    color: #495057;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    min-width: 160px;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    border-color: #007bff;
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+}
+
+.nav-btn:disabled {
+    background: #f8f9fa;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.nav-btn.next:hover:not(:disabled) {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border-color: #28a745;
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+}
+
+.btn-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.nav-btn.next .btn-content {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.btn-title {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.btn-subtitle {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.current-position {
+    text-align: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.position-display {
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.current-num {
+    color: #fff;
+}
+
+.separator {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0.5rem;
+}
+
+.total-num {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.position-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+}
+
+/* ===== CONTROLES ADICIONALES ===== */
+.additional-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.control-option-btn {
+    background: rgba(108, 117, 125, 0.1);
+    border: 1px solid rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.control-option-btn:hover {
+    background: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+/* ===== NAVEGADOR DE PREGUNTAS ===== */
+.questions-navigator {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    padding: 1.5rem;
+}
+
+.navigator-title {
+    color: #495057;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+}
+
+.questions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 1rem;
+}
+
+.question-nav-item {
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.question-nav-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #007bff;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+}
+
+.question-nav-item.completed {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-color: #28a745;
+    color: #155724;
+}
+
+.question-nav-item.current {
+    background: linear-gradient(135deg, #cce5ff 0%, #b3d9ff 100%);
+    border-color: #007bff;
+    color: #004085;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+.nav-item-number {
+    font-size: 1.2rem;
+    font-weight: 900;
+    margin-bottom: 0.25rem;
+}
+
+.nav-item-type {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.nav-item-status {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: white;
+}
+
+.nav-item-status.completed {
+    background: #28a745;
+}
+
+.nav-item-status.current {
+    background: #007bff;
+    animation: pulse 2s infinite;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+    .question-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .nav-buttons {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .nav-btn {
+        min-width: 100%;
+        justify-content: center;
+    }
+    
+    .additional-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .control-option-btn {
+        width: 100%;
+        max-width: 300px;
+        text-align: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .current-question-display {
+        padding: 1.5rem;
+    }
+    
+    .question-number {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .question-text {
+        font-size: 1rem;
+        padding: 0.75rem;
+    }
+    
+    .question-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .stats-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .stat-item {
+        padding: 0.75rem;
+    }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .questions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 0.75rem;
+    }
+    
+    .question-nav-item {
+        min-height: 60px;
+        padding: 0.75rem;
+    }
+    
+    .nav-item-number {
+        font-size: 1rem;
+    }
+    
+    .options-list {
+        gap: 0.5rem;
+    }
+    
+    .option-item {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .option-stats {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+</style>

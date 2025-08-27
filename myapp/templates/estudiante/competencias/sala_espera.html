@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% load static %}
+    <title>Sala de Espera - {{ competencia.recurso.titulo }}</title>
+
+    <!-- Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800;900&family=Roboto:wght@400;500;700&display=swap">
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/vendor/font-awesome/css/all.min.css' %}">
+    
+    <!-- Theme CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'assets/css/style.css' %}">
+
+    <!-- Custom CSS - Waiting Room Kahoot Style -->
+    <style>
+        :root {
+            --kahoot-purple: #662d91;
+            --kahoot-blue: #1368ce;
+            --kahoot-red: #e21b3c;
+            --kahoot-yellow: #ffa602;
+            --kahoot-green: #26890d;
+            --kahoot-dark: #1a1a1a;
+            --kahoot-light: #f2f2f2;
+            --kahoot-orange: #ff8c00;
+            --kahoot-pink: #ff69b4;
+            --kahoot-cyan: #00bcd4;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--kahoot-purple) 0%, var(--kahoot-blue) 50%, var(--kahoot-green) 100%);
+            min-height: 100vh;
+            font-family: 'Heebo', sans-serif;
+            color: white;
+            overflow-x: hidden;
+            animation: gradient-wave 10s ease-in-out infinite;
+        }
+
+        @keyframes gradient-wave {
+            0%, 100% {
+                background: linear-gradient(135deg, var(--kahoot-purple) 0%, var(--kahoot-blue) 50%, var(--kahoot-green) 100%);
+            }
+            25% {
+                background: linear-gradient(135deg, var(--kahoot-blue) 0%, var(--kahoot-green) 50%, var(--kahoot-purple) 100%);
+            }
+            50% {
+                background: linear-gradient(135deg, var(--kahoot-green) 0%, var(--kahoot-purple) 50%, var(--kahoot-blue) 100%);
+            }
+            75% {
+                background: linear-gradient(135deg, var(--kahoot-purple) 0%, var(--kahoot-green) 50%, var(--kahoot-blue) 100%);
+            }
+        }
+
+        /* ===== HEADER ===== */
+        .waiting-header {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border: none;
+            padding: 15px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .competition-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .competition-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .competition-stats {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .stat-badge {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 8px 18px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-badge:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--kahoot-yellow);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        /* ===== CONTENEDOR PRINCIPAL ===== */
+        .main-container {
+            padding: 100px 20px 40px;
+            min-height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* ===== ESTADO PRINCIPAL ===== */
+        .waiting-main {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .main-icon {
+            font-size: 8rem;
+            margin-bottom: 30px;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+            animation: float-main-icon 4s ease-in-out infinite;
+        }
+
+        @keyframes float-main-icon {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-15px) rotate(3deg);
+            }
+            50% {
+                transform: translateY(0) rotate(0deg);
+            }
+            75% {
+                transform: translateY(-10px) rotate(-3deg);
+            }
+        }
+
+        .main-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(45deg, #fff, var(--kahoot-yellow), #fff);
+            background-size: 200% 200%;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: title-shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes title-shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .main-subtitle {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .waiting-message {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* ===== PROGRESS BAR ANIMADO ===== */
+        .progress-section {
+            margin: 40px 0;
+        }
+
+        .progress-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--kahoot-yellow);
+        }
+
+        .progress-container {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 8px;
+            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--kahoot-green), var(--kahoot-yellow), var(--kahoot-orange), var(--kahoot-red));
+            height: 15px;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            animation: progress-pulse 2s ease-in-out infinite;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: progress-shine 2s infinite;
+        }
+
+        @keyframes progress-pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; box-shadow: 0 0 20px rgba(255, 166, 2, 0.5); }
+        }
+
+        @keyframes progress-shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        /* ===== LISTA DE PARTICIPANTES ===== */
+        .participants-section {
+            margin: 50px 0;
+        }
+
+        .participants-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            color: var(--kahoot-yellow);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .participant-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 20px;
+            color: var(--kahoot-dark);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            overflow: hidden;
+            animation: participant-enter 0.6s ease forwards;
+        }
+
+        @keyframes participant-enter {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .participant-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--kahoot-purple), var(--kahoot-blue), var(--kahoot-green));
+            transition: left 0.5s ease;
+        }
+
+        .participant-card:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .participant-card:hover::before {
+            left: 0;
+        }
+
+        .participant-card.current-user {
+            border: 3px solid var(--kahoot-yellow);
+            background: linear-gradient(135deg, rgba(255, 166, 2, 0.1), rgba(255, 255, 255, 0.9));
+            animation: current-user-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes current-user-glow {
+            0%, 100% { box-shadow: 0 10px 30px rgba(255, 166, 2, 0.3); }
+            50% { box-shadow: 0 15px 40px rgba(255, 166, 2, 0.6); }
+        }
+
+        .participant-avatar {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            text-align: center;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .participant-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            text-align: center;
+            color: var(--kahoot-dark);
+        }
+
+        .participant-molecule {
+            font-size: 0.85rem;
+            color: var(--kahoot-purple);
+            font-weight: 600;
+            text-align: center;
+            opacity: 0.8;
+        }
+
+        .participant-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--kahoot-green);
+            box-shadow: 0 0 10px rgba(38, 137, 13, 0.5);
+            animation: status-pulse 2s infinite;
+        }
+
+        @keyframes status-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        .participant-status.offline {
+            background: #999;
+            box-shadow: none;
+            animation: none;
+        }
+
+        /* ===== INFORMACIÓN DEL JUGADOR ACTUAL ===== */
+        .current-player-info {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 3px solid var(--kahoot-yellow);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .current-player-avatar {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+            animation: player-bounce 3s ease-in-out infinite;
+        }
+
+        @keyframes player-bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-5px) rotate(2deg); }
+            75% { transform: translateY(-3px) rotate(-2deg); }
+        }
+
+        .current-player-name {
+            font-weight: 800;
+            color: var(--kahoot-yellow);
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .current-player-molecule {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-align: center;
+            color: white;
+        }
+
+        .current-player-ready {
+            background: var(--kahoot-green);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 10px;
+            animation: ready-pulse 2s infinite;
+        }
+
+        @keyframes ready-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* ===== CONTROLES DE SALA ===== */
+        .room-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 999;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--kahoot-dark);
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(102, 45, 145, 0.2);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-btn:hover::before {
+            width: 200%;
+            height: 200%;
+        }
+
+        .control-btn.exit {
+            background: linear-gradient(135deg, var(--kahoot-red), #c41e3a);
+            color: white;
+        }
+
+        .control-btn.settings {
+            background: linear-gradient(135deg, var(--kahoot-blue), #0d47a1);
+            color: white;
+        }
+
+        .control-btn.help {
+            background: linear-gradient(135deg, var(--kahoot-green), #1b5e20);
+            color: white;
+        }
+
+        /* ===== EFECTOS DE FONDO ===== */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .floating-molecule {
+            position: absolute;
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.1);
+            animation: float-molecule 15s ease-in-out infinite;
+        }
+
+        .floating-molecule:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
+        .floating-molecule:nth-child(2) { top: 20%; right: 10%; animation-delay: 3s; }
+        .floating-molecule:nth-child(3) { top: 60%; left: 8%; animation-delay: 6s; }
+        .floating-molecule:nth-child(4) { bottom: 30%; right: 5%; animation-delay: 9s; }
+        .floating-molecule:nth-child(5) { bottom: 10%; left: 15%; animation-delay: 12s; }
+        .floating-molecule:nth-child(6) { top: 40%; right: 20%; animation-delay: 2s; }
+        .floating-molecule:nth-child(7) { top: 80%; left: 25%; animation-delay: 5s; }
+        .floating-molecule:nth-child(8) { bottom: 50%; right: 30%; animation-delay: 8s; }
+
+        @keyframes float-molecule {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg) scale(1);
+                opacity: 0.1;
+            }
+            25% {
+                transform: translateY(-40px) rotate(90deg) scale(1.2);
+                opacity: 0.2;
+            }
+            50% {
+                transform: translateY(-80px) rotate(180deg) scale(0.8);
+                opacity: 0.15;
+            }
+            75% {
+                transform: translateY(-40px) rotate(270deg) scale(1.1);
+                opacity: 0.25;
+            }
+        }
+
+        .energy-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        .energy-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 166, 2, 0.6);
+            border-radius: 50%;
+            animation: particle-travel 8s linear infinite;
+        }
+
+        @keyframes particle-travel {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 1;
+            }
+            20% {
+                transform: translateY(80vh) translateX(20px) scale(1);
+                opacity: 0.8;
+            }
+            80% {
+                transform: translateY(20vh) translateX(-20px) scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-10vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+        }
+
+        /* ===== NOTIFICACIONES ===== */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: -400px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            border-left: 4px solid var(--kahoot-green);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            transition: right 0.5s ease;
+            z-index: 2000;
+            max-width: 350px;
+        }
+
+        .notification.show {
+            right: 20px;
+        }
+
+        .notification.join {
+            border-left-color: var(--kahoot-green);
+        }
+
+        .notification.leave {
+            border-left-color: var(--kahoot-red);
+        }
+
+        .notification.update {
+            border-left-color: var(--kahoot-blue);
+        }
+
+        /* ===== CHAT EN VIVO (OPCIONAL) ===== */
+        .live-chat {
+            position: fixed;
+            top: 100px;
+            left: 30px;
+            width: 300px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+            z-index: 1500;
+        }
+
+        .chat-header {
+            background: var(--kahoot-purple);
+            color: white;
+            padding: 15px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: white;
+            color: var(--kahoot-dark);
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .chat-input {
+            width: 100%;
+            border: 2px solid var(--kahoot-purple);
+            border-radius: 20px;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        /* ===== ESTADOS ESPECIALES ===== */
+        .countdown-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            backdrop-filter: blur(10px);
+        }
+
+        .countdown-display {
+            text-align: center;
+        }
+
+        .countdown-number {
+            font-size: 15rem;
+            font-weight: 900;
+            color: var(--kahoot-yellow);
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+            animation: countdown-pulse 1s ease;
+        }
+
+        @keyframes countdown-pulse {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .countdown-text {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 20px;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 80px 15px 120px;
+            }
+
+            .main-icon {
+                font-size: 6rem;
+            }
+
+            .main-title {
+                font-size: 2.5rem;
+            }
+
+            .main-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .participants-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .participant-card {
+                padding: 15px;
+            }
+
+            .participant-avatar {
+                font-size: 2.5rem;
+            }
+
+            .current-player-info {
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                text-align: left;
+            }
+
+            .current-player-avatar {
+                font-size: 2.5rem;
+                margin: 0;
+            }
+
+            .room-controls {
+                bottom: 100px;
+                right: 20px;
+                flex-direction: row;
+            }
+
+            .control-btn {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+
+            .competition-stats {
+                gap: 15px;
+            }
+
+            .stat-badge {
+                padding: 6px 12px;
+            }
+
+            .live-chat {
+                left: 15px;
+                right: 15px;
+                width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-title {
+                font-size: 2rem;
+            }
+
+            .participants-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .countdown-number {
+                font-size: 10rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Elementos flotantes de fondo -->
+    <div class="floating-elements">
+        <div class="floating-molecule">⚗️</div>
+        <div class="floating-molecule">🧪</div>
+        <div class="floating-molecule">⚛️</div>
+        <div class="floating-molecule">💊</div>
+        <div class="floating-molecule">🔬</div>
+        <div class="floating-molecule">🌡️</div>
+        <div class="floating-molecule">🧬</div>
+        <div class="floating-molecule">💉</div>
+    </div>
+
+    <!-- Partículas de energía -->
+    <div class="energy-particles">
+        <!-- Las partículas se generarán dinámicamente -->
+    </div>
+
+    <!-- Header -->
+    <nav class="waiting-header">
+        <div class="container-fluid">
+            <div class="competition-info">
+                <div class="competition-title">
+                    <i class="fas fa-trophy me-2"></i>
+                    {{ competencia.recurso.titulo }}
+                </div>
+                
+                <div class="competition-stats">
+                    <div class="stat-badge">
+                        <div class="stat-value" id="participantCount">{{ participantes_count }}</div>
+                        <div class="stat-label">Jugadores</div>
+                    </div>
+                    
+                    <div class="stat-badge">
+                        <div class="stat-value">{{ competencia.pin_acceso }}</div>
+                        <div class="stat-label">PIN</div>
+                    </div>
+                    
+                    {% if competencia.modalidad == 'grupal' %}
+                    <div class="stat-badge">
+                        <div class="stat-value" id="groupCount">{{ grupos_count }}</div>
+                        <div class="stat-label">Equipos</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="stat-badge">
+                        <div class="stat-value">{{ competencia.get_preguntas.count }}</div>
+                        <div class="stat-label">Preguntas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor principal -->
+    <div class="main-container">
+        <!-- Estado principal de espera -->
+        <div class="waiting-main">
+            <div class="main-icon">🏁</div>
+            
+            <h1 class="main-title">¡Sala de Espera!</h1>
+            
+            <p class="main-subtitle">
+                Esperando que el profesor inicie la competencia...
+            </p>
+            
+            <div class="waiting-message">
+                <i class="fas fa-info-circle me-2"></i>
+                Tu avatar molecular está listo. La competencia comenzará pronto.
+                <br><strong>¡Prepárate para demostrar tus conocimientos!</strong>
+            </div>
+
+            <!-- Barra de progreso animada -->
+            <div class="progress-section">
+                <div class="progress-title">
+                    <i class="fas fa-hourglass-half me-2"></i>
+                    Preparando la competencia...
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" style="width: 75%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de participantes -->
+        <div class="participants-section">
+            <h2 class="participants-title">
+                <i class="fas fa-users me-2"></i>
+                Participantes Conectados
+                <span id="participantCountText">({{ participantes_count }})</span>
+            </h2>
+            
+            <div class="participants-grid" id="participantsGrid">
+                {% for participante in participantes %}
+                <div class="participant-card {% if participante.estudiante == user %}current-user{% endif %}" 
+                     data-user-id="{{ participante.estudiante.id }}">
+                    <div class="participant-status {% if participante.activo %}online{% else %}offline{% endif %}"></div>
+                    
+                    <div class="participant-avatar">
+                        {{ participante.avatar_elegido|default:"🧪" }}
+                    </div>
+                    
+                    <div class="participant-name">
+                        {{ participante.estudiante.first_name|default:participante.estudiante.username }}
+                        {% if participante.estudiante == user %}
+                        <span style="color: var(--kahoot-yellow); font-weight: 800;"> (Tú)</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="participant-molecule">
+                        {{ participante.avatar_nombre|default:"Molécula Química" }}
+                    </div>
+
+                    {% if participante.grupo %}
+                    <div style="margin-top: 8px; font-size: 0.75rem; color: var(--kahoot-blue); font-weight: 600;">
+                        <i class="fas fa-users me-1"></i>{{ participante.grupo.nombre }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del jugador actual -->
+    <div class="current-player-info">
+        <div class="current-player-avatar">
+            {{ participacion.avatar_elegido|default:"🧪" }}
+        </div>
+        <div>
+            <div class="current-player-name">
+                {{ user.first_name|default:user.username }}
+            </div>
+            <div class="current-player-molecule">
+                {{ participacion.avatar_nombre|default:"Tu Avatar Molecular" }}
+            </div>
+            <div class="current-player-ready">
+                <i class="fas fa-check me-1"></i>Listo para competir
+            </div>
+        </div>
+    </div>
+
+    <!-- Controles de sala -->
+    <div class="room-controls">
+        <button class="control-btn help" onclick="showHelp()" title="Ayuda">
+            <i class="fas fa-question-circle me-2"></i>Ayuda
+        </button>
+        
+        <button class="control-btn settings" onclick="toggleChat()" title="Chat en vivo">
+            <i class="fas fa-comments me-2"></i>Chat
+        </button>
+        
+        <button class="control-btn exit" onclick="exitCompetition()" title="Salir">
+            <i class="fas fa-sign-out-alt me-2"></i>Salir
+        </button>
+    </div>
+
+    <!-- Chat en vivo (opcional) -->
+    <div class="live-chat" id="liveChat">
+        <div class="chat-header">
+            <span><i class="fas fa-comments me-2"></i>Chat en Vivo</span>
+            <button onclick="toggleChat()" style="background: none; border: none; color: white; font-size: 1.2rem;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div style="text-align: center; padding: 20px; opacity: 0.7;">
+                <i class="fas fa-comment-dots"></i><br>
+                El chat estará disponible durante la competencia
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" placeholder="Escribe un mensaje..." 
+                   onkeypress="handleChatInput(event)" disabled>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div class="notification" id="notification">
+        <div id="notificationContent"></div>
+    </div>
+
+    <!-- Overlay de cuenta regresiva -->
+    <div class="countdown-overlay" id="countdownOverlay">
+        <div class="countdown-display">
+            <div class="countdown-number" id="countdownNumber">3</div>
+            <div class="countdown-text">¡La competencia está por comenzar!</div>
+        </div>
+    </div>
+    <!-- Scripts -->
+    <script src="{% static 'assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js' %}"></script>
+
+    <script>
+        // =====================================================
+        // VARIABLES GLOBALES
+        // =====================================================
+        
+        let competenciaId = {{ competencia.id }};
+        let participacionId = {{ participacion.id }};
+        let participantesActuales = {{ participantes_count }};
+        let estadoCompetencia = '{{ competencia.estado }}';
+        let heartbeatInterval = null;
+        let updateInterval = null;
+        let chatActive = false;
+
+        // =====================================================
+        // INICIALIZACIÓN
+        // =====================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏁 Inicializando sala de espera...');
+            
+            // Crear partículas de energía
+            createEnergyParticles();
+            
+            // Iniciar monitoreo de estado
+            iniciarMonitoreoEstado();
+            
+            // Configurar heartbeat
+            iniciarHeartbeat();
+            
+            // Configurar notificaciones
+            setupNotifications();
+            
+            // Manejar eventos de ventana
+            setupWindowEvents();
+            
+            console.log('✅ Sala de espera inicializada');
+            console.log('🎯 Competencia ID:', competenciaId);
+            console.log('👤 Participación ID:', participacionId);
+            console.log('👥 Participantes actuales:', participantesActuales);
+            console.log('📊 Estado:', estadoCompetencia);
+        });
+
+        // =====================================================
+        // MONITOREO DE ESTADO
+        // =====================================================
+
+        /**
+         * Inicia el monitoreo del estado de la competencia
+         */
+        function iniciarMonitoreoEstado() {
+            updateInterval = setInterval(async () => {
+                try {
+                    await verificarEstadoCompetencia();
+                    await actualizarParticipantes();
+                } catch (error) {
+                    console.warn('⚠️ Error en monitoreo:', error);
+                }
+            }, 2000); // Cada 2 segundos
+        }
+
+        /**
+         * Verifica el estado actual de la competencia
+         */
+        async function verificarEstadoCompetencia() {
+            try {
+                const response = await fetch(`/competencia/estado/${competenciaId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const nuevoEstado = data.estado;
+                    
+                    if (nuevoEstado !== estadoCompetencia) {
+                        console.log('🔄 Cambio de estado:', estadoCompetencia, '->', nuevoEstado);
+                        estadoCompetencia = nuevoEstado;
+                        
+                        manejarCambioEstado(nuevoEstado, data);
+                    }
+                } else {
+                    console.error('❌ Error al verificar estado:', data.error);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error de conexión al verificar estado:', error);
+            }
+        }
+
+        /**
+         * Maneja los cambios de estado de la competencia
+         */
+        function manejarCambioEstado(nuevoEstado, data) {
+            switch (nuevoEstado) {
+                case 'activa':
+                    console.log('🚀 ¡La competencia ha comenzado!');
+                    mostrarCuentaRegresiva(() => {
+                        // Redirigir a la competencia
+                        window.location.href = `/competencia/participar/${participacionId}/`;
+                    });
+                    break;
+                    
+                case 'finalizada':
+                    console.log('🏁 La competencia ha finalizado');
+                    showNotification('La competencia ha finalizado', 'update');
+                    setTimeout(() => {
+                        window.location.href = `/competencia/resultados-participacion/${participacionId}/`;
+                    }, 2000);
+                    break;
+                    
+                case 'cancelada':
+                    console.log('❌ La competencia ha sido cancelada');
+                    showNotification('La competencia ha sido cancelada por el profesor', 'leave');
+                    setTimeout(() => {
+                        window.location.href = '/usEstudiante/';
+                    }, 3000);
+                    break;
+                    
+                default:
+                    console.log('📊 Estado actualizado:', nuevoEstado);
+            }
+        }
+
+        /**
+         * Actualiza la lista de participantes
+         */
+        async function actualizarParticipantes() {
+            try {
+                const response = await fetch(`/competencia/participantes-sala/${competenciaId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.participantes) {
+                    const nuevoCount = data.participantes.length;
+                    
+                    if (nuevoCount !== participantesActuales) {
+                        const diferencia = nuevoCount - participantesActuales;
+                        
+                        if (diferencia > 0) {
+                            showNotification(`${diferencia} nuevo${diferencia > 1 ? 's' : ''} jugador${diferencia > 1 ? 'es' : ''} se ${diferencia > 1 ? 'han unido' : 'ha unido'}`, 'join');
+                        } else {
+                            showNotification(`${Math.abs(diferencia)} jugador${Math.abs(diferencia) > 1 ? 'es han' : ' ha'} salido`, 'leave');
+                        }
+                        
+                        participantesActuales = nuevoCount;
+                        actualizarUIParticipantes(data.participantes);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Error al actualizar participantes:', error);
+            }
+        }
+
+        /**
+         * Actualiza la UI con la nueva lista de participantes
+         */
+        function actualizarUIParticipantes(participantes) {
+            const grid = document.getElementById('participantsGrid');
+            const countElement = document.getElementById('participantCount');
+            const countTextElement = document.getElementById('participantCountText');
+            
+            // Actualizar contadores
+            countElement.textContent = participantes.length;
+            countTextElement.textContent = `(${participantes.length})`;
+            
+            // Limpiar grid actual
+            grid.innerHTML = '';
+            
+            // Agregar participantes actualizados
+            participantes.forEach((participante, index) => {
+                const card = crearTarjetaParticipante(participante);
+                
+                // Animar entrada con delay
+                setTimeout(() => {
+                    grid.appendChild(card);
+                    card.style.animation = 'participant-enter 0.6s ease forwards';
+                }, index * 100);
+            });
+        }
+
+        /**
+         * Crea una tarjeta de participante
+         */
+        function crearTarjetaParticipante(participante) {
+            const card = document.createElement('div');
+            card.className = `participant-card ${participante.es_usuario_actual ? 'current-user' : ''}`;
+            card.dataset.userId = participante.id;
+            
+            card.innerHTML = `
+                <div class="participant-status ${participante.activo ? 'online' : 'offline'}"></div>
+                
+                <div class="participant-avatar">
+                    ${participante.avatar_elegido || '🧪'}
+                </div>
+                
+                <div class="participant-name">
+                    ${participante.nombre}
+                    ${participante.es_usuario_actual ? '<span style="color: var(--kahoot-yellow); font-weight: 800;"> (Tú)</span>' : ''}
+                </div>
+                
+                <div class="participant-molecule">
+                    ${participante.avatar_nombre || 'Molécula Química'}
+                </div>
+                
+                ${participante.grupo ? `
+                <div style="margin-top: 8px; font-size: 0.75rem; color: var(--kahoot-blue); font-weight: 600;">
+                    <i class="fas fa-users me-1"></i>${participante.grupo}
+                </div>
+                ` : ''}
+            `;
+            
+            return card;
+        }
+
+        // =====================================================
+        // HEARTBEAT Y CONEXIÓN
+        // =====================================================
+
+        /**
+         * Inicia el heartbeat para mantener la conexión
+         */
+        function iniciarHeartbeat() {
+            heartbeatInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/competencia/ping/${participacionId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        console.warn('⚠️ Heartbeat fallido');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error en heartbeat:', error);
+                }
+            }, 15000); // Cada 15 segundos
+        }
+
+        // =====================================================
+        // EFECTOS VISUALES
+        // =====================================================
+
+        /**
+         * Crea partículas de energía flotantes
+         */
+        function createEnergyParticles() {
+            const particlesContainer = document.querySelector('.energy-particles');
+            
+            setInterval(() => {
+                if (document.querySelectorAll('.energy-particle').length < 25) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('energy-particle');
+                    
+                    // Posición aleatoria en X
+                    particle.style.left = Math.random() * 100 + '%';
+                    
+                    // Duración aleatoria
+                    particle.style.animationDuration = (Math.random() * 3 + 5) + 's';
+                    
+                    // Delay aleatorio
+                    particle.style.animationDelay = Math.random() * 2 + 's';
+                    
+                    particlesContainer.appendChild(particle);
+                    
+                    // Eliminar después de la animación
+                    setTimeout(() => {
+                        if (particlesContainer.contains(particle)) {
+                            particlesContainer.removeChild(particle);
+                        }
+                    }, 8000);
+                }
+            }, 600);
+        }
+
+        /**
+         * Muestra cuenta regresiva antes de iniciar
+         */
+        function mostrarCuentaRegresiva(callback) {
+            const overlay = document.getElementById('countdownOverlay');
+            const number = document.getElementById('countdownNumber');
+            let count = 3;
+            
+            overlay.style.display = 'flex';
+            
+            const countInterval = setInterval(() => {
+                number.textContent = count;
+                number.style.animation = 'countdown-pulse 1s ease';
+                
+                // Reproducir sonido de cuenta regresiva
+                playCountdownSound(count);
+                
+                count--;
+                
+                if (count < 0) {
+                    clearInterval(countInterval);
+                    number.textContent = '¡GO!';
+                    number.style.animation = 'countdown-pulse 1s ease';
+                    
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                        callback();
+                    }, 1000);
+                }
+                
+                setTimeout(() => {
+                    number.style.animation = '';
+                }, 1000);
+            }, 1000);
+        }
+
+        /**
+         * Reproduce sonido de cuenta regresiva
+         */
+        function playCountdownSound(count) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = count === 0 ? 1000 : 800; // Tono más alto para "GO!"
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('🔇 Audio no disponible');
+            }
+        }
+
+        // =====================================================
+        // SISTEMA DE NOTIFICACIONES
+        // =====================================================
+
+        /**
+         * Configura el sistema de notificaciones
+         */
+        function setupNotifications() {
+            // Solicitar permisos de notificaciones del navegador
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        /**
+         * Muestra una notificación en pantalla
+         */
+        function showNotification(message, type = 'update') {
+            const notification = document.getElementById('notification');
+            const content = document.getElementById('notificationContent');
+            
+            // Configurar icono según tipo
+            let icon = '';
+            switch (type) {
+                case 'join':
+                    icon = '<i class="fas fa-user-plus me-2"></i>';
+                    break;
+                case 'leave':
+                    icon = '<i class="fas fa-user-minus me-2"></i>';
+                    break;
+                case 'update':
+                    icon = '<i class="fas fa-info-circle me-2"></i>';
+                    break;
+                default:
+                    icon = '<i class="fas fa-bell me-2"></i>';
+            }
+            
+            content.innerHTML = icon + message;
+            notification.className = `notification ${type} show`;
+            
+            // Auto-ocultar después de 4 segundos
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+            
+            // Notificación del navegador si está permitido
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('EduCompete', {
+                    body: message,
+                    icon: '/static/assets/images/favicon.ico'
+                });
+            }
+        }
+
+        // =====================================================
+        // FUNCIONES DE INTERACCIÓN
+        // =====================================================
+
+        /**
+         * Alterna la visibilidad del chat
+         */
+        function toggleChat() {
+            const chat = document.getElementById('liveChat');
+            if (chat.style.display === 'none' || chat.style.display === '') {
+                chat.style.display = 'flex';
+                chatActive = true;
+            } else {
+                chat.style.display = 'none';
+                chatActive = false;
+            }
+        }
+
+        /**
+         * Maneja la entrada de texto del chat
+         */
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const message = input.value.trim();
+                
+                if (message) {
+                    // Aquí se enviaría el mensaje al servidor
+                    console.log('💬 Mensaje chat:', message);
+                    input.value = '';
+                }
+            }
+        }
+
+        /**
+         * Muestra ayuda
+         */
+        function showHelp() {
+            const helpModal = `
+                <div class="modal fade" id="helpModal" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="background: var(--kahoot-dark); color: white; border: none;">
+                            <div class="modal-header" style="border-color: var(--kahoot-purple);">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-question-circle me-2"></i>
+                                    ¿Cómo funciona la sala de espera?
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <span class="badge bg-primary rounded-circle p-2">1</span>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6>Espera Activa</h6>
+                                                <p class="text-muted mb-0">Mantente en esta pantalla. La competencia comenzará automáticamente cuando el profesor la inicie.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <span class="badge bg-primary rounded-circle p-2">2</span>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6>Observa a tus Compañeros</h6>
+                                                <p class="text-muted mb-0">Puedes ver quién más se ha unido a la competencia. Los puntos verdes indican que están conectados.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex">
+                                            <div class="flex-shrink-0">
+                                                <span class="badge bg-primary rounded-circle p-2">3</span>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6>Prepárate Mental​mente</h6>
+                                                <p class="text-muted mb-0">Repasa tus conocimientos. ¡La competencia está por comenzar!</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="border-color: var(--kahoot-purple);">
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                                    <i class="fas fa-check me-2"></i>¡Entendido!
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Insertar modal en el DOM
+            document.body.insertAdjacentHTML('beforeend', helpModal);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('helpModal'));
+            modal.show();
+            
+            // Remover del DOM cuando se cierre
+            document.getElementById('helpModal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        }
+
+        /**
+         * Confirma salir de la competencia
+         */
+        function exitCompetition() {
+            if (confirm('¿Estás seguro de que quieres salir de la competencia?')) {
+                console.log('🚪 Saliendo de la competencia...');
+                
+                // Limpiar intervalos
+                if (heartbeatInterval) clearInterval(heartbeatInterval);
+                if (updateInterval) clearInterval(updateInterval);
+                
+                // Notificar al servidor y redirigir
+                fetch(`/competencia/salir/${participacionId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                }).finally(() => {
+                    window.location.href = '/usEstudiante/';
+                });
+            }
+        }
+
+        // =====================================================
+        // MANEJO DE EVENTOS DE VENTANA
+        // =====================================================
+
+        /**
+         * Configura eventos de ventana
+         */
+        function setupWindowEvents() {
+            // Detectar pérdida de conexión
+            window.addEventListener('online', function() {
+                console.log('🌐 Conexión restaurada');
+                showNotification('Conexión restaurada', 'update');
+                
+                // Reiniciar monitoreo
+                if (!updateInterval) {
+                    iniciarMonitoreoEstado();
+                }
+            });
+
+            window.addEventListener('offline', function() {
+                console.log('🚫 Conexión perdida');
+                showNotification('Sin conexión a internet', 'leave');
+            });
+            
+            // Manejar cierre de ventana/pestaña
+            window.addEventListener('beforeunload', function(e) {
+                // Advertir al usuario
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            });
+            
+            // Limpiar al salir
+            window.addEventListener('unload', function() {
+                if (heartbeatInterval) clearInterval(heartbeatInterval);
+                if (updateInterval) clearInterval(updateInterval);
+            });
+        }
+
+        // =====================================================
+        // FUNCIONES DE UTILIDAD
+        // =====================================================
+
+        /**
+         * Obtiene el valor de una cookie
+         */
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        /**
+         * Formatea tiempo transcurrido
+         */
+        function formatElapsedTime(startTime) {
+            const now = new Date();
+            const elapsed = Math.floor((now - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // =====================================================
+        // EVENTOS DE TECLADO
+        // =====================================================
+
+        document.addEventListener('keydown', function(event) {
+            // F5 o Ctrl+R para recargar
+            if (event.key === 'F5' || (event.ctrlKey && event.key === 'r')) {
+                event.preventDefault();
+                window.location.reload();
+            }
+            
+            // Escape para cerrar chat
+            if (event.key === 'Escape' && chatActive) {
+                toggleChat();
+            }
+            
+            // H para ayuda
+            if (event.key.toLowerCase() === 'h' && !chatActive) {
+                showHelp();
+            }
+        });
+
+        // =====================================================
+        // LOG DE INICIALIZACIÓN
+        // =====================================================
+
+        console.log('🏁 Sistema de sala de espera inicializado');
+        console.log('🔄 Monitoreo de estado:', 'Activo');
+        console.log('💓 Heartbeat:', 'Activo cada 15s');
+        console.log('👥 Actualizaciones:', 'Cada 2s');
+        console.log('⚡ Atajos de teclado:');
+        console.log('   - H: Ayuda');
+        console.log('   - Escape: Cerrar chat');
+        console.log('   - F5/Ctrl+R: Recargar');
+    </script>
+</body>
+</html>

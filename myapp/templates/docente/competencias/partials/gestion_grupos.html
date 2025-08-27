@@ -1,0 +1,974 @@
+<!-- Gestión de Grupos (Solo modalidad grupal) -->
+<div class="panel-header">
+    <h4>
+        <i class="fas fa-layer-group me-3"></i>Gestión de Grupos
+        <span class="groups-count-badge">{{ grupos.count }} grupo{{ grupos.count|pluralize:"s" }}</span>
+    </h4>
+    <div class="panel-actions">
+        <button class="btn btn-sm btn-outline-primary" onclick="actualizarGrupos()">
+            <i class="fas fa-sync-alt me-1"></i>Actualizar
+        </button>
+        {% if competencia.estado == 'esperando' %}
+        <button class="btn btn-sm btn-outline-success" onclick="crearGrupoAutomatico()">
+            <i class="fas fa-magic me-1"></i>Grupo Auto
+        </button>
+        <button class="btn btn-sm btn-outline-warning" onclick="redistribuirGrupos()">
+            <i class="fas fa-random me-1"></i>Redistribuir
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel-body">
+    <!-- Configuración de grupos -->
+    <div class="groups-config">
+        <div class="config-row">
+            <div class="config-item">
+                <div class="config-label">
+                    <i class="fas fa-users me-2"></i>Máximo por grupo
+                </div>
+                <div class="config-value">{{ competencia.max_miembros_grupo }}</div>
+            </div>
+            <div class="config-item">
+                <div class="config-label">
+                    <i class="fas fa-user-friends me-2"></i>Participantes sin grupo
+                </div>
+                <div class="config-value" id="participants-without-group">{{ participantes_sin_grupo|default:0 }}</div>
+            </div>
+            <div class="config-item">
+                <div class="config-label">
+                    <i class="fas fa-percentage me-2"></i>Grupos completos
+                </div>
+                <div class="config-value">{{ grupos_completos|default:0 }}/{{ grupos.count }}</div>
+            </div>
+        </div>
+        
+        <!-- Alertas de configuración -->
+        {% if participantes_sin_grupo > 0 %}
+        <div class="config-alert warning">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>{{ participantes_sin_grupo }}</strong> participante{{ participantes_sin_grupo|pluralize:"s" }} sin grupo. 
+            {% if competencia.estado == 'esperando' %}
+            <button class="alert-action" onclick="asignarGruposAutomaticamente()">
+                Asignar automáticamente
+            </button>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        {% if competencia.grupos_aleatorios %}
+        <div class="config-alert info">
+            <i class="fas fa-info-circle me-2"></i>
+            Los grupos se forman automáticamente cuando los estudiantes se unen.
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Lista de grupos -->
+    {% if grupos %}
+    <div class="groups-list">
+        {% for grupo in grupos %}
+        <div class="group-card {% if grupo.miembros.count >= competencia.max_miembros_grupo %}complete{% elif grupo.miembros.count == 0 %}empty{% endif %}">
+            <div class="group-header">
+                <div class="group-info">
+                    <div class="group-name">
+                        <i class="fas fa-layer-group me-2"></i>
+                        {% if competencia.estado == 'esperando' %}
+                        <input type="text" class="group-name-input" value="{{ grupo.nombre }}" 
+                               onblur="actualizarNombreGrupo({{ grupo.id }}, this.value)"
+                               onkeypress="if(event.key==='Enter') this.blur()">
+                        {% else %}
+                        {{ grupo.nombre }}
+                        {% endif %}
+                    </div>
+                    <div class="group-stats">
+                        <span class="member-count">
+                            <i class="fas fa-users me-1"></i>
+                            {{ grupo.miembros.count }}/{{ competencia.max_miembros_grupo }}
+                        </span>
+                        {% if competencia.estado in 'activa,finalizada' %}
+                        <span class="group-score">
+                            <i class="fas fa-star me-1"></i>
+                            {{ grupo.puntaje_total|default:0 }} pts
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="group-actions">
+                    {% if competencia.estado == 'esperando' %}
+                    <button class="group-action-btn" onclick="agregarMiembroAGrupo({{ grupo.id }})" 
+                            title="Agregar miembro"
+                            {% if grupo.miembros.count >= competencia.max_miembros_grupo %}disabled{% endif %}>
+                        <i class="fas fa-user-plus"></i>
+                    </button>
+                    <button class="group-action-btn danger" onclick="eliminarGrupo({{ grupo.id }})" 
+                            title="Eliminar grupo">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    {% endif %}
+                    <button class="group-action-btn" onclick="verDetallesGrupo({{ grupo.id }})" 
+                            title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Miembros del grupo -->
+            <div class="group-members">
+                {% if grupo.miembros.all %}
+                    {% for miembro in grupo.miembros.all %}
+                    <div class="member-item" data-member-id="{{ miembro.id }}">
+                        <div class="member-avatar">
+                            {% if miembro.usuario.avatar %}
+                                <img src="{{ miembro.usuario.avatar.url }}" alt="{{ miembro.usuario.get_full_name }}">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    {{ miembro.usuario.first_name|first|upper }}{{ miembro.usuario.last_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Estado del miembro -->
+                            <div class="member-status status-{{ miembro.estado }}">
+                                {% if miembro.estado == 'conectado' %}
+                                    <i class="fas fa-circle"></i>
+                                {% elif miembro.estado == 'respondiendo' %}
+                                    <i class="fas fa-pen"></i>
+                                {% elif miembro.estado == 'finalizado' %}
+                                    <i class="fas fa-check-circle"></i>
+                                {% else %}
+                                    <i class="fas fa-clock"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="member-info">
+                            <div class="member-name">
+                                {{ miembro.usuario.get_full_name|default:miembro.usuario.username }}
+                            </div>
+                            <div class="member-details">
+                                {% if competencia.estado in 'activa,finalizada' %}
+                                    <span class="member-score">
+                                        <i class="fas fa-star me-1"></i>{{ miembro.puntaje_total|default:0 }} pts
+                                    </span>
+                                {% endif %}
+                                <span class="member-progress">
+                                    <i class="fas fa-tasks me-1"></i>{{ miembro.respuestas.count|default:0 }}/{{ preguntas.count }} respuestas
+                                </span>
+                            </div>
+                        </div>
+                        
+                        {% if competencia.estado == 'esperando' %}
+                        <div class="member-actions">
+                            <button class="member-action-btn" onclick="cambiarGrupoMiembro({{ miembro.id }})" 
+                                    title="Cambiar de grupo">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                            <button class="member-action-btn danger" onclick="removerDeGrupo({{ miembro.id }})" 
+                                    title="Remover del grupo">
+                                <i class="fas fa-user-times"></i>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <!-- Grupo vacío -->
+                    <div class="empty-group">
+                        <div class="empty-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <p class="empty-text">Grupo vacío</p>
+                        {% if competencia.estado == 'esperando' %}
+                        <button class="btn btn-sm btn-outline-primary" onclick="agregarMiembroAGrupo({{ grupo.id }})">
+                            <i class="fas fa-plus me-1"></i>Agregar miembros
+                        </button>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                
+                <!-- Indicador de capacidad -->
+                <div class="capacity-indicator">
+                    <div class="capacity-bar">
+                        <div class="capacity-fill" style="width: {% widthratio grupo.miembros.count competencia.max_miembros_grupo 100 %}%"></div>
+                    </div>
+                    <div class="capacity-text">
+                        {{ grupo.miembros.count }} de {{ competencia.max_miembros_grupo }} miembros
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Botón agregar grupo -->
+    {% if competencia.estado == 'esperando' %}
+    <div class="add-group-section">
+        <button class="add-group-btn" onclick="crearNuevoGrupo()">
+            <i class="fas fa-plus-circle me-3"></i>
+            <div class="add-group-content">
+                <span class="add-group-title">Crear Nuevo Grupo</span>
+                <small class="add-group-subtitle">Agregar un grupo adicional para la competencia</small>
+            </div>
+        </button>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <!-- Sin grupos -->
+    <div class="no-groups-state">
+        <div class="no-groups-icon">
+            <i class="fas fa-layer-group"></i>
+        </div>
+        <h6>No hay grupos creados</h6>
+        <p class="text-muted">
+            {% if competencia.grupos_aleatorios %}
+                Los grupos se crearán automáticamente cuando los estudiantes se unan.
+            {% else %}
+                Crea grupos manualmente o permite que los estudiantes formen sus propios grupos.
+            {% endif %}
+        </p>
+        {% if competencia.estado == 'esperando' and not competencia.grupos_aleatorios %}
+        <button class="btn btn-primary" onclick="crearNuevoGrupo()">
+            <i class="fas fa-plus-circle me-2"></i>Crear Primer Grupo
+        </button>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Participantes sin grupo -->
+    {% if participantes_sin_grupo_lista %}
+    <div class="unassigned-participants">
+        <h6 class="section-title">
+            <i class="fas fa-user-friends me-2"></i>Participantes sin Grupo
+            <span class="count-badge">{{ participantes_sin_grupo_lista|length }}</span>
+        </h6>
+        
+        <div class="unassigned-list">
+            {% for participante in participantes_sin_grupo_lista %}
+            <div class="unassigned-item" data-participant-id="{{ participante.id }}">
+                <div class="participant-avatar-small">
+                    {% if participante.usuario.avatar %}
+                        <img src="{{ participante.usuario.avatar.url }}" alt="{{ participante.usuario.get_full_name }}">
+                    {% else %}
+                        <div class="avatar-placeholder-small">
+                            {{ participante.usuario.first_name|first|upper }}{{ participante.usuario.last_name|first|upper }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="participant-info-small">
+                    <div class="participant-name-small">
+                        {{ participante.usuario.get_full_name|default:participante.usuario.username }}
+                    </div>
+                    <div class="participant-email-small">{{ participante.usuario.email }}</div>
+                </div>
+                
+                {% if competencia.estado == 'esperando' %}
+                <div class="assign-actions">
+                    <select class="group-select" onchange="asignarAGrupo({{ participante.id }}, this.value)">
+                        <option value="">Asignar a grupo...</option>
+                        {% for grupo in grupos %}
+                        <option value="{{ grupo.id }}" 
+                                {% if grupo.miembros.count >= competencia.max_miembros_grupo %}disabled{% endif %}>
+                            {{ grupo.nombre }} ({{ grupo.miembros.count }}/{{ competencia.max_miembros_grupo }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if competencia.estado == 'esperando' %}
+        <div class="bulk-actions">
+            <button class="btn btn-sm btn-outline-success" onclick="asignarGruposAutomaticamente()">
+                <i class="fas fa-magic me-1"></i>Asignar Automáticamente
+            </button>
+            <button class="btn btn-sm btn-outline-primary" onclick="crearGrupoConSeleccionados()">
+                <i class="fas fa-layer-group me-1"></i>Crear Grupo con Seleccionados
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* ===== ESTILOS PARA GESTIÓN DE GRUPOS ===== */
+.groups-count-badge {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    margin-left: 1rem;
+}
+
+/* ===== CONFIGURACIÓN DE GRUPOS ===== */
+.groups-config {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.config-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.config-item {
+    text-align: center;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.05);
+}
+
+.config-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.config-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #2c3e50;
+}
+
+.config-alert {
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.config-alert.warning {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+.config-alert.info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+    border: 1px solid #17a2b8;
+}
+
+.alert-action {
+    background: none;
+    border: none;
+    color: inherit;
+    text-decoration: underline;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.alert-action:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* ===== TARJETAS DE GRUPOS ===== */
+.groups-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.group-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.group-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.group-card.complete {
+    border-color: #28a745;
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.05) 0%, rgba(32, 201, 151, 0.05) 100%);
+}
+
+.group-card.empty {
+    border-color: #ffc107;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 235, 59, 0.05) 100%);
+}
+
+.group-header {
+    background: rgba(0, 0, 0, 0.03);
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.group-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.group-name {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.group-name-input {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.group-name-input:focus {
+    background: rgba(255, 255, 255, 0.8);
+    outline: 2px solid #007bff;
+}
+
+.group-stats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.member-count, .group-score {
+    background: rgba(255, 255, 255, 0.8);
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.group-score {
+    background: rgba(40, 167, 69, 0.1);
+    color: #155724;
+}
+
+.group-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.group-action-btn {
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.2);
+    color: #007bff;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.group-action-btn:hover:not(:disabled) {
+    background: #007bff;
+    color: white;
+    transform: scale(1.1);
+}
+
+.group-action-btn:disabled {
+    background: #f8f9fa;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+.group-action-btn.danger {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.group-action-btn.danger:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* ===== MIEMBROS DEL GRUPO ===== */
+.group-members {
+    padding: 1.5rem;
+}
+
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.member-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateX(5px);
+}
+
+.member-avatar {
+    position: relative;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.member-status {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.status-conectado { background: #28a745; color: white; }
+.status-respondiendo { background: #ffc107; color: #212529; }
+.status-finalizado { background: #6f42c1; color: white; }
+
+.member-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.member-name {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.member-details {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.member-score, .member-progress {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.member-score {
+    color: #155724;
+}
+
+.member-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.member-action-btn {
+    background: rgba(108, 117, 125, 0.1);
+    border: 1px solid rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.member-action-btn:hover {
+    background: #6c757d;
+    color: white;
+}
+
+.member-action-btn.danger {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.member-action-btn.danger:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* ===== GRUPO VACÍO ===== */
+.empty-group {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 2.5rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.empty-text {
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+/* ===== INDICADOR DE CAPACIDAD ===== */
+.capacity-indicator {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.capacity-bar {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.capacity-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.capacity-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* ===== AGREGAR GRUPO ===== */
+.add-group-section {
+    margin-top: 2rem;
+}
+
+.add-group-btn {
+    width: 100%;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+    border: 3px dashed #28a745;
+    color: #28a745;
+    padding: 2rem;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.add-group-btn:hover {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(32, 201, 151, 0.1) 100%);
+    border-color: #20c997;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.2);
+}
+
+.add-group-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.add-group-title {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.add-group-subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+/* ===== SIN GRUPOS ===== */
+.no-groups-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #6c757d;
+}
+
+.no-groups-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1.5rem;
+}
+
+.no-groups-state h6 {
+    color: #495057;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.no-groups-state p {
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+/* ===== PARTICIPANTES SIN GRUPO ===== */
+.unassigned-participants {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.section-title {
+    color: #495057;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.count-badge {
+    background: #ffc107;
+    color: #212529;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    margin-left: 1rem;
+}
+
+.unassigned-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.unassigned-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.unassigned-item:hover {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateX(5px);
+}
+
+.participant-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.participant-avatar-small img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder-small {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.participant-info-small {
+    flex: 1;
+    min-width: 0;
+}
+
+.participant-name-small {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.participant-email-small {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.assign-actions {
+    flex-shrink: 0;
+}
+
+.group-select {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #dee2e6;
+    color: #495057;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.group-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+    .groups-list {
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .groups-list {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .config-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .group-header {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .group-stats {
+        justify-content: center;
+    }
+    
+    .group-actions {
+        justify-content: center;
+    }
+    
+    .group-members {
+        padding: 1rem;
+    }
+    
+    .member-item {
+        padding: 0.75rem;
+    }
+    
+    .member-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .unassigned-item {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .participant-info-small {
+        order: -1;
+    }
+    
+    .bulk-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .bulk-actions .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .config-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .groups-config,
+    .unassigned-participants {
+        padding: 1rem;
+    }
+    
+    .add-group-btn {
+        padding: 1.5rem;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .add-group-content {
+        align-items: center;
+        text-align: center;
+    }
+}
+</style>
